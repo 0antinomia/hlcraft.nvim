@@ -30,6 +30,113 @@ local function uninstall_preview_keymap(instance)
   require('hlcraft.ui.preview').uninstall_keymap(instance)
 end
 
+local managed_window_options = {
+  'number',
+  'relativenumber',
+  'signcolumn',
+  'foldcolumn',
+}
+
+local workspace_window_option_values = {
+  number = false,
+  relativenumber = false,
+  signcolumn = 'no',
+  foldcolumn = '0',
+}
+
+local function read_window_options(win)
+  local values = {}
+  for _, option in ipairs(managed_window_options) do
+    values[option] = vim.wo[win][option]
+  end
+  return values
+end
+
+local function snapshot_window_options(win)
+  if not M.is_valid_win(win) then
+    return nil
+  end
+
+  return {
+    win = win,
+    values = read_window_options(win),
+  }
+end
+
+local function restore_window_options(snapshot)
+  if not snapshot or not M.is_valid_win(snapshot.win) then
+    return false
+  end
+
+  for option, value in pairs(snapshot.values or {}) do
+    pcall(function()
+      vim.wo[snapshot.win][option] = value
+    end)
+  end
+
+  return true
+end
+
+local function clear_workspace_window_snapshot(instance, win)
+  if win == nil then
+    return
+  end
+
+  instance.state.workspace_win_options[win] = nil
+  if instance.state.last_workspace_win == win then
+    instance.state.last_workspace_win = nil
+  end
+end
+
+local function restore_workspace_window_options(instance, win)
+  if win == nil then
+    return false
+  end
+
+  local snapshot = instance.state.workspace_win_options[win]
+  if not snapshot then
+    return false
+  end
+
+  local restored = restore_window_options(snapshot)
+  clear_workspace_window_snapshot(instance, win)
+  return restored
+end
+
+local function restore_all_workspace_windows(instance)
+  for workspace_win, _ in pairs(instance.state.workspace_win_options or {}) do
+    restore_workspace_window_options(instance, workspace_win)
+  end
+end
+
+local function restore_origin_window_options(instance, clear_snapshot)
+  if instance.state.origin_win_options == nil then
+    return false
+  end
+
+  local restored = restore_window_options(instance.state.origin_win_options)
+  if clear_snapshot ~= false then
+    instance.state.origin_win_options = nil
+  end
+  return restored
+end
+
+local function has_origin(instance)
+  return M.is_valid_win(instance.state.origin_win)
+    and M.is_valid_buf(instance.state.origin_buf)
+    and instance.state.origin_buf ~= instance.state.buf
+end
+
+local function is_workspace_window_options(values)
+  for option, expected in pairs(workspace_window_option_values) do
+    if values[option] ~= expected then
+      return false
+    end
+  end
+
+  return true
+end
+
 local function help_lines()
   local lines = {
     'hlcraft help',
@@ -55,14 +162,14 @@ end
 --- @param buf number|nil Buffer handle
 --- @return boolean True if buffer is valid
 function M.is_valid_buf(buf)
-  return buf and vim.api.nvim_buf_is_valid(buf)
+  return buf ~= nil and vim.api.nvim_buf_is_valid(buf)
 end
 
 --- Check if a window handle is valid
 --- @param win number|nil Window handle
 --- @return boolean True if window is valid
 function M.is_valid_win(win)
-  return win and vim.api.nvim_win_is_valid(win)
+  return win ~= nil and vim.api.nvim_win_is_valid(win)
 end
 
 --- Get the workspace buffer handle
@@ -80,8 +187,23 @@ function M.get_win(instance)
   if not M.is_valid_buf(buf) then
     return nil
   end
-  local win = vim.fn.bufwinid(buf)
-  return win ~= -1 and win or nil
+
+  local windows = vim.fn.win_findbuf(buf)
+  if type(windows) == 'table' and #windows > 0 then
+    for _, win in ipairs(windows) do
+      if win == instance.state.last_workspace_win and M.is_valid_win(win) then
+        return win
+      end
+    end
+
+    for _, win in ipairs(windows) do
+      if M.is_valid_win(win) then
+        return win
+      end
+    end
+  end
+
+  return nil
 end
 
 --- Check if the workspace window is currently open
@@ -213,15 +335,9 @@ end
 --- @return nil
 function M.apply_window_options(instance, win)
   vim.api.nvim_win_set_hl_ns(win, instance.ns)
-  vim.wo[win].number = false
-  vim.wo[win].relativenumber = false
-  vim.wo[win].signcolumn = 'no'
-  vim.wo[win].foldcolumn = '0'
-  vim.wo[win].spell = false
-  vim.wo[win].list = false
-  vim.wo[win].wrap = false
-  vim.wo[win].cursorline = false
-  vim.wo[win].winbar = ''
+  for option, value in pairs(workspace_window_option_values) do
+    vim.wo[win][option] = value
+  end
 end
 
 --- Restore the origin buffer and window that was active before opening
@@ -229,24 +345,34 @@ end
 --- @return nil
 function M.restore_origin(instance)
   local win = M.get_win(instance)
-  if not M.is_valid_win(win) then
-    return
-  end
+  local had_origin = has_origin(instance)
 
-  if
-    M.is_valid_win(instance.state.origin_win)
-    and M.is_valid_buf(instance.state.origin_buf)
-    and instance.state.origin_buf ~= instance.state.buf
-  then
-    if win == instance.state.origin_win then
+  if had_origin then
+    if M.is_valid_win(win) and win == instance.state.origin_win then
       pcall(vim.api.nvim_win_set_buf, win, instance.state.origin_buf)
     else
       pcall(vim.api.nvim_set_current_win, instance.state.origin_win)
       pcall(vim.api.nvim_win_set_buf, instance.state.origin_win, instance.state.origin_buf)
       if M.is_valid_win(win) then
+        restore_workspace_window_options(instance, win)
         pcall(vim.api.nvim_win_close, win, true)
       end
     end
+  end
+
+  if instance.state.origin_win_options ~= nil then
+    restore_origin_window_options(instance, false)
+  end
+
+  if had_origin then
+    return
+  end
+
+  if M.is_valid_win(win) then
+    restore_workspace_window_options(instance, win)
+  end
+
+  if not M.is_valid_win(win) then
     return
   end
 
@@ -309,6 +435,10 @@ function M.cleanup(instance)
   local ok, err = pcall(function()
     cleanup_preview(instance)
     uninstall_preview_keymap(instance)
+    restore_all_workspace_windows(instance)
+    if instance.state.origin_win_options ~= nil then
+      restore_origin_window_options(instance)
+    end
     if M.is_valid_win(instance.state.help_win) then
       pcall(vim.api.nvim_win_close, instance.state.help_win, true)
     end
@@ -328,6 +458,9 @@ function M.cleanup(instance)
     instance.state.help_win = nil
     instance.state.origin_buf = nil
     instance.state.origin_win = nil
+    instance.state.origin_win_options = nil
+    instance.state.workspace_win_options = {}
+    instance.state.last_workspace_win = nil
   end)
   instance.state.closing = false
   if not ok then
@@ -346,20 +479,58 @@ function M.open(instance)
   if current_buf ~= instance.state.buf then
     instance.state.origin_win = current_win
     instance.state.origin_buf = current_buf
+    instance.state.origin_win_options = snapshot_window_options(current_win)
   end
 
   local buf = M.ensure_buffer(instance)
   vim.api.nvim_set_current_buf(buf)
-
-  local win = M.get_win(instance)
-  if M.is_valid_win(win) then
-    M.apply_window_options(instance, win)
-  end
+  M.capture_workspace_window(instance, current_win)
 
   instance:rerender()
   install_preview_keymap(instance)
   require('hlcraft.ui.input.actions').goto_first_input(instance)
   require('hlcraft.ui.navigation').clamp_cursor(instance)
+end
+
+function M.capture_workspace_window(instance, win)
+  if not M.is_valid_win(win) then
+    return
+  end
+
+  if win == instance.state.origin_win then
+    M.apply_window_options(instance, win)
+    return
+  end
+
+  instance.state.last_workspace_win = win
+
+  if instance.state.workspace_win_options[win] == nil then
+    local snapshot = snapshot_window_options(win)
+    if snapshot == nil or snapshot.win == nil then
+      return
+    end
+
+    if instance.state.origin_win_options ~= nil and is_workspace_window_options(snapshot.values) then
+      snapshot.values = vim.deepcopy(instance.state.origin_win_options.values or {})
+    end
+
+    instance.state.workspace_win_options[win] = snapshot
+  end
+
+  M.apply_window_options(instance, win)
+end
+
+function M.release_workspace_window(instance, win)
+  if not M.is_valid_win(win) then
+    return
+  end
+
+  if win == instance.state.origin_win then
+    restore_origin_window_options(instance, false)
+    return
+  end
+
+  restore_workspace_window_options(instance, win)
 end
 
 return M

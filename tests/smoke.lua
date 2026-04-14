@@ -38,6 +38,31 @@ local results_state = require('hlcraft.ui.state.results')
 local overrides = require('hlcraft.overrides')
 local storage = require('hlcraft.storage')
 
+local origin_win = vim.api.nvim_get_current_win()
+local origin_buf = vim.api.nvim_get_current_buf()
+local original_window_options = {
+  number = true,
+  relativenumber = true,
+  signcolumn = 'yes',
+  foldcolumn = '1',
+}
+local workspace_window_options = {
+  number = false,
+  relativenumber = false,
+  signcolumn = 'no',
+  foldcolumn = '0',
+}
+local secondary_window_options = {
+  number = true,
+  relativenumber = false,
+  signcolumn = 'yes:1',
+  foldcolumn = '2',
+}
+
+for option, value in pairs(original_window_options) do
+  vim.wo[origin_win][option] = value
+end
+
 hlcraft.setup({ persist_dir = persist_dir, debounce_ms = 0 })
 hlcraft.open()
 
@@ -46,6 +71,38 @@ assert_true(instance.state.buf and vim.api.nvim_buf_is_valid(instance.state.buf)
 
 local win = vim.fn.bufwinid(instance.state.buf)
 assert_true(win ~= -1 and vim.api.nvim_win_is_valid(win), 'workspace window is not open')
+assert_equal(win, origin_win, 'workspace did not reuse the origin window')
+
+for option, value in pairs(workspace_window_options) do
+  assert_equal(vim.wo[win][option], value, ('workspace window option %s was not applied'):format(option))
+end
+
+vim.cmd('edit smoke-origin-switch.txt')
+for option, value in pairs(original_window_options) do
+  assert_equal(vim.wo[origin_win][option], value, ('origin file window option %s leaked from workspace'):format(option))
+end
+vim.cmd('buffer ' .. instance.state.buf)
+for option, value in pairs(workspace_window_options) do
+  assert_equal(vim.wo[origin_win][option], value, ('workspace window option %s was not reapplied after returning'):format(option))
+end
+
+vim.cmd('vsplit')
+local secondary_win = vim.api.nvim_get_current_win()
+assert_true(secondary_win ~= origin_win, 'failed to open secondary window')
+for option, value in pairs(secondary_window_options) do
+  vim.wo[secondary_win][option] = value
+end
+vim.api.nvim_win_set_buf(secondary_win, instance.state.buf)
+require('hlcraft.ui.workspace').capture_workspace_window(instance, secondary_win)
+for option, value in pairs(workspace_window_options) do
+  assert_equal(vim.wo[secondary_win][option], value, ('secondary workspace window option %s was not applied'):format(option))
+end
+vim.cmd('edit smoke-secondary.txt')
+require('hlcraft.ui.workspace').release_workspace_window(instance, secondary_win)
+for option, value in pairs(secondary_window_options) do
+  assert_equal(vim.wo[secondary_win][option], value, ('secondary file window option %s leaked from workspace'):format(option))
+end
+vim.api.nvim_set_current_win(origin_win)
 
 input_model.fill_input(instance, 'name', 'normal', true)
 input_model.fill_input(instance, 'color', '', true)
@@ -98,6 +155,12 @@ assert_true(
   instance.state.buf == nil or not vim.api.nvim_buf_is_valid(instance.state.buf),
   'workspace buffer was not deleted on quit'
 )
+assert_true(vim.api.nvim_win_is_valid(origin_win), 'origin window is invalid after quit')
+assert_equal(vim.api.nvim_win_get_buf(origin_win), origin_buf, 'origin buffer was not restored after quit')
+
+for option, value in pairs(original_window_options) do
+  assert_equal(vim.wo[origin_win][option], value, ('origin window option %s was not restored'):format(option))
+end
 
 vim.fn.delete(persist_dir, 'rf')
 

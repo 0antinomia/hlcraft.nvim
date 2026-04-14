@@ -98,6 +98,35 @@ function M.setup(instance)
     end,
   })
 
+  vim.api.nvim_create_autocmd('BufWinEnter', {
+    group = instance.group,
+    buffer = instance.state.buf,
+    callback = function()
+      local win = vim.api.nvim_get_current_win()
+      if workspace.is_valid_win(win) then
+        workspace.capture_workspace_window(instance, win)
+      end
+    end,
+  })
+
+  vim.api.nvim_create_autocmd('BufWinLeave', {
+    group = instance.group,
+    buffer = instance.state.buf,
+    callback = function()
+      local current_win = vim.api.nvim_get_current_win()
+      if workspace.is_valid_win(current_win) then
+        workspace.release_workspace_window(instance, current_win)
+      end
+
+      if workspace.is_valid_win(instance.state.origin_win) then
+        local current_buf = vim.api.nvim_win_get_buf(instance.state.origin_win)
+        if current_buf ~= instance.state.buf then
+          workspace.release_workspace_window(instance, instance.state.origin_win)
+        end
+      end
+    end,
+  })
+
   vim.api.nvim_create_autocmd('BufWipeout', {
     group = instance.group,
     buffer = instance.state.buf,
