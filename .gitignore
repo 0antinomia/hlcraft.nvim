@@ -1,1 +1,14 @@
+# IDE / Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# OS
 .DS_Store
+Thumbs.db
+
