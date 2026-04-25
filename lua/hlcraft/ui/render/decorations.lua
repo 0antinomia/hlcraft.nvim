@@ -1,4 +1,3 @@
-local config = require('hlcraft.config')
 local ui_fields = require('hlcraft.ui.fields')
 local color = require('hlcraft.color')
 local ui_detail = require('hlcraft.ui.detail')
@@ -191,7 +190,7 @@ function M.detail_placeholder_values(result)
   local resolved_fg = result.resolved_fg ~= 'NONE' and result.resolved_fg or result.fg
   local resolved_bg = result.resolved_bg ~= 'NONE' and result.resolved_bg or result.bg
   return {
-    group = config.default_group_name(),
+    group = '',
     fg = resolved_fg or 'NONE',
     bg = resolved_bg or 'NONE',
     sp = result.sp or 'NONE',

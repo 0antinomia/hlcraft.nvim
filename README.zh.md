@@ -57,7 +57,6 @@ require('hlcraft').setup({
   },
   threshold = 100,
   include_sp_in_color_search = false,
-  default_group = 'default',
   persist_dir = vim.fn.stdpath('config') .. '/.hlcraft',
   reapply_events = {
     enabled = true,
@@ -113,16 +112,6 @@ include_sp_in_color_search = false
 ```
 
 启用后，`sp` 颜色匹配的高亮组也会出现在结果中。这在大量使用 underline 或 undercurl 的主题里会更有用。
-
-#### `default_group`
-
-持久化 override 时使用的默认 TOML section 名称。
-
-```lua
-default_group = 'default'
-```
-
-override 会按 section 分组存入 TOML 文件。如果你没有在详情页里指定自定义 group，就会写入这里。
 
 #### `persist_dir`
 
@@ -243,7 +232,9 @@ preview_key = 'z'
 vim.fn.stdpath('config') .. '/.hlcraft'
 ```
 
-每个文件保存一个顶层 TOML section。section 名称来自详情表单中的配置，如果没有指定，则回退到 `default_group`。
+每个文件保存一个顶层 TOML section。section 名称来自你在详情页里明确选择或新建的 group。如果某个 override 没有 group，hlcraft 会要求你先选择或新建一个 group，再进行保存。
+
+例如 `default.toml` 也只是一个普通 group 文件：`default` 只是普通分组名，不再是隐式回退值。
 
 持久化 override 会在 `setup()` 时加载，并在配置的 `reapply_events` 上再次应用。
 

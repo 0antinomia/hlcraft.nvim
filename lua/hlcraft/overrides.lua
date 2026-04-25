@@ -125,7 +125,7 @@ end
 
 local function ensure_runtime_group(name)
   if state.runtime_groups[name] == nil or vim.trim(tostring(state.runtime_groups[name])) == '' then
-    state.runtime_groups[name] = state.persisted_groups[name] or config.default_group_name()
+    state.runtime_groups[name] = state.persisted_groups[name]
   end
 end
 
@@ -300,27 +300,30 @@ end
 --- @param name string
 --- @return string
 function M.get_runtime_group(name)
-  return state.runtime_groups[name] or state.persisted_groups[name] or config.default_group_name()
+  return state.runtime_groups[name] or state.persisted_groups[name]
 end
 
 --- Return the persisted TOML section for a highlight group.
 --- @param name string
 --- @return string
 function M.get_persisted_group(name)
-  return state.persisted_groups[name] or config.default_group_name()
+  return state.persisted_groups[name]
 end
 
 --- Return sorted unique TOML section names known from defaults, persisted, and runtime state.
 --- @return string[]
 function M.known_groups()
   local groups = {}
-  groups[config.default_group_name()] = true
 
   for _, group_name in pairs(state.persisted_groups) do
-    groups[group_name] = true
+    if type(group_name) == 'string' and vim.trim(group_name) ~= '' then
+      groups[group_name] = true
+    end
   end
   for _, group_name in pairs(state.runtime_groups) do
-    groups[group_name] = true
+    if type(group_name) == 'string' and vim.trim(group_name) ~= '' then
+      groups[group_name] = true
+    end
   end
 
   local names = vim.tbl_keys(groups)
@@ -347,7 +350,7 @@ end
 function M.set_group(name, group_name)
   local normalized = vim.trim(tostring(group_name or ''))
   if normalized == '' then
-    normalized = config.default_group_name()
+    return false, 'Group name is required'
   end
 
   if not state.runtime[name] then

@@ -1,5 +1,4 @@
 local color = require('hlcraft.color')
-local config = require('hlcraft.config')
 local overrides = require('hlcraft.overrides')
 local ui_fields = require('hlcraft.ui.fields')
 local workspace = require('hlcraft.ui.workspace')
@@ -52,7 +51,7 @@ function M.snapshot(instance, result)
   local runtime_override = overrides.get(result.name)
   local runtime_group = overrides.get_runtime_group(result.name)
   local values = {
-    group = runtime_group ~= config.default_group_name() and runtime_group or '',
+    group = runtime_group or '',
     fg = format_form_value(runtime_override.fg),
     bg = format_form_value(runtime_override.bg),
     sp = format_form_value(runtime_override.sp),
@@ -211,7 +210,11 @@ function M.apply(instance)
 
   overrides.clear(result.name)
   if has_override then
-    overrides.set_group(result.name, values.group)
+    local group_ok, group_err = overrides.set_group(result.name, values.group)
+    if not group_ok then
+      vim.notify(group_err, vim.log.levels.ERROR)
+      return
+    end
 
     for _, key in ipairs({ 'fg', 'bg', 'sp' }) do
       if normalized_colors[key] ~= nil then

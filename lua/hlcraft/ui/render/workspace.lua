@@ -103,7 +103,7 @@ end
 --- @return string Display text
 local function detail_display_text(value)
   if value == nil then
-    return ''
+    return 'unset'
   end
   if value == true then
     return 'true'

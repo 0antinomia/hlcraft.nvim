@@ -15,6 +15,9 @@ local function assert_equal(actual, expected, message)
 end
 
 local function assert_file_missing(path, message)
+  if path == nil then
+    return
+  end
   assert_true(vim.uv.fs_stat(path) == nil, message)
 end
 
@@ -29,6 +32,15 @@ end
 
 local function press_normal(lhs)
   vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(lhs, true, false, true), 'mx', false)
+end
+
+local function list_contains(list, value)
+  for _, item in ipairs(list or {}) do
+    if item == value then
+      return true
+    end
+  end
+  return false
 end
 
 local persist_dir = vim.fn.stdpath('cache') .. '/hlcraft-smoke'
@@ -46,6 +58,10 @@ local detail_values = require('hlcraft.ui.state.detail_values')
 local results_state = require('hlcraft.ui.state.results')
 local overrides = require('hlcraft.overrides')
 local storage = require('hlcraft.storage')
+local config = require('hlcraft.config')
+
+local default_group_config_ok = config.validate({ default_group = 'default' })
+assert_true(not default_group_config_ok, 'default_group config option is still accepted')
 
 local origin_win = vim.api.nvim_get_current_win()
 local origin_buf = vim.api.nvim_get_current_buf()
@@ -74,6 +90,10 @@ end
 
 hlcraft.setup({ persist_dir = persist_dir, debounce_ms = 0 })
 hlcraft.open()
+
+assert_equal(overrides.get_runtime_group('Normal'), nil, 'missing runtime group fell back to default')
+assert_equal(overrides.get_persisted_group('Normal'), nil, 'missing persisted group fell back to default')
+assert_equal(#overrides.known_groups(), 0, 'known groups included an implicit default group')
 
 local instance = ui.get_instance()
 assert_true(instance.state.buf and vim.api.nvim_buf_is_valid(instance.state.buf), 'workspace buffer is invalid')
@@ -153,11 +173,21 @@ local group_line = instance.state.geometry.detail_menu.group.line
 local fg_line = instance.state.geometry.detail_menu.fg.line
 local lines = vim.api.nvim_buf_get_lines(instance.state.buf, group_line - 1, fg_line, false)
 assert_true(lines[1]:find('Group') ~= nil, 'group menu row does not show label')
+assert_true(lines[1]:find('unset') ~= nil, 'unset group row does not show unset state')
+assert_true(lines[1]:find('default') == nil, 'unset group row displayed an implicit default group')
 assert_true(lines[#lines]:find('FG') ~= nil, 'fg menu row does not show label')
 
 local result_name = instance.state.results[instance.state.detail_index].name
 local runtime_before = overrides.get(result_name)
 assert_true(type(runtime_before) == 'table', 'failed to read runtime override state')
+
+field_editor.open(instance, 'group')
+assert_true(instance.state.geometry.editor_rows.new_group ~= nil, 'empty group editor did not offer new group')
+assert_true(
+  instance.state.geometry.editor_rows['group:default'] == nil,
+  'empty group editor offered implicit default group'
+)
+field_editor.close(instance)
 
 vim.api.nvim_win_set_cursor(win, { instance.state.geometry.detail_menu.bold.line, 0 })
 field_editor.activate(instance)
@@ -177,6 +207,13 @@ local editor_file_path = overrides.file_path(result_name)
 field_editor.set_color(instance, '#112233')
 field_editor.adjust_color(instance, 'r', 5)
 assert_equal(overrides.get(result_name).fg, '#162233', 'red channel did not increase by 5')
+local missing_group_save_ok, missing_group_save_err = detail_values.save(instance, result_name)
+assert_true(not missing_group_save_ok, 'saving override without group unexpectedly succeeded')
+assert_true(
+  tostring(missing_group_save_err or ''):find('group') ~= nil,
+  'saving override without group did not report missing group'
+)
+assert_file_missing(editor_file_path, 'saving override without group created TOML')
 press_normal('r')
 assert_equal(overrides.get(result_name).fg, '#112233', 'r key did not decrease red channel in color editor')
 press_normal('G')
@@ -363,6 +400,24 @@ assert_equal(
   overrides.get_persisted_group(group_only_name),
   'smoke-group-only',
   'group-only persisted group did not reload after bootstrap'
+)
+
+local explicit_default_name = 'Identifier'
+overrides.clear(explicit_default_name)
+local explicit_default_ok, explicit_default_err =
+  detail_values.apply_runtime(nil, explicit_default_name, { group = 'default' })
+assert_true(explicit_default_ok, explicit_default_err or 'explicit default group runtime apply failed')
+local explicit_default_save_ok, explicit_default_save_err = detail_values.save(nil, explicit_default_name)
+assert_true(explicit_default_save_ok, explicit_default_save_err or 'explicit default group save failed')
+local explicit_default_loaded = storage.load(persist_dir)
+assert_equal(
+  explicit_default_loaded.groups[explicit_default_name],
+  'default',
+  'explicit default group was not treated as a normal persisted group'
+)
+assert_true(
+  list_contains(overrides.known_groups(), 'default'),
+  'explicit default group was not listed as a normal known group'
 )
 
 local clear_last_field_name = 'LineNr'

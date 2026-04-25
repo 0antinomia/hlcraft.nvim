@@ -20,7 +20,7 @@ end
 local function normalize_group_name(name)
   local normalized = vim.trim(tostring(name or ''))
   if normalized == '' then
-    return config.default_group_name()
+    return nil
   end
 
   return normalized
@@ -299,6 +299,9 @@ end
 --- @return string
 function M.file_path(group_name)
   local section_name = normalize_group_name(group_name)
+  if not section_name then
+    return nil
+  end
   return storage_dir() .. '/' .. sanitize_filename(section_name) .. '.toml'
 end
 
@@ -344,6 +347,9 @@ function M.save(overrides, groups, path)
   for highlight_name, entry in pairs(overrides or {}) do
     if entry and next(entry) ~= nil then
       local section_name = normalize_group_name(groups and groups[highlight_name])
+      if not section_name then
+        return false, ('Highlight %s must have a group before saving'):format(tostring(highlight_name))
+      end
       sections[section_name] = sections[section_name] or {}
       sections[section_name][highlight_name] = entry
     end
@@ -351,6 +357,9 @@ function M.save(overrides, groups, path)
 
   for highlight_name, group_name in pairs(groups or {}) do
     local section_name = normalize_group_name(group_name)
+    if not section_name then
+      return false, ('Highlight %s must have a group before saving'):format(tostring(highlight_name))
+    end
     sections[section_name] = sections[section_name] or {}
     sections[section_name][highlight_name] = sections[section_name][highlight_name]
       or (overrides and overrides[highlight_name])

@@ -51,7 +51,7 @@ end
 
 local function apply_entry(name, entry, group, keep_group)
   overrides.clear(name)
-  if has_entry(entry) or keep_group then
+  if group ~= nil and (has_entry(entry) or keep_group) then
     local ok, err = overrides.set_group(name, group)
     if not ok then
       return false, err

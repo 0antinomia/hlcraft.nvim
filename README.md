@@ -57,7 +57,6 @@ require('hlcraft').setup({
   },
   threshold = 100,
   include_sp_in_color_search = false,
-  default_group = 'default',
   persist_dir = vim.fn.stdpath('config') .. '/.hlcraft',
   reapply_events = {
     enabled = true,
@@ -113,16 +112,6 @@ include_sp_in_color_search = false
 ```
 
 When enabled, highlight groups whose special color matches the query can also appear in the results. This is mainly useful for underline- and undercurl-heavy colorschemes.
-
-#### `default_group`
-
-Default TOML section used when persisting overrides.
-
-```lua
-default_group = 'default'
-```
-
-Overrides are stored in TOML files grouped by section name. If you do not assign a custom group in the detail view, entries are written to this group.
 
 #### `persist_dir`
 
@@ -243,7 +232,9 @@ Persisted overrides are written under:
 vim.fn.stdpath('config') .. '/.hlcraft'
 ```
 
-Each file stores one top-level TOML section. The section name comes from the value assigned in the detail form, or falls back to `default_group`.
+Each file stores one top-level TOML section. Section names come from groups you explicitly select or create in the detail view. If an override has no group, hlcraft asks you to choose or create one before saving.
+
+A file such as `default.toml` is treated like any other group file: `default` is just a normal group name, not an implicit fallback.
 
 Persisted overrides are loaded during `setup()` and replayed again on configured `reapply_events`.
 
