@@ -20,7 +20,6 @@ local defaults = {
   include_sp_in_color_search = false, -- Whether special/underline color participates in color search
   persist_dir = vim.fn.stdpath('config') .. '/.hlcraft', -- Directory used to persist highlight overrides as multiple TOML files
   reapply_events = default_reapply_events, -- Controls whether persisted overrides are replayed automatically and on which events
-  debug = { level = 'off' }, -- Debug logging level: trace/debug/info/warn/error/off
   debounce_ms = 100, -- Debounce delay in milliseconds for search input (0 disables)
   preview_key = 'z', -- Global normal-mode key active while the workspace is open for flashing the current result
 }
@@ -64,7 +63,7 @@ local function normalize_reapply_events(value)
   }
 end
 
---- Validate user config before merging with defaults (per D-05, D-06, D-08)
+--- Validate user config before merging with defaults.
 --- Aggregates ALL errors using per-field pcall(vim.validate) instead of stopping at first.
 --- @param user_config table|nil User configuration options
 --- @return boolean ok True if valid
@@ -80,14 +79,13 @@ function M.validate(user_config)
 
   local errors = {}
 
-  -- Unknown key check (D-05)
+  -- Unknown key check
   local known_keys = {
     from_none = true,
     threshold = true,
     include_sp_in_color_search = true,
     persist_dir = true,
     reapply_events = true,
-    debug = true,
     debounce_ms = true,
     preview_key = true,
   }
@@ -117,11 +115,13 @@ function M.validate(user_config)
     end
   end
 
-  -- persist_dir: string (D-07 -- only non-empty string check, no path safety)
+  -- persist_dir: non-empty string
   if user_config.persist_dir ~= nil then
     local ok, err = pcall(vim.validate, { persist_dir = { user_config.persist_dir, 'string' } })
     if not ok then
       errors[#errors + 1] = err
+    elseif vim.trim(user_config.persist_dir) == '' then
+      errors[#errors + 1] = 'persist_dir: must be a non-empty string'
     end
   end
 
@@ -177,29 +177,6 @@ function M.validate(user_config)
             errors[#errors + 1] = ('reapply_events.events[%d]: must be a string or table, got %s'):format(i, entry_type)
           end
         end
-      end
-    end
-  end
-
-  -- debug: table with optional level field
-  if user_config.debug ~= nil then
-    if type(user_config.debug) ~= 'table' then
-      errors[#errors + 1] = 'debug: must be a table, got ' .. type(user_config.debug)
-    elseif user_config.debug.level ~= nil then
-      local valid_levels = {
-        trace = true,
-        debug = true,
-        info = true,
-        warn = true,
-        error = true,
-        off = true,
-      }
-      if type(user_config.debug.level) ~= 'string' then
-        errors[#errors + 1] = 'debug.level: must be a string, got ' .. type(user_config.debug.level)
-      elseif not valid_levels[user_config.debug.level] then
-        errors[#errors + 1] = ('debug.level: must be one of trace/debug/info/warn/error/off, got %q'):format(
-          user_config.debug.level
-        )
       end
     end
   end

@@ -15,7 +15,7 @@
 - 按名称搜索高亮组
 - 按颜色相似度搜索高亮组
 - 查看最终解析后的 `fg`、`bg`、`sp`、链接、来源和属性
-- 在独立详情表单中编辑 override
+- 在详情编辑器中编辑 override
 - 跨会话持久化 override
 - 在 colorscheme 变化后自动重新应用持久化 override
 - 无外部依赖
@@ -63,9 +63,6 @@ require('hlcraft').setup({
     events = {
       'ColorScheme',
     },
-  },
-  debug = {
-    level = 'off',
   },
   debounce_ms = 100,
   preview_key = 'z',
@@ -155,27 +152,6 @@ reapply_events = {
 - `once`：是否只执行一次
 
 将 `enabled = false` 可以完全关闭自动重放。
-
-#### `debug.level`
-
-内部日志级别。
-
-```lua
-debug = {
-  level = 'off',
-}
-```
-
-可选值：
-
-- `trace`
-- `debug`
-- `info`
-- `warn`
-- `error`
-- `off`
-
-正常使用时保持 `off` 即可。
 
 #### `debounce_ms`
 

@@ -13,7 +13,7 @@ local M = {}
 --- @param instance table The Instance object holding UI state
 --- @param buf number Buffer handle to attach keymaps to
 --- @return nil
-function M.setup_input_boundary_keys(instance, buf)
+local function setup_input_boundary_keys(instance, buf)
   local function setup_deletion(key, should_block)
     vim.keymap.set('i', key, function()
       if should_block(instance) then
@@ -131,6 +131,19 @@ function M.setup_workspace_keymaps(instance, buf)
     end
   end
 
+  local function unset_blend(fallback_key)
+    if current_field_kind() ~= 'blend' then
+      if fallback_key then
+        feed_normal_key(fallback_key)
+      end
+      return
+    end
+    local ok, err = field_editor.set_blend(instance, nil)
+    if not ok then
+      notify_error(err)
+    end
+  end
+
   local function input_current_editor_field()
     local field = instance.state.field_editor and instance.state.field_editor.field
     if not field then
@@ -206,7 +219,7 @@ function M.setup_workspace_keymaps(instance, buf)
   end, opts)
   vim.keymap.set('n', 'G', function()
     if current_field_kind() == 'color' then
-      adjust_color('g', 5)
+      adjust_color('g', ui_fields.color_step)
       return
     end
     local rows = navigation.allowed_rows(instance)
@@ -256,38 +269,41 @@ function M.setup_workspace_keymaps(instance, buf)
     end
   end, opts)
   vim.keymap.set('n', 'r', function()
-    adjust_color('r', -5, 'r')
+    adjust_color('r', -ui_fields.color_step, 'r')
   end, opts)
   vim.keymap.set('n', 'R', function()
-    adjust_color('r', 5, 'R')
+    adjust_color('r', ui_fields.color_step, 'R')
   end, opts)
   vim.keymap.set('n', 'g', function()
     if current_field_kind() ~= 'color' then
       feed_normal_key('g')
       return
     end
-    adjust_color('g', -5)
+    adjust_color('g', -ui_fields.color_step)
   end, vim.tbl_extend('force', opts, { nowait = false }))
   vim.keymap.set('n', 'b', function()
-    adjust_color('b', -5, 'b')
+    adjust_color('b', -ui_fields.color_step, 'b')
   end, opts)
   vim.keymap.set('n', 'B', function()
-    adjust_color('b', 5, 'B')
+    adjust_color('b', ui_fields.color_step, 'B')
   end, opts)
   vim.keymap.set('n', 'n', function()
     set_color('NONE', 'n')
   end, opts)
   vim.keymap.set('n', '+', function()
-    adjust_blend(1, '+')
+    adjust_blend(ui_fields.blend_small_step, '+')
   end, opts)
   vim.keymap.set('n', '-', function()
-    adjust_blend(-1, '-')
+    adjust_blend(-ui_fields.blend_small_step, '-')
   end, opts)
   vim.keymap.set('n', '>', function()
-    adjust_blend(5, '>')
+    adjust_blend(ui_fields.blend_large_step, '>')
   end, opts)
   vim.keymap.set('n', '<', function()
-    adjust_blend(-5, '<')
+    adjust_blend(-ui_fields.blend_large_step, '<')
+  end, opts)
+  vim.keymap.set('n', 'u', function()
+    unset_blend('u')
   end, opts)
   vim.keymap.set('n', 'i', function()
     if input_current_editor_field() then
@@ -347,7 +363,7 @@ function M.setup_workspace_keymaps(instance, buf)
     return ''
   end, vim.tbl_extend('force', opts, { expr = true }))
 
-  M.setup_input_boundary_keys(instance, buf)
+  setup_input_boundary_keys(instance, buf)
 end
 
 return M

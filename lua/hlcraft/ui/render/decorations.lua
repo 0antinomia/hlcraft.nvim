@@ -6,10 +6,6 @@ local input_model = require('hlcraft.ui.input.model')
 
 local M = {}
 
-local function get_detail_form_state()
-  return require('hlcraft.ui.state.detail_form')
-end
-
 local function get_results_state()
   return require('hlcraft.ui.state.results')
 end
@@ -18,11 +14,10 @@ end
 --- @param instance table The Instance object holding UI state
 --- @param result table Highlight group result from search
 --- @return table[] Virtual lines for extmark display
---- @return table Form values snapshot for the detail fields
 function M.detail_info_virt_lines(instance, result)
   local win = workspace.get_win(instance)
   local width = workspace.is_valid_win(win) and math.max(50, vim.api.nvim_win_get_width(win) - 1) or 50
-  return ui_detail.build_virt_lines(result, get_detail_form_state().snapshot(instance, result), function(bg, suffix)
+  return ui_detail.build_virt_lines(result, function(bg, suffix)
     return M.detail_color_hl(instance, bg, suffix)
   end, width)
 end
@@ -183,10 +178,10 @@ function M.find_text_start(line, text, start_col)
   return first and (first - 1) or nil
 end
 
---- Build placeholder values table for the detail form fields from a highlight result
+--- Build placeholder values table for detail fields from a highlight result
 --- @param result table Highlight group result with resolved colors and styles
 --- @return table Map of field names to placeholder string values
-function M.detail_placeholder_values(result)
+local function detail_placeholder_values(result)
   local resolved_fg = result.resolved_fg ~= 'NONE' and result.resolved_fg or result.fg
   local resolved_bg = result.resolved_bg ~= 'NONE' and result.resolved_bg or result.bg
   return {
@@ -207,7 +202,7 @@ end
 --- @param instance table The Instance object holding UI state
 --- @param field table Field descriptor with name/key
 --- @return string|nil Placeholder text, or nil if none applicable
-function M.placeholder_text_for_field(instance, field)
+local function placeholder_text_for_field(instance, field)
   local name = field.key or field.name
   if name == 'name' then
     return ui_fields.search_placeholders.name
@@ -222,7 +217,7 @@ function M.placeholder_text_for_field(instance, field)
   if not result then
     return nil
   end
-  return M.detail_placeholder_values(result)[name]
+  return detail_placeholder_values(result)[name]
 end
 
 --- Update overlay placeholders for all input fields based on current values
@@ -235,7 +230,7 @@ function M.refresh_input_placeholders(instance)
 
   for _, field in ipairs(instance.state.geometry.inputs or {}) do
     local key = field.key or field.name
-    local text = M.placeholder_text_for_field(instance, field)
+    local text = placeholder_text_for_field(instance, field)
     local value = input_model.field_line_text(instance, field)
     if value == '' and text and text ~= '' then
       M.set_overlay(instance, instance.state.buf, key, field.line - 1, tostring(text), 'Comment')

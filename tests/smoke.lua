@@ -62,6 +62,10 @@ local config = require('hlcraft.config')
 
 local default_group_config_ok = config.validate({ default_group = 'default' })
 assert_true(not default_group_config_ok, 'default_group config option is still accepted')
+local debug_config_ok = config.validate({ debug = { level = 'trace' } })
+assert_true(not debug_config_ok, 'debug config option is still accepted')
+local empty_persist_dir_ok = config.validate({ persist_dir = '' })
+assert_true(not empty_persist_dir_ok, 'empty persist_dir config option is still accepted')
 
 local origin_win = vim.api.nvim_get_current_win()
 local origin_buf = vim.api.nvim_get_current_buf()
@@ -225,6 +229,9 @@ field_editor.open(instance, 'blend')
 field_editor.set_blend(instance, 10)
 press_normal('+')
 assert_equal(overrides.get(result_name).blend, 11, '+ key did not adjust blend in blend editor')
+press_normal('u')
+assert_true(overrides.get(result_name).blend == nil, 'u key did not unset blend in blend editor')
+field_editor.set_blend(instance, 10)
 press_normal('G')
 assert_equal(overrides.get(result_name).fg, '#112233', 'G key mutated color in blend editor')
 press_normal('g')
@@ -340,6 +347,7 @@ assert_file_missing(runtime_file_path, 'failed runtime patch unexpectedly saved 
 
 local original_storage_save = storage.save
 local persisted_group_before_failed_save = overrides.get_persisted_group(result_name)
+---@diagnostic disable-next-line: duplicate-set-field
 storage.save = function()
   return false, 'smoke forced save failure'
 end

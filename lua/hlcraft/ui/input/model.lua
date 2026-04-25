@@ -21,22 +21,12 @@ function M.current_area(instance, row1)
   end
 end
 
---- Get the input field at the current cursor position
---- @param instance table The Instance object holding UI state
---- @return table|nil Field descriptor, or nil if cursor is not on an input
-function M.current_input_field(instance)
-  local win = workspace.get_win(instance)
-  if not workspace.is_valid_win(win) then
-    return nil
-  end
-  return M.get_input_field_at_row(instance, vim.api.nvim_win_get_cursor(win)[1] - 1)
-end
-
 --- Collapse newlines and carriage returns into a single space
 --- @param value any Value to normalize
 --- @return string Single-line string
 function M.normalize_single_line(value)
-  return tostring(value or ''):gsub('[\r\n]+', ' ')
+  local text = tostring(value or ''):gsub('[\r\n]+', ' ')
+  return text
 end
 
 --- Get the input field descriptor at a given 0-based row
@@ -101,8 +91,10 @@ function M.get_input_pos(instance, name)
     return nil, nil, field
   end
 
-  local start_row = unpack(vim.api.nvim_buf_get_extmark_by_id(instance.state.buf, instance.ns, start_id, {}))
-  local end_row = unpack(vim.api.nvim_buf_get_extmark_by_id(instance.state.buf, instance.ns, end_id, {}))
+  local start_mark = vim.api.nvim_buf_get_extmark_by_id(instance.state.buf, instance.ns, start_id, {})
+  local end_mark = vim.api.nvim_buf_get_extmark_by_id(instance.state.buf, instance.ns, end_id, {})
+  local start_row = start_mark[1]
+  local end_row = end_mark[1]
   return start_row, end_row, field
 end
 

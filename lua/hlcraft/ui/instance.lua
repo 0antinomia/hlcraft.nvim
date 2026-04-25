@@ -34,11 +34,9 @@ function Instance.new(id)
     geometry = {
       inputs = {},
       result_lines = {},
-      detail_fields = {},
       detail_menu = {},
       editor_rows = {},
     },
-    detail_form = {},
     field_editor = {
       field = nil,
     },
@@ -87,12 +85,6 @@ end
 --- @return nil
 function Instance:open()
   return workspace.open(self)
-end
-
---- Close the workspace window and restore origin buffer
---- @return nil
-function Instance:close_workspace()
-  return workspace.close(self)
 end
 
 --- Clean up all resources: windows, buffers, augroups, and reset state

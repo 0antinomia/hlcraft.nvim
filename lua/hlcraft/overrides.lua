@@ -162,7 +162,7 @@ local function uninstall_pending_hook()
     return
   end
 
-  -- Safety check (Pitfall 4): only restore if our hook is still active.
+  -- Safety check: only restore if our hook is still active.
   -- Another plugin may have replaced nvim_set_hl after our install.
   -- Do NOT restore -- that would overwrite their hook.
   -- Pending groups will be resolved on next ColorScheme replay.
@@ -189,7 +189,7 @@ install_pending_hook = function()
       return
     end
 
-    -- ONLY intercept calls for groups in the pending set (D-02)
+    -- Only intercept calls for groups in the pending set.
     if not state.pending[name] then
       return
     end
@@ -197,7 +197,7 @@ install_pending_hook = function()
     state.base_specs[name] = vim.deepcopy(spec or {})
     apply_group(name)
 
-    -- Auto-uninstall when no more pending groups (D-02/D-04)
+    -- Auto-uninstall when no more pending groups remain.
     if next(state.pending) == nil then
       uninstall_pending_hook()
     end
@@ -268,7 +268,7 @@ function M.bootstrap(force)
   state.bootstrapped = true
   M.apply_all()
 
-  -- Install narrow hook only if pending groups remain after apply_all (D-04)
+  -- Install narrow hook only if pending groups remain after apply_all.
   if next(state.pending) ~= nil then
     install_pending_hook()
   end
@@ -535,7 +535,7 @@ end
 
 --- Return the concrete TOML file path currently used for one highlight group.
 --- @param name string
---- @return string
+--- @return string|nil
 function M.file_path(name)
   return storage.file_path(M.get_runtime_group(name))
 end

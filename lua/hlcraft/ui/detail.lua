@@ -7,11 +7,10 @@ local M = {}
 
 --- Build virtual lines for the detail info panel (name, colors, attrs, source, links, file)
 --- @param result table Highlight group result with resolved colors and metadata
---- @param form_values table Current form values for the detail fields
 --- @param get_color_hl function Callback(bg, suffix) -> string highlight name
 --- @param width integer Display width
 --- @return table[] Array of virtual line token arrays
-function M.build_virt_lines(result, form_values, get_color_hl, width)
+function M.build_virt_lines(result, get_color_hl, width)
   local src_file, src_line = source.get_source(result.name)
   local source_text = src_file and ('%s:%s'):format(src_file, tostring(src_line or '?')) or '-'
   local chain = result.link_chain and #result.link_chain > 0 and table.concat(result.link_chain, ' -> ') or '-'
@@ -49,8 +48,7 @@ function M.build_virt_lines(result, form_values, get_color_hl, width)
     { { '' } },
     { { ('File: %s'):format(render_util.truncate(persist_path, 88)), 'Normal' } },
     { { '' } },
-  },
-    form_values
+  }
 end
 
 return M

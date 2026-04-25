@@ -251,12 +251,6 @@ local function toml_files_in_dir(path)
   return files
 end
 
-local function remove_existing_toml_files(path)
-  for _, file in ipairs(toml_files_in_dir(path)) do
-    os.remove(file)
-  end
-end
-
 local function atomic_write_file(filepath, content_lines)
   local tmp_path = filepath .. '.tmp'
   local file, open_err = io.open(tmp_path, 'w')
@@ -296,7 +290,7 @@ end
 
 --- Return the persisted TOML file path for one top-level group.
 --- @param group_name string|nil
---- @return string
+--- @return string|nil
 function M.file_path(group_name)
   local section_name = normalize_group_name(group_name)
   if not section_name then
