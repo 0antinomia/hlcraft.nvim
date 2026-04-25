@@ -15,7 +15,7 @@ function M.build_virt_lines(result, form_values, get_color_hl, width)
   local src_file, src_line = source.get_source(result.name)
   local source_text = src_file and ('%s:%s'):format(src_file, tostring(src_line or '?')) or '-'
   local chain = result.link_chain and #result.link_chain > 0 and table.concat(result.link_chain, ' -> ') or '-'
-  local persist_path = overrides.file_path(result.name)
+  local persist_path = overrides.file_path(result.name) or '-'
 
   local resolved_fg = result.resolved_fg ~= 'NONE' and result.resolved_fg or result.fg
   local resolved_bg = result.resolved_bg ~= 'NONE' and result.resolved_bg or result.bg

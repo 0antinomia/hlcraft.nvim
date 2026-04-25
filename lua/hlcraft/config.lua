@@ -18,7 +18,6 @@ local defaults = {
   from_none = default_from_none, -- Start from a broad NONE-based transparent baseline before adding custom overrides
   threshold = 100, -- RGB Euclidean distance default for color similarity
   include_sp_in_color_search = false, -- Whether special/underline color participates in color search
-  default_group = 'default', -- Default top-level TOML group used for persisted highlight overrides
   persist_dir = vim.fn.stdpath('config') .. '/.hlcraft', -- Directory used to persist highlight overrides as multiple TOML files
   reapply_events = default_reapply_events, -- Controls whether persisted overrides are replayed automatically and on which events
   debug = { level = 'off' }, -- Debug logging level: trace/debug/info/warn/error/off
@@ -86,7 +85,6 @@ function M.validate(user_config)
     from_none = true,
     threshold = true,
     include_sp_in_color_search = true,
-    default_group = true,
     persist_dir = true,
     reapply_events = true,
     debug = true,
@@ -116,16 +114,6 @@ function M.validate(user_config)
     })
     if not ok then
       errors[#errors + 1] = err
-    end
-  end
-
-  -- default_group: string, non-empty after trim
-  if user_config.default_group ~= nil then
-    local ok, err = pcall(vim.validate, { default_group = { user_config.default_group, 'string' } })
-    if not ok then
-      errors[#errors + 1] = err
-    elseif vim.trim(user_config.default_group) == '' then
-      errors[#errors + 1] = 'default_group: must be a non-empty string'
     end
   end
 
@@ -268,17 +256,6 @@ end
 --- @return '"core"'|'"extended"'
 function M.from_none_scope()
   return M.config.from_none.scope
-end
-
---- Return the default top-level TOML group used for persisted overrides.
---- @return string
-function M.default_group_name()
-  local name = vim.trim(tostring(M.config.default_group or 'default'))
-  if name == '' then
-    return 'default'
-  end
-
-  return name
 end
 
 return M
