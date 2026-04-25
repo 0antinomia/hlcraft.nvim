@@ -184,6 +184,19 @@ Open the workspace:
 :Hlcraft
 ```
 
+## Public API
+
+The supported Lua entry points are:
+
+- `require('hlcraft').setup(opts)`
+- `require('hlcraft').open(opts)`
+- `require('hlcraft').search_by_name(query)`
+- `require('hlcraft').search_by_color(query)`
+- `require('hlcraft').overrides` / `require('hlcraft.overrides')`
+- `require('hlcraft.storage')` for the persistence facade: `path`, `file_path`, `load`, `save`
+
+Modules below `hlcraft.ui.*`, `hlcraft.ui.render.*`, `hlcraft.storage.*`, and `hlcraft.overrides.*` are internal implementation modules. They may change as the UI and persistence internals continue to evolve.
+
 ### Search
 
 The top area contains two inputs:

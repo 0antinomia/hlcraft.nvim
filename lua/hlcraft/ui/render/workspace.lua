@@ -2,8 +2,9 @@ local ui_fields = require('hlcraft.ui.fields')
 local render_util = require('hlcraft.render.util')
 local input_model = require('hlcraft.ui.input.model')
 local decorations = require('hlcraft.ui.render.decorations')
-local detail_values = require('hlcraft.ui.state.detail_values')
-local overrides = require('hlcraft.overrides')
+local detail_menu = require('hlcraft.ui.render.detail_menu')
+local field_editor = require('hlcraft.ui.render.field_editor')
+local list = require('hlcraft.ui.render.list')
 local results_state = require('hlcraft.ui.state.results')
 local workspace = require('hlcraft.ui.workspace')
 
@@ -37,251 +38,6 @@ local function append_input(lines, geometry, name, kind, value, extra)
   geometry.inputs[#geometry.inputs + 1] = field
   lines[#lines + 1] = render_util.truncate(input_model.normalize_single_line(value), extra and extra.width or math.huge)
   return field
-end
-
---- Build the result list lines and selectable row map for list view
---- @param instance table The Instance object holding UI state
---- @param width integer Available display width
---- @return string[] lines Buffer lines for the results area
---- @return table selectable Map of 1-based line numbers to result indices
-local function build_list_lines(instance, width)
-  local gap = 3
-  local name_width = math.min(36, math.max(24, width - 36))
-  local remaining = math.max(18, width - name_width - (gap * 3))
-  local fg_width = math.max(8, math.floor(remaining / 3))
-  local bg_width = math.max(8, math.floor(remaining / 3))
-  local sp_width = math.max(8, remaining - fg_width - bg_width)
-  local lines = {}
-  local selectable = {}
-
-  local header = table.concat({
-    render_util.pad('NAME', name_width),
-    render_util.pad('FG', fg_width),
-    render_util.pad('BG', bg_width),
-    render_util.pad('SP', sp_width),
-  }, string.rep(' ', gap))
-
-  lines[#lines + 1] = header
-  lines[#lines + 1] = string.rep('─', vim.fn.strdisplaywidth(header))
-
-  if #instance.state.results == 0 then
-    lines[#lines + 1] = results_state.empty_message(instance)
-  else
-    for index, result in ipairs(instance.state.results) do
-      lines[#lines + 1] = table.concat({
-        render_util.pad(render_util.truncate(result.name, name_width), name_width),
-        render_util.pad(render_util.display_color(result.fg), fg_width),
-        render_util.pad(render_util.display_color(result.bg), bg_width),
-        render_util.pad(render_util.display_color(result.sp), sp_width),
-      }, string.rep(' ', gap))
-      selectable[#lines] = index
-    end
-  end
-
-  return lines, selectable
-end
-
---- Get the default value shown for a detail menu row
---- @param result table Highlight group result with resolved colors and styles
---- @param key string Detail field key
---- @return any value Default value for the field
-local function detail_fallback_value(result, key)
-  if key == 'fg' then
-    return result.resolved_fg ~= 'NONE' and result.resolved_fg or result.fg
-  end
-  if key == 'bg' then
-    return result.resolved_bg ~= 'NONE' and result.resolved_bg or result.bg
-  end
-  if key == 'sp' then
-    return result.sp
-  end
-  return result[key]
-end
-
---- Convert a detail menu value to display text
---- @param value any Detail value
---- @return string Display text
-local function detail_display_text(value)
-  if value == nil then
-    return 'unset'
-  end
-  if value == true then
-    return 'true'
-  end
-  if value == false then
-    return 'false'
-  end
-  return tostring(value)
-end
-
---- Append a selectable editor row and register it in geometry
---- @param lines string[] Mutable list of buffer lines being built
---- @param geometry table Mutable geometry table to register editor rows in
---- @param key string Editor row key
---- @param text string Display text
---- @return table The created editor row descriptor
-local function append_editor_row(lines, geometry, key, text)
-  local row = {
-    line = #lines + 1,
-    key = key,
-  }
-  geometry.editor_rows[key] = row
-  lines[#lines + 1] = text
-  return row
-end
-
---- Build the read-only detail menu and register row geometry
---- @param geometry table Mutable geometry table to register rows in
---- @param result table Highlight group result with resolved colors and styles
---- @param width integer Available display width
---- @return string[] lines Buffer lines for the detail menu
-local function build_detail_menu_lines(geometry, result, width)
-  local lines = {
-    'Detail fields  (<CR> edit/toggle, s save, q back)',
-  }
-  local label_width = 0
-  for _, key in ipairs(ui_fields.detail_order) do
-    label_width = math.max(label_width, vim.fn.strdisplaywidth(ui_fields.detail_labels[key] or key))
-  end
-
-  local dirty_mark = detail_values.is_dirty(result.name) and '*' or ' '
-  for _, key in ipairs(ui_fields.detail_order) do
-    local fallback = detail_fallback_value(result, key)
-    local value = key == 'group' and detail_values.display_group(result.name)
-      or detail_values.display_value(result.name, key, fallback)
-    local line = ('%s %s  %s'):format(
-      dirty_mark,
-      render_util.pad(ui_fields.detail_labels[key] or key, label_width),
-      detail_display_text(value)
-    )
-    geometry.detail_menu[key] = {
-      line = #lines + 1,
-      key = key,
-      kind = ui_fields.detail_kinds[key],
-    }
-    lines[#lines + 1] = render_util.truncate(line, width)
-  end
-
-  return lines
-end
-
---- Build color editor lines and register selectable row geometry
---- @param geometry table Mutable geometry table to register rows in
---- @param result table Highlight group result with resolved colors and styles
---- @param field string Color field key ('fg', 'bg', 'sp')
---- @param width integer Available display width
---- @return string[] lines Buffer lines for the color editor
-local function build_color_editor_lines(geometry, result, field, width)
-  local label = ui_fields.detail_labels[field] or field:upper()
-  local fallback = detail_fallback_value(result, field)
-  local value = detail_values.display_value(result.name, field, fallback)
-  local display_value = detail_display_text(value)
-  local sample = 'The quick brown fox jumps over hlcraft.'
-  local lines = {
-    ('Color editor: %s'):format(label),
-    string.rep('─', math.max(20, math.min(width, 36))),
-    ('Current: %s'):format(display_value),
-    ('Sample: %s'):format(sample),
-    ('Swatch: %s'):format(display_value),
-  }
-
-  geometry.color_sample = {
-    line = 4,
-    text = sample,
-    value = value,
-    field = field,
-  }
-  geometry.color_swatch = {
-    line = 5,
-    text = display_value,
-    value = value,
-    field = field,
-  }
-  append_editor_row(
-    lines,
-    geometry,
-    'color_keys',
-    ('Keys: r/R red -/+%d, g/G green -/+%d, b/B blue -/+%d, n NONE, i input, s save, q back'):format(
-      ui_fields.color_step,
-      ui_fields.color_step,
-      ui_fields.color_step
-    )
-  )
-
-  for index, line in ipairs(lines) do
-    lines[index] = render_util.truncate(line, width)
-  end
-  return lines
-end
-
---- Build group editor lines and register selectable row geometry
---- @param geometry table Mutable geometry table to register rows in
---- @param result table Highlight group result with resolved colors and styles
---- @param width integer Available display width
---- @return string[] lines Buffer lines for the group editor
-local function build_group_editor_lines(geometry, result, width)
-  local lines = {
-    ('Group editor: %s'):format(result.name),
-    string.rep('─', math.max(20, math.min(width, 36))),
-  }
-
-  for _, group_name in ipairs(overrides.known_groups()) do
-    append_editor_row(lines, geometry, 'group:' .. group_name, group_name)
-  end
-  append_editor_row(lines, geometry, 'new_group', '+ New group (i)')
-
-  for index, line in ipairs(lines) do
-    lines[index] = render_util.truncate(line, width)
-  end
-  return lines
-end
-
---- Build blend editor lines and register selectable row geometry
---- @param geometry table Mutable geometry table to register rows in
---- @param result table Highlight group result with resolved colors and styles
---- @param width integer Available display width
---- @return string[] lines Buffer lines for the blend editor
-local function build_blend_editor_lines(geometry, result, width)
-  local fallback = detail_fallback_value(result, 'blend')
-  local value = detail_values.display_value(result.name, 'blend', fallback)
-  local lines = {
-    'Blend editor',
-    string.rep('─', math.max(20, math.min(width, 36))),
-    ('Current: %s'):format(detail_display_text(value)),
-  }
-  append_editor_row(
-    lines,
-    geometry,
-    'blend_keys',
-    ('Keys: -/+ by %d, </> by %d, u unset, i input, s save, q back'):format(
-      ui_fields.blend_small_step,
-      ui_fields.blend_large_step
-    )
-  )
-
-  for index, line in ipairs(lines) do
-    lines[index] = render_util.truncate(line, width)
-  end
-  return lines
-end
-
---- Build the active field editor lines, if a supported editor is open
---- @param geometry table Mutable geometry table to register rows in
---- @param result table Highlight group result with resolved colors and styles
---- @param field string Active field editor key
---- @param width integer Available display width
---- @return string[]|nil lines Buffer lines for the editor, or nil if unsupported
-local function build_field_editor_lines(geometry, result, field, width)
-  if field == 'fg' or field == 'bg' or field == 'sp' then
-    return build_color_editor_lines(geometry, result, field, width)
-  end
-  if field == 'group' then
-    return build_group_editor_lines(geometry, result, width)
-  end
-  if field == 'blend' then
-    return build_blend_editor_lines(geometry, result, width)
-  end
-  return nil
 end
 
 --- Convert local editor geometry rows to absolute buffer rows
@@ -348,8 +104,8 @@ function M.render(instance)
   if instance.state.detail_index then
     if detail_result then
       local field = instance.state.field_editor and instance.state.field_editor.field or nil
-      local detail_lines = field and build_field_editor_lines(geometry, detail_result, field, width)
-        or build_detail_menu_lines(geometry, detail_result, width)
+      local detail_lines = field and field_editor.build(geometry, detail_result, field, width)
+        or detail_menu.build(geometry, detail_result, width)
       for _, line in ipairs(detail_lines) do
         lines[#lines + 1] = line
       end
@@ -359,7 +115,7 @@ function M.render(instance)
       absolutize_editor_geometry(geometry, results_top)
     end
   else
-    local result_lines, selectable = build_list_lines(instance, width)
+    local result_lines, selectable = list.build(instance, width)
     for _, line in ipairs(result_lines) do
       lines[#lines + 1] = line
     end

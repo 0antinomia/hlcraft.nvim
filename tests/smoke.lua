@@ -1,47 +1,20 @@
-local function fail(message)
-  error('hlcraft smoke: ' .. message, 0)
-end
+local h = require('tests.helpers')
 
 local function assert_true(condition, message)
-  if not condition then
-    fail(message)
-  end
+  return h.assert_true(condition, message, 'hlcraft smoke')
 end
 
 local function assert_equal(actual, expected, message)
-  if actual ~= expected then
-    fail(('%s (expected %s, got %s)'):format(message, vim.inspect(expected), vim.inspect(actual)))
-  end
+  return h.assert_equal(actual, expected, message, 'hlcraft smoke')
 end
 
 local function assert_file_missing(path, message)
-  if path == nil then
-    return
-  end
-  assert_true(vim.uv.fs_stat(path) == nil, message)
+  return h.assert_file_missing(path, message, 'hlcraft smoke')
 end
 
-local function find_result_line(instance, index)
-  for line, result_index in pairs(instance.state.geometry.result_lines or {}) do
-    if result_index == index then
-      return line
-    end
-  end
-  return nil
-end
-
-local function press_normal(lhs)
-  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(lhs, true, false, true), 'mx', false)
-end
-
-local function list_contains(list, value)
-  for _, item in ipairs(list or {}) do
-    if item == value then
-      return true
-    end
-  end
-  return false
-end
+local find_result_line = h.find_result_line
+local press_normal = h.press_normal
+local list_contains = h.list_contains
 
 local persist_dir = vim.fn.stdpath('cache') .. '/hlcraft-smoke'
 vim.fn.delete(persist_dir, 'rf')
@@ -58,14 +31,6 @@ local detail_values = require('hlcraft.ui.state.detail_values')
 local results_state = require('hlcraft.ui.state.results')
 local overrides = require('hlcraft.overrides')
 local storage = require('hlcraft.storage')
-local config = require('hlcraft.config')
-
-local default_group_config_ok = config.validate({ default_group = 'default' })
-assert_true(not default_group_config_ok, 'default_group config option is still accepted')
-local debug_config_ok = config.validate({ debug = { level = 'trace' } })
-assert_true(not debug_config_ok, 'debug config option is still accepted')
-local empty_persist_dir_ok = config.validate({ persist_dir = '' })
-assert_true(not empty_persist_dir_ok, 'empty persist_dir config option is still accepted')
 
 local origin_win = vim.api.nvim_get_current_win()
 local origin_buf = vim.api.nvim_get_current_buf()

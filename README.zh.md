@@ -184,6 +184,19 @@ preview_key = 'z'
 :Hlcraft
 ```
 
+## Public API
+
+稳定支持的 Lua 入口包括：
+
+- `require('hlcraft').setup(opts)`
+- `require('hlcraft').open(opts)`
+- `require('hlcraft').search_by_name(query)`
+- `require('hlcraft').search_by_color(query)`
+- `require('hlcraft').overrides` / `require('hlcraft.overrides')`
+- `require('hlcraft.storage')` 持久化 facade：`path`、`file_path`、`load`、`save`
+
+`hlcraft.ui.*`、`hlcraft.ui.render.*`、`hlcraft.storage.*` 和 `hlcraft.overrides.*` 下的更深层模块都视为 internal implementation modules。后续继续整理 UI 和持久化内部结构时，它们可能会变化。
+
 ### 搜索
 
 顶部区域有两个输入框：
