@@ -1,7 +1,6 @@
 local color = require('hlcraft.color')
 local detail_values = require('hlcraft.ui.state.detail_values')
 local results_state = require('hlcraft.ui.state.results')
-local ui_fields = require('hlcraft.ui.fields')
 local workspace = require('hlcraft.ui.workspace')
 
 local M = {}

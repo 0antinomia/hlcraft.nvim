@@ -96,7 +96,7 @@ function M.clamp_cursor(instance)
   end
 
   instance.state.clamping_cursor = true
-  local ok, _ = pcall(function()
+  pcall(function()
     local line = vim.api.nvim_buf_get_lines(instance.state.buf, target_row - 1, target_row, false)[1] or ''
     pcall(vim.api.nvim_win_set_cursor, win, { target_row, math.min(col, #line) })
   end)

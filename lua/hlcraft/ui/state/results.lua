@@ -39,19 +39,17 @@ function M.empty_message(instance)
 end
 
 --- Check if a color query string is a valid hex color or 'NONE'
---- @param instance table The Instance object holding UI state
 --- @param query string Color query string
 --- @return boolean True if query is valid for color search
-function M.valid_color_query(instance, query)
+local function valid_color_query(query)
   return query:upper() == 'NONE' or color.hex_to_int(query) ~= nil
 end
 
 --- Intersect name search and color search results, sorted by color distance
---- @param instance table The Instance object holding UI state
 --- @param name_results table[] Results from name search
 --- @param color_results table[] Results from color search
 --- @return table[] Intersection of results sorted by distance then name
-function M.intersect_results(instance, name_results, color_results)
+local function intersect_results(name_results, color_results)
   local color_index = {}
   local results = {}
 
@@ -85,17 +83,14 @@ function M.update_results(instance)
   local results = {}
 
   if instance.state.name_query ~= '' and instance.state.color_query ~= '' then
-    if M.valid_color_query(instance, instance.state.color_query) then
-      results = M.intersect_results(
-        instance,
-        search.by_name(instance.state.name_query),
-        search.by_color(instance.state.color_query)
-      )
+    if valid_color_query(instance.state.color_query) then
+      results =
+        intersect_results(search.by_name(instance.state.name_query), search.by_color(instance.state.color_query))
     end
   elseif instance.state.name_query ~= '' then
     results = search.by_name(instance.state.name_query)
   elseif instance.state.color_query ~= '' then
-    if M.valid_color_query(instance, instance.state.color_query) then
+    if valid_color_query(instance.state.color_query) then
       results = search.by_color(instance.state.color_query)
     end
   end
@@ -194,7 +189,6 @@ function M.refresh(instance, name, reopen_detail)
       instance.state.list_cursor = index
       if reopen_detail then
         instance.state.detail_index = index
-        instance.state.detail_form = {}
         instance.state.field_editor.field = active_field
         workspace_render.render(instance)
       end
@@ -204,7 +198,6 @@ function M.refresh(instance, name, reopen_detail)
 
   if reopen_detail then
     instance.state.detail_index = nil
-    instance.state.detail_form = {}
     instance.state.field_editor.field = nil
     instance.state.list_cursor = math.min(math.max(instance.state.list_cursor, 1), math.max(#instance.state.results, 1))
     workspace_render.render(instance)
@@ -225,7 +218,6 @@ function M.open_detail(instance)
     return
   end
   instance.state.detail_index = index
-  instance.state.detail_form = {}
   instance.state.field_editor.field = nil
   instance:rerender()
   local first_key = ui_fields.detail_order[1]
@@ -255,7 +247,6 @@ end
 function M.force_close_detail(instance)
   M.close_unsaved_prompt(instance)
   instance.state.detail_index = nil
-  instance.state.detail_form = {}
   instance.state.field_editor.field = nil
   instance:rerender()
   local win = workspace.get_win(instance)

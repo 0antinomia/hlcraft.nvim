@@ -47,17 +47,29 @@ end
 vim.cmd('edit hlcraft-origin-window-switch.txt')
 
 for option, value in pairs(original_window_options) do
-  assert_equal(vim.wo[origin_win][option], value, ('origin window option %s leaked after switching buffers'):format(option))
+  assert_equal(
+    vim.wo[origin_win][option],
+    value,
+    ('origin window option %s leaked after switching buffers'):format(option)
+  )
 end
 
 vim.cmd('buffer ' .. instance.state.buf)
 for option, value in pairs(workspace_window_options) do
-  assert_equal(vim.wo[origin_win][option], value, ('workspace window option %s was not reapplied after returning'):format(option))
+  assert_equal(
+    vim.wo[origin_win][option],
+    value,
+    ('workspace window option %s was not reapplied after returning'):format(option)
+  )
 end
 
 instance:quit_or_back()
 for option, value in pairs(original_window_options) do
-  assert_equal(vim.wo[origin_win][option], value, ('origin window option %s was not restored after close'):format(option))
+  assert_equal(
+    vim.wo[origin_win][option],
+    value,
+    ('origin window option %s was not restored after close'):format(option)
+  )
 end
 
 vim.fn.delete(persist_dir, 'rf')

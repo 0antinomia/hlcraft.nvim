@@ -15,7 +15,7 @@ A practical workflow is to ask AI to turn a colorscheme you already like into hl
 - Search highlight groups by name
 - Search highlight groups by color similarity
 - Inspect resolved `fg`, `bg`, `sp`, links, source and attributes
-- Edit overrides in a dedicated detail form
+- Edit overrides in a detail editor
 - Persist overrides across sessions
 - Reapply persisted overrides after colorscheme changes
 - Zero external dependencies
@@ -63,9 +63,6 @@ require('hlcraft').setup({
     events = {
       'ColorScheme',
     },
-  },
-  debug = {
-    level = 'off',
   },
   debounce_ms = 100,
   preview_key = 'z',
@@ -155,27 +152,6 @@ Structured entries support:
 - `once`: whether the autocmd should run only once
 
 Set `enabled = false` to disable automatic replay entirely.
-
-#### `debug.level`
-
-Internal log verbosity.
-
-```lua
-debug = {
-  level = 'off',
-}
-```
-
-Accepted values:
-
-- `trace`
-- `debug`
-- `info`
-- `warn`
-- `error`
-- `off`
-
-For normal use, keep this at `off`.
 
 #### `debounce_ms`
 

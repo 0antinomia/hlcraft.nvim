@@ -49,8 +49,7 @@ M.detail_kinds = {
   blend = 'blend',
 }
 
-M.color_small_step = 5
-M.color_large_step = 16
+M.color_step = 5
 M.blend_small_step = 1
 M.blend_large_step = 5
 

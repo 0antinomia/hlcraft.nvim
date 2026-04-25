@@ -13,7 +13,7 @@ local initialized = false
 --- @param opts table|nil User configuration options
 --- @return table M The hlcraft module (fluent API)
 function M.setup(opts)
-  -- Version guard (per D-04)
+  -- Version guard
   if vim.version and vim.version.ge then
     if not vim.version.ge(vim.version(), '0.10.0') then
       vim.notify(
@@ -27,7 +27,7 @@ function M.setup(opts)
     return M
   end
 
-  -- Validate config before merging (D-09: prevent partial init)
+  -- Validate config before merging to prevent partial init.
   local ok, err = config.validate(opts)
   if not ok then
     vim.notify(err, vim.log.levels.ERROR)
@@ -46,7 +46,7 @@ function M.is_setup()
   return initialized
 end
 
--- Submodule access (per D-01 fluent API)
+-- Submodule access
 M.highlights = highlights
 M.get_source = source.get_source
 M.search = search

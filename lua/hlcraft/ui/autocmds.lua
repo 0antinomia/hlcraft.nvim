@@ -1,7 +1,6 @@
 local input_model = require('hlcraft.ui.input.model')
 local workspace_render = require('hlcraft.ui.render.workspace')
 local navigation = require('hlcraft.ui.navigation')
-local detail_form_state = require('hlcraft.ui.state.detail_form')
 local workspace = require('hlcraft.ui.workspace')
 local config = require('hlcraft.config')
 
@@ -40,7 +39,8 @@ function M.setup(instance)
     buffer = instance.state.buf,
     callback = function()
       if instance.state.detail_index then
-        detail_form_state.rerender(instance)
+        instance:rerender()
+        navigation.clamp_cursor(instance)
         return
       end
       local debounce_ms = config.config.debounce_ms or 100
@@ -66,10 +66,6 @@ function M.setup(instance)
       if not workspace.is_valid_win(win) then
         return
       end
-      if instance.state.detail_index and detail_form_state.is_layout_dirty(instance) then
-        detail_form_state.rerender(instance)
-        return
-      end
       navigation.clamp_cursor(instance)
       local row = vim.api.nvim_win_get_cursor(win)[1]
       local area, extra = input_model.current_area(instance, row)
@@ -83,9 +79,7 @@ function M.setup(instance)
     group = instance.group,
     buffer = instance.state.buf,
     callback = function()
-      if instance.state.detail_index and detail_form_state.is_layout_dirty(instance) then
-        detail_form_state.rerender(instance)
-      end
+      navigation.clamp_cursor(instance)
     end,
   })
 

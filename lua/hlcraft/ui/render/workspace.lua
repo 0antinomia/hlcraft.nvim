@@ -201,7 +201,11 @@ local function build_color_editor_lines(geometry, result, field, width)
     lines,
     geometry,
     'color_keys',
-    'Keys: r/R red -/+5, g/G green -/+5, b/B blue -/+5, n NONE, i input, s save, q back'
+    ('Keys: r/R red -/+%d, g/G green -/+%d, b/B blue -/+%d, n NONE, i input, s save, q back'):format(
+      ui_fields.color_step,
+      ui_fields.color_step,
+      ui_fields.color_step
+    )
   )
 
   for index, line in ipairs(lines) do
@@ -245,7 +249,15 @@ local function build_blend_editor_lines(geometry, result, width)
     string.rep('─', math.max(20, math.min(width, 36))),
     ('Current: %s'):format(detail_display_text(value)),
   }
-  append_editor_row(lines, geometry, 'blend_keys', 'Keys: -/+ by 1, </> by 5, u unset, i input, s save, q back')
+  append_editor_row(
+    lines,
+    geometry,
+    'blend_keys',
+    ('Keys: -/+ by %d, </> by %d, u unset, i input, s save, q back'):format(
+      ui_fields.blend_small_step,
+      ui_fields.blend_large_step
+    )
+  )
 
   for index, line in ipairs(lines) do
     lines[index] = render_util.truncate(line, width)
@@ -303,7 +315,7 @@ local function set_buffer_lines(instance, lines)
   end
 end
 
---- Full render of the workspace: search inputs, results or detail form, decorations, and placeholders
+--- Full render of the workspace: search inputs, results or detail editor, decorations, and placeholders
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.render(instance)
@@ -321,7 +333,6 @@ function M.render(instance)
   local geometry = {
     inputs = {},
     result_lines = {},
-    detail_fields = {},
     detail_menu = {},
     editor_rows = {},
   }

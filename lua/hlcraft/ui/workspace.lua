@@ -176,13 +176,6 @@ function M.is_valid_win(win)
   return win ~= nil and vim.api.nvim_win_is_valid(win)
 end
 
---- Get the workspace buffer handle
---- @param instance table The Instance object holding UI state
---- @return number|nil Buffer handle
-function M.get_buf(instance)
-  return instance.state.buf
-end
-
 --- Get the window displaying the workspace buffer
 --- @param instance table The Instance object holding UI state
 --- @return number|nil Window handle, or nil if buffer is not displayed
@@ -220,7 +213,7 @@ end
 --- Reset all view state to defaults
 --- @param instance table The Instance object holding UI state
 --- @return nil
-function M.reset_view_state(instance)
+local function reset_view_state(instance)
   close_unsaved_prompt(instance)
   instance.state.results = {}
   instance.state.detail_index = nil
@@ -230,9 +223,9 @@ function M.reset_view_state(instance)
   instance.state.geometry = {
     inputs = {},
     result_lines = {},
-    detail_fields = {},
+    detail_menu = {},
+    editor_rows = {},
   }
-  instance.state.detail_form = {}
   instance.state.rendering = false
   instance.state.input_marks = {}
   instance.state.placeholder_marks = {}
@@ -249,7 +242,7 @@ end
 --- Create the help buffer if it does not already exist
 --- @param instance table The Instance object holding UI state
 --- @return nil
-function M.ensure_help_buffer(instance)
+local function ensure_help_buffer(instance)
   if M.is_valid_buf(instance.state.help_buf) then
     return
   end
@@ -280,7 +273,7 @@ function M.toggle_help(instance)
     return
   end
 
-  M.ensure_help_buffer(instance)
+  ensure_help_buffer(instance)
   instance.state.help_win = vim.api.nvim_open_win(instance.state.help_buf, true, {
     relative = 'editor',
     style = 'minimal',
@@ -313,7 +306,7 @@ end
 --- Create the workspace buffer if it does not already exist
 --- @param instance table The Instance object holding UI state
 --- @return number Buffer handle
-function M.ensure_buffer(instance)
+local function ensure_buffer(instance)
   if M.is_valid_buf(instance.state.buf) then
     return instance.state.buf
   end
@@ -338,7 +331,7 @@ end
 --- @param instance table The Instance object holding UI state
 --- @param win number Window handle
 --- @return nil
-function M.apply_window_options(instance, win)
+local function apply_window_options(instance, win)
   vim.api.nvim_win_set_hl_ns(win, instance.ns)
   for option, value in pairs(workspace_window_option_values) do
     vim.wo[win][option] = value
@@ -348,7 +341,7 @@ end
 --- Restore the origin buffer and window that was active before opening
 --- @param instance table The Instance object holding UI state
 --- @return nil
-function M.restore_origin(instance)
+local function restore_origin(instance)
   local win = M.get_win(instance)
   local had_origin = has_origin(instance)
 
@@ -405,7 +398,7 @@ function M.hide(instance)
       pcall(vim.api.nvim_win_close, instance.state.help_win, true)
     end
     instance.state.help_win = nil
-    M.restore_origin(instance)
+    restore_origin(instance)
   end)
   instance.state.closing = false
   if not ok then
@@ -474,7 +467,7 @@ function M.cleanup(instance)
     vim.notify(('hlcraft: cleanup failed: %s'):format(tostring(err)), vim.log.levels.WARN)
   end
 
-  M.reset_view_state(instance)
+  reset_view_state(instance)
 end
 
 --- Open the workspace in the current window, setting up buffer and initial render
@@ -489,7 +482,7 @@ function M.open(instance)
     instance.state.origin_win_options = snapshot_window_options(current_win)
   end
 
-  local buf = M.ensure_buffer(instance)
+  local buf = ensure_buffer(instance)
   vim.api.nvim_set_current_buf(buf)
   M.capture_workspace_window(instance, current_win)
 
@@ -505,7 +498,7 @@ function M.capture_workspace_window(instance, win)
   end
 
   if win == instance.state.origin_win then
-    M.apply_window_options(instance, win)
+    apply_window_options(instance, win)
     return
   end
 
@@ -524,7 +517,7 @@ function M.capture_workspace_window(instance, win)
     instance.state.workspace_win_options[win] = snapshot
   end
 
-  M.apply_window_options(instance, win)
+  apply_window_options(instance, win)
 end
 
 function M.release_workspace_window(instance, win)

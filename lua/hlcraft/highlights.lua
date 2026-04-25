@@ -3,8 +3,8 @@ local M = {}
 
 local color = require('hlcraft.color')
 
---- Module-level cache for highlight group enumeration (D-10)
---- Invalidated on ColorScheme events (D-11, D-13)
+--- Module-level cache for highlight group enumeration.
+--- Invalidated on ColorScheme events.
 local cache = {
   groups = nil, -- table[]|nil cached result of get_all()
   raw_map = nil, -- table|nil mapping name -> raw attrs from nvim_get_hl(0, {})
@@ -40,7 +40,7 @@ local function resolve_chain_from_map(name, raw_map)
   return chain
 end
 
---- Build a complete highlight entry from bulk data (D-12).
+--- Build a complete highlight entry from bulk data.
 --- Resolves link chains from the bulk result with per-name fallback for missing targets.
 --- @param name string Highlight group name
 --- @param attrs table Raw attributes from nvim_get_hl bulk call
@@ -172,7 +172,7 @@ function M.get_group(name)
 end
 
 --- Get all highlight groups as a flat list with normalized attributes.
---- Uses single bulk nvim_get_hl(0, {}) call with module-level cache (D-10, D-12).
+--- Uses single bulk nvim_get_hl(0, {}) call with module-level cache.
 --- Callers (search.lua) already deepcopy before mutating, so no copy needed here.
 --- @return table[] Array of highlight group data
 function M.get_all()
@@ -195,7 +195,7 @@ function M.get_all()
   return result
 end
 
---- Invalidate the highlight cache. Called on ColorScheme events (D-13).
+--- Invalidate the highlight cache. Called on ColorScheme events.
 --- @return nil
 function M.invalidate_cache()
   cache.groups = nil
@@ -215,7 +215,7 @@ function M.bool_attrs(result)
   return #attrs > 0 and table.concat(attrs, ', ') or '-'
 end
 
--- Register ColorScheme autocmd for cache invalidation (D-13)
+-- Register ColorScheme autocmd for cache invalidation.
 local cache_augroup = vim.api.nvim_create_augroup('hlcraft-cache', { clear = true })
 vim.api.nvim_create_autocmd('ColorScheme', {
   group = cache_augroup,

@@ -1,7 +1,5 @@
 local input_model = require('hlcraft.ui.input.model')
 local navigation = require('hlcraft.ui.navigation')
-local detail_form_state = require('hlcraft.ui.state.detail_form')
-local decorations = require('hlcraft.ui.render.decorations')
 
 local M = {}
 
@@ -11,22 +9,6 @@ end
 
 local function get_results_state()
   return require('hlcraft.ui.state.results')
-end
-
---- Clear the value of an input field and jump cursor to it
---- @param instance table The Instance object holding UI state
---- @param field table|nil Field descriptor to clear
---- @return nil
-function M.clear_input_field(instance, field)
-  if not field then
-    return
-  end
-  input_model.fill_input(instance, field.key or field.name, '', true)
-  if field.kind == 'detail' then
-    detail_form_state.sync_from_buffer(instance)
-  end
-  decorations.refresh_input_placeholders(instance)
-  navigation.jump_to_row(instance, field.line, false)
 end
 
 --- Check if backward deletion (BS, C-h, C-w, C-u) should be blocked at current position
@@ -81,7 +63,8 @@ function M.paste_below(instance, is_visual)
     return
   end
 
-  local cursor_row, cursor_col = unpack(vim.api.nvim_win_get_cursor(win))
+  local cursor = vim.api.nvim_win_get_cursor(win)
+  local cursor_row, cursor_col = cursor[1], cursor[2]
   local input = input_model.get_input_at_row(instance, cursor_row - 1)
   if results_state.is_on_row(instance) then
     return
@@ -129,7 +112,8 @@ function M.paste_above(instance, is_visual)
     return
   end
 
-  local cursor_row, cursor_col = unpack(vim.api.nvim_win_get_cursor(win))
+  local cursor = vim.api.nvim_win_get_cursor(win)
+  local cursor_row, cursor_col = cursor[1], cursor[2]
   local input = input_model.get_input_at_row(instance, cursor_row - 1)
   if results_state.is_on_row(instance) then
     return
@@ -177,7 +161,7 @@ function M.open_below(instance)
     return
   end
 
-  local cursor_row = unpack(vim.api.nvim_win_get_cursor(win))
+  local cursor_row = vim.api.nvim_win_get_cursor(win)[1]
   local input = input_model.get_input_at_row(instance, cursor_row - 1)
   if results_state.is_on_row(instance) then
     return
