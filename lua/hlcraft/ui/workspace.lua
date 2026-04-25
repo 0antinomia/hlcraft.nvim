@@ -30,6 +30,10 @@ local function uninstall_preview_keymap(instance)
   require('hlcraft.ui.preview').uninstall_keymap(instance)
 end
 
+local function close_unsaved_prompt(instance)
+  require('hlcraft.ui.state.results').close_unsaved_prompt(instance)
+end
+
 local managed_window_options = {
   'number',
   'relativenumber',
@@ -217,6 +221,7 @@ end
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.reset_view_state(instance)
+  close_unsaved_prompt(instance)
   instance.state.results = {}
   instance.state.detail_index = nil
   instance.state.list_cursor = 1
@@ -393,6 +398,7 @@ function M.hide(instance)
   instance.state.closing = true
 
   local ok, err = pcall(function()
+    close_unsaved_prompt(instance)
     cleanup_preview(instance)
     uninstall_preview_keymap(instance)
     if M.is_valid_win(instance.state.help_win) then
@@ -433,6 +439,7 @@ function M.cleanup(instance)
   instance.state.closing = true
 
   local ok, err = pcall(function()
+    close_unsaved_prompt(instance)
     cleanup_preview(instance)
     uninstall_preview_keymap(instance)
     restore_all_workspace_windows(instance)

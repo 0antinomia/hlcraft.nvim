@@ -2,15 +2,13 @@ local color = require('hlcraft.color')
 local search = require('hlcraft.search')
 local workspace = require('hlcraft.ui.workspace')
 local navigation = require('hlcraft.ui.navigation')
+local ui_fields = require('hlcraft.ui.fields')
+local detail_values = require('hlcraft.ui.state.detail_values')
 
 local M = {}
 
 local function get_workspace_render()
   return require('hlcraft.ui.render.workspace')
-end
-
-local function get_input_actions()
-  return require('hlcraft.ui.input.actions')
 end
 
 --- Get the highlight result currently shown in detail view
@@ -189,6 +187,7 @@ end
 --- @return nil
 function M.refresh(instance, name, reopen_detail)
   local workspace_render = get_workspace_render()
+  local active_field = instance.state.field_editor and instance.state.field_editor.field or nil
   instance:rerender()
   for index, result in ipairs(instance.state.results) do
     if result.name == name then
@@ -196,10 +195,19 @@ function M.refresh(instance, name, reopen_detail)
       if reopen_detail then
         instance.state.detail_index = index
         instance.state.detail_form = {}
+        instance.state.field_editor.field = active_field
         workspace_render.render(instance)
       end
       return
     end
+  end
+
+  if reopen_detail then
+    instance.state.detail_index = nil
+    instance.state.detail_form = {}
+    instance.state.field_editor.field = nil
+    instance.state.list_cursor = math.min(math.max(instance.state.list_cursor, 1), math.max(#instance.state.results, 1))
+    workspace_render.render(instance)
   end
 end
 
@@ -218,19 +226,37 @@ function M.open_detail(instance)
   end
   instance.state.detail_index = index
   instance.state.detail_form = {}
+  instance.state.field_editor.field = nil
   instance:rerender()
-  get_input_actions().goto_first_input(instance)
+  local first_key = ui_fields.detail_order[1]
+  local first_row = first_key and instance.state.geometry.detail_menu[first_key]
+  if first_row then
+    navigation.jump_to_row(instance, first_row.line, false)
+  end
 end
 
---- Close the detail view and return to the result list, restoring cursor position
+--- Close and delete the unsaved-changes prompt window and buffer
 --- @param instance table The Instance object holding UI state
 --- @return nil
-function M.close_detail(instance)
-  if not instance.state.detail_index then
-    return
+function M.close_unsaved_prompt(instance)
+  local prompt = instance.state.unsaved_prompt or {}
+  if workspace.is_valid_win(prompt.win) then
+    pcall(vim.api.nvim_win_close, prompt.win, true)
   end
+  if workspace.is_valid_buf(prompt.buf) then
+    pcall(vim.api.nvim_buf_delete, prompt.buf, { force = true })
+  end
+  instance.state.unsaved_prompt = { win = nil, buf = nil }
+end
+
+--- Close the detail view without checking for unsaved changes
+--- @param instance table The Instance object holding UI state
+--- @return nil
+function M.force_close_detail(instance)
+  M.close_unsaved_prompt(instance)
   instance.state.detail_index = nil
   instance.state.detail_form = {}
+  instance.state.field_editor.field = nil
   instance:rerender()
   local win = workspace.get_win(instance)
   if not workspace.is_valid_win(win) then
@@ -242,6 +268,79 @@ function M.close_detail(instance)
       break
     end
   end
+end
+
+--- Open a confirmation prompt for closing a dirty detail view
+--- @param instance table The Instance object holding UI state
+--- @param name string Highlight group name
+--- @return nil
+function M.open_unsaved_prompt(instance, name)
+  M.close_unsaved_prompt(instance)
+
+  local lines = {
+    'Unsaved highlight changes',
+    's: save   d: discard   c/q: cancel',
+  }
+  local width = 38
+  local height = #lines
+  local buf = vim.api.nvim_create_buf(false, true)
+  vim.bo[buf].bufhidden = 'wipe'
+  vim.bo[buf].buftype = 'nofile'
+  vim.bo[buf].swapfile = false
+  vim.bo[buf].modifiable = true
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+  vim.bo[buf].modifiable = false
+
+  local win = vim.api.nvim_open_win(buf, true, {
+    relative = 'editor',
+    style = 'minimal',
+    border = 'rounded',
+    width = width,
+    height = height,
+    row = math.max(1, math.floor((vim.o.lines - height) / 2) - 1),
+    col = math.max(1, math.floor((vim.o.columns - width) / 2)),
+    zindex = 90,
+  })
+
+  instance.state.unsaved_prompt = { win = win, buf = buf }
+  vim.wo[win].wrap = false
+  vim.wo[win].cursorline = false
+  vim.wo[win].number = false
+  vim.wo[win].relativenumber = false
+
+  local opts = { buffer = buf, silent = true, nowait = true }
+  vim.keymap.set('n', 's', function()
+    local ok, err = detail_values.save(instance, name)
+    if ok then
+      M.force_close_detail(instance)
+    elseif err then
+      vim.notify(('hlcraft: %s'):format(err), vim.log.levels.ERROR)
+    end
+  end, opts)
+  vim.keymap.set('n', 'd', function()
+    detail_values.discard(instance, name)
+    M.force_close_detail(instance)
+  end, opts)
+  for _, key in ipairs({ 'c', 'q', '<Esc>' }) do
+    vim.keymap.set('n', key, function()
+      M.close_unsaved_prompt(instance)
+    end, opts)
+  end
+end
+
+--- Close the detail view and return to the result list, restoring cursor position
+--- @param instance table The Instance object holding UI state
+--- @return nil
+function M.close_detail(instance)
+  if not instance.state.detail_index then
+    return
+  end
+  local result = M.current_detail_result(instance)
+  if result and detail_values.is_dirty(result.name) then
+    M.open_unsaved_prompt(instance, result.name)
+    return
+  end
+  M.force_close_detail(instance)
 end
 
 return M
