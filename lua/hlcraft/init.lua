@@ -46,7 +46,8 @@ function M.is_setup()
   return initialized
 end
 
--- Submodule access
+-- Public API surface. Deeper implementation modules under hlcraft.ui.*,
+-- hlcraft.ui.render.*, hlcraft.storage.*, and hlcraft.overrides.* are internal.
 M.highlights = highlights
 M.get_source = source.get_source
 M.search = search

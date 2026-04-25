@@ -1,11 +1,7 @@
-local function fail(message)
-  error('hlcraft origin-window switch: ' .. message, 0)
-end
+local h = require('tests.helpers')
 
 local function assert_equal(actual, expected, message)
-  if actual ~= expected then
-    fail(('%s (expected %s, got %s)'):format(message, vim.inspect(expected), vim.inspect(actual)))
-  end
+  return h.assert_equal(actual, expected, message, 'hlcraft origin-window switch')
 end
 
 vim.cmd('runtime plugin/hlcraft.lua')

@@ -1,5 +1,8 @@
 local M = {}
 
+local help = require('hlcraft.ui.help')
+local window_options = require('hlcraft.ui.window_options')
+
 local function stop_debounce_timer(instance)
   local timer = instance.state.debounce_timer
   if not timer then
@@ -34,53 +37,6 @@ local function close_unsaved_prompt(instance)
   require('hlcraft.ui.state.results').close_unsaved_prompt(instance)
 end
 
-local managed_window_options = {
-  'number',
-  'relativenumber',
-  'signcolumn',
-  'foldcolumn',
-}
-
-local workspace_window_option_values = {
-  number = false,
-  relativenumber = false,
-  signcolumn = 'no',
-  foldcolumn = '0',
-}
-
-local function read_window_options(win)
-  local values = {}
-  for _, option in ipairs(managed_window_options) do
-    values[option] = vim.wo[win][option]
-  end
-  return values
-end
-
-local function snapshot_window_options(win)
-  if not M.is_valid_win(win) then
-    return nil
-  end
-
-  return {
-    win = win,
-    values = read_window_options(win),
-  }
-end
-
-local function restore_window_options(snapshot)
-  if not snapshot or not M.is_valid_win(snapshot.win) then
-    return false
-  end
-
-  for option, value in pairs(snapshot.values or {}) do
-    pcall(function()
-      vim.wo[snapshot.win][option] = value
-    end)
-  end
-
-  return true
-end
-
 local function clear_workspace_window_snapshot(instance, win)
   if win == nil then
     return
@@ -102,7 +58,7 @@ local function restore_workspace_window_options(instance, win)
     return false
   end
 
-  local restored = restore_window_options(snapshot)
+  local restored = window_options.restore(snapshot)
   clear_workspace_window_snapshot(instance, win)
   return restored
 end
@@ -118,7 +74,7 @@ local function restore_origin_window_options(instance, clear_snapshot)
     return false
   end
 
-  local restored = restore_window_options(instance.state.origin_win_options)
+  local restored = window_options.restore(instance.state.origin_win_options)
   if clear_snapshot ~= false then
     instance.state.origin_win_options = nil
   end
@@ -129,37 +85,6 @@ local function has_origin(instance)
   return M.is_valid_win(instance.state.origin_win)
     and M.is_valid_buf(instance.state.origin_buf)
     and instance.state.origin_buf ~= instance.state.buf
-end
-
-local function is_workspace_window_options(values)
-  for option, expected in pairs(workspace_window_option_values) do
-    if values[option] ~= expected then
-      return false
-    end
-  end
-
-  return true
-end
-
-local function help_lines()
-  local lines = {
-    'hlcraft help',
-    '',
-    'Enter confirm / apply',
-    'Move  cursor onto an input to edit',
-    'q     back/close',
-    'Esc   back/close',
-    '?     toggle this help',
-    'Tab   next input',
-    'S-Tab prev input',
-  }
-
-  local preview_key = require('hlcraft.config').config.preview_key
-  if preview_key and preview_key ~= false and preview_key ~= '' then
-    table.insert(lines, 5, ('%s     flash current result'):format(preview_key))
-  end
-
-  return lines
 end
 
 --- Check if a buffer handle is valid
@@ -239,68 +164,11 @@ local function reset_view_state(instance)
   }
 end
 
---- Create the help buffer if it does not already exist
---- @param instance table The Instance object holding UI state
---- @return nil
-local function ensure_help_buffer(instance)
-  if M.is_valid_buf(instance.state.help_buf) then
-    return
-  end
-
-  local buf = vim.api.nvim_create_buf(false, true)
-  instance.state.help_buf = buf
-  vim.bo[buf].bufhidden = 'wipe'
-  vim.bo[buf].buftype = 'nofile'
-  vim.bo[buf].swapfile = false
-  vim.bo[buf].modifiable = true
-  vim.api.nvim_buf_set_lines(buf, 0, -1, false, help_lines())
-  vim.bo[buf].modifiable = false
-  vim.keymap.set('n', 'q', function()
-    M.toggle_help(instance)
-  end, { buffer = buf, silent = true })
-  vim.keymap.set('n', '<Esc>', function()
-    M.toggle_help(instance)
-  end, { buffer = buf, silent = true })
-end
-
 --- Toggle the help floating window open or closed
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.toggle_help(instance)
-  if M.is_valid_win(instance.state.help_win) then
-    pcall(vim.api.nvim_win_close, instance.state.help_win, true)
-    instance.state.help_win = nil
-    return
-  end
-
-  ensure_help_buffer(instance)
-  instance.state.help_win = vim.api.nvim_open_win(instance.state.help_buf, true, {
-    relative = 'editor',
-    style = 'minimal',
-    border = 'rounded',
-    width = 38,
-    height = 15,
-    row = math.max(1, math.floor((vim.o.lines - 15) / 2) - 1),
-    col = math.max(1, math.floor((vim.o.columns - 38) / 2)),
-    zindex = 80,
-  })
-
-  vim.wo[instance.state.help_win].wrap = false
-  vim.wo[instance.state.help_win].cursorline = false
-  vim.wo[instance.state.help_win].number = false
-  vim.wo[instance.state.help_win].relativenumber = false
-  vim.api.nvim_win_set_hl_ns(instance.state.help_win, instance.ns)
-  vim.api.nvim_buf_add_highlight(instance.state.help_buf, instance.ns, 'Title', 0, 0, -1)
-  local line_count = vim.api.nvim_buf_line_count(instance.state.help_buf)
-  for line_nr = 2, line_count - 1 do
-    local line = vim.api.nvim_buf_get_lines(instance.state.help_buf, line_nr, line_nr + 1, false)[1]
-    if line and line ~= '' then
-      local key = line:match('^(%S+)')
-      if key then
-        vim.api.nvim_buf_add_highlight(instance.state.help_buf, instance.ns, 'Function', line_nr, 0, #key)
-      end
-    end
-  end
+  help.toggle(instance)
 end
 
 --- Create the workspace buffer if it does not already exist
@@ -332,10 +200,7 @@ end
 --- @param win number Window handle
 --- @return nil
 local function apply_window_options(instance, win)
-  vim.api.nvim_win_set_hl_ns(win, instance.ns)
-  for option, value in pairs(workspace_window_option_values) do
-    vim.wo[win][option] = value
-  end
+  window_options.apply(win, instance.ns)
 end
 
 --- Restore the origin buffer and window that was active before opening
@@ -394,10 +259,7 @@ function M.hide(instance)
     close_unsaved_prompt(instance)
     cleanup_preview(instance)
     uninstall_preview_keymap(instance)
-    if M.is_valid_win(instance.state.help_win) then
-      pcall(vim.api.nvim_win_close, instance.state.help_win, true)
-    end
-    instance.state.help_win = nil
+    help.close(instance)
     restore_origin(instance)
   end)
   instance.state.closing = false
@@ -439,12 +301,8 @@ function M.cleanup(instance)
     if instance.state.origin_win_options ~= nil then
       restore_origin_window_options(instance)
     end
-    if M.is_valid_win(instance.state.help_win) then
-      pcall(vim.api.nvim_win_close, instance.state.help_win, true)
-    end
-    if M.is_valid_buf(instance.state.help_buf) then
-      pcall(vim.api.nvim_buf_delete, instance.state.help_buf, { force = true })
-    end
+    help.close(instance)
+    help.delete_buffer(instance)
 
     if instance.group then
       pcall(vim.api.nvim_del_augroup_by_id, instance.group)
@@ -479,7 +337,7 @@ function M.open(instance)
   if current_buf ~= instance.state.buf then
     instance.state.origin_win = current_win
     instance.state.origin_buf = current_buf
-    instance.state.origin_win_options = snapshot_window_options(current_win)
+    instance.state.origin_win_options = window_options.snapshot(current_win)
   end
 
   local buf = ensure_buffer(instance)
@@ -505,12 +363,12 @@ function M.capture_workspace_window(instance, win)
   instance.state.last_workspace_win = win
 
   if instance.state.workspace_win_options[win] == nil then
-    local snapshot = snapshot_window_options(win)
+    local snapshot = window_options.snapshot(win)
     if snapshot == nil or snapshot.win == nil then
       return
     end
 
-    if instance.state.origin_win_options ~= nil and is_workspace_window_options(snapshot.values) then
+    if instance.state.origin_win_options ~= nil and window_options.matches_workspace(snapshot.values) then
       snapshot.values = vim.deepcopy(instance.state.origin_win_options.values or {})
     end
 

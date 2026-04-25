@@ -1,244 +1,12 @@
---- @type table
 local M = {}
 
 local color = require('hlcraft.color')
-local config = require('hlcraft.config')
 local highlights = require('hlcraft.highlights')
-local presets = require('hlcraft.presets')
 local storage = require('hlcraft.storage')
+local apply = require('hlcraft.overrides.apply')
+local override_state = require('hlcraft.overrides.state')
 
-local color_keys = { 'fg', 'bg', 'sp' }
-local style_keys = {
-  'bold',
-  'italic',
-  'underline',
-  'undercurl',
-  'strikethrough',
-  'underdouble',
-  'underdotted',
-  'underdashed',
-}
-local numeric_keys = { 'blend' }
-local override_keys = vim.list_extend(vim.list_extend(vim.deepcopy(color_keys), vim.deepcopy(style_keys)), numeric_keys)
-
-local state = {
-  applying = false,
-  bootstrapped = false,
-  group = nil,
-  base_specs = {},
-  active = {},
-  preset = {},
-  hooked = false,
-  original_set_hl = vim.api.nvim_set_hl,
-  persisted = {},
-  persisted_groups = {},
-  pending = {},
-  runtime = {},
-  runtime_groups = {},
-}
-
-local function deepcopy(value)
-  return vim.deepcopy(value)
-end
-
-local install_pending_hook
-
-local function normalized_set_hl_spec(name)
-  local group = highlights.get_group(name)
-  if not group then
-    return {}
-  end
-
-  return {
-    fg = group.resolved_fg ~= 'NONE' and group.resolved_fg or 'NONE',
-    bg = group.resolved_bg ~= 'NONE' and group.resolved_bg or 'NONE',
-    sp = group.sp ~= 'NONE' and group.sp or 'NONE',
-    bold = group.bold or nil,
-    italic = group.italic or nil,
-    underline = group.underline or nil,
-    undercurl = group.undercurl or nil,
-    strikethrough = group.strikethrough or nil,
-    underdouble = group.underdouble or nil,
-    underdotted = group.underdotted or nil,
-    underdashed = group.underdashed or nil,
-    blend = group.blend,
-  }
-end
-
-local function group_exists(name)
-  local ok, spec = pcall(vim.api.nvim_get_hl, 0, { name = name, create = false })
-  return ok and spec and not vim.tbl_isempty(spec)
-end
-
-local function capture_group(name)
-  if state.base_specs[name] ~= nil then
-    return
-  end
-
-  local ok, spec = pcall(vim.api.nvim_get_hl, 0, { name = name, create = false })
-  if ok and spec and not vim.tbl_isempty(spec) then
-    state.base_specs[name] = deepcopy(spec)
-    return
-  end
-
-  state.base_specs[name] = normalized_set_hl_spec(name)
-end
-
-local function restore_group(name)
-  local base = state.base_specs[name]
-  if not base then
-    return
-  end
-
-  vim.api.nvim_set_hl(0, name, deepcopy(base))
-end
-
-local function merged_spec(name)
-  capture_group(name)
-
-  local spec = normalized_set_hl_spec(name)
-  local override = state.active[name]
-  if not override then
-    return spec
-  end
-
-  for _, key in ipairs(override_keys) do
-    if override[key] ~= nil then
-      spec[key] = override[key]
-    end
-  end
-
-  return spec
-end
-
-local function build_preset_overrides()
-  if not config.from_none_enabled() then
-    return {}
-  end
-
-  return presets.transparent(config.from_none_scope())
-end
-
-local function rebuild_active()
-  state.active = vim.tbl_deep_extend('force', deepcopy(state.preset), deepcopy(state.runtime))
-end
-
-local function ensure_runtime_group(name)
-  if state.runtime_groups[name] == nil or vim.trim(tostring(state.runtime_groups[name])) == '' then
-    state.runtime_groups[name] = state.persisted_groups[name]
-  end
-end
-
-local function apply_group(name)
-  local override = state.active[name]
-  if not override or next(override) == nil then
-    state.pending[name] = nil
-    restore_group(name)
-    return
-  end
-
-  if not group_exists(name) then
-    state.pending[name] = true
-    install_pending_hook() -- ensure hook is active when pending exists
-    return
-  end
-
-  state.pending[name] = nil
-  state.applying = true
-  local ok, err = pcall(state.original_set_hl, 0, name, merged_spec(name))
-  state.applying = false
-
-  if not ok then
-    vim.notify(('hlcraft: failed to apply highlight %s: %s'):format(name, tostring(err)), vim.log.levels.WARN)
-  end
-end
-
-local function refresh_base_specs()
-  state.base_specs = {}
-end
-
-local function uninstall_pending_hook()
-  if not state.hooked then
-    return
-  end
-
-  -- Safety check: only restore if our hook is still active.
-  -- Another plugin may have replaced nvim_set_hl after our install.
-  -- Do NOT restore -- that would overwrite their hook.
-  -- Pending groups will be resolved on next ColorScheme replay.
-  if vim.api.nvim_set_hl ~= state.original_set_hl then
-    state.hooked = false
-    return
-  end
-  vim.api.nvim_set_hl = state.original_set_hl
-  state.hooked = false
-end
-
-install_pending_hook = function()
-  if state.hooked then
-    return
-  end
-
-  vim.api.nvim_set_hl = function(ns_id, name, spec)
-    state.original_set_hl(ns_id, name, spec)
-
-    if state.applying then
-      return
-    end
-    if ns_id ~= 0 or type(name) ~= 'string' or name == '' then
-      return
-    end
-
-    -- Only intercept calls for groups in the pending set.
-    if not state.pending[name] then
-      return
-    end
-
-    state.base_specs[name] = vim.deepcopy(spec or {})
-    apply_group(name)
-
-    -- Auto-uninstall when no more pending groups remain.
-    if next(state.pending) == nil then
-      uninstall_pending_hook()
-    end
-  end
-
-  state.hooked = true
-end
-
-local function register_reapply_events()
-  if not config.config.reapply_events.enabled then
-    return
-  end
-
-  for index, hook in ipairs(config.config.reapply_events.events or {}) do
-    local event = hook
-    local opts = {}
-
-    if type(hook) == 'table' then
-      event = hook.event
-      opts.pattern = hook.pattern
-      if hook.once ~= nil then
-        opts.once = hook.once
-      end
-    end
-
-    if type(event) == 'string' and event ~= '' then
-      vim.api.nvim_create_autocmd(event, {
-        group = state.group,
-        pattern = opts.pattern,
-        once = opts.once,
-        callback = function()
-          vim.schedule(function()
-            refresh_base_specs()
-            M.apply_all()
-          end)
-        end,
-        desc = ('hlcraft replay hook %d'):format(index),
-      })
-    end
-  end
-end
+local state = override_state.data
 
 --- Bootstrap runtime overrides and automatic reapplication after colorscheme changes.
 --- @param force boolean|nil Force re-bootstrap even if already bootstrapped
@@ -253,47 +21,46 @@ function M.bootstrap(force)
   end
 
   local loaded = storage.load()
-  state.persisted = deepcopy(loaded.entries or {})
-  state.persisted_groups = deepcopy(loaded.groups or {})
-  state.runtime = deepcopy(state.persisted)
-  state.runtime_groups = deepcopy(state.persisted_groups)
-  state.preset = build_preset_overrides()
-  rebuild_active()
+  state.persisted = override_state.deepcopy(loaded.entries or {})
+  state.persisted_groups = override_state.deepcopy(loaded.groups or {})
+  state.runtime = override_state.deepcopy(state.persisted)
+  state.runtime_groups = override_state.deepcopy(state.persisted_groups)
+  state.preset = apply.build_preset_overrides()
+  override_state.rebuild_active()
   state.pending = {}
-  refresh_base_specs()
+  apply.refresh_base_specs()
 
   state.group = vim.api.nvim_create_augroup('HlcraftOverrides', { clear = true })
-  register_reapply_events()
+  apply.register_reapply_events(function()
+    M.apply_all()
+  end)
 
   state.bootstrapped = true
   M.apply_all()
 
-  -- Install narrow hook only if pending groups remain after apply_all.
   if next(state.pending) ~= nil then
-    install_pending_hook()
+    apply.install_pending_hook()
   end
 end
 
 --- Apply all active overrides to the current colorscheme.
 --- @return nil
 function M.apply_all()
-  for name, _ in pairs(state.active) do
-    apply_group(name)
-  end
+  apply.apply_all()
 end
 
 --- Return the active runtime override for a group.
 --- @param name string
 --- @return table
 function M.get(name)
-  return deepcopy(state.runtime[name] or {})
+  return override_state.deepcopy(state.runtime[name] or {})
 end
 
 --- Return the persisted override for a group.
 --- @param name string
 --- @return table
 function M.get_persisted(name)
-  return deepcopy(state.persisted[name] or {})
+  return override_state.deepcopy(state.persisted[name] or {})
 end
 
 --- Return the current runtime TOML section for a highlight group.
@@ -313,33 +80,18 @@ end
 --- Return sorted unique TOML section names known from defaults, persisted, and runtime state.
 --- @return string[]
 function M.known_groups()
-  local groups = {}
-
-  for _, group_name in pairs(state.persisted_groups) do
-    if type(group_name) == 'string' and vim.trim(group_name) ~= '' then
-      groups[group_name] = true
-    end
-  end
-  for _, group_name in pairs(state.runtime_groups) do
-    if type(group_name) == 'string' and vim.trim(group_name) ~= '' then
-      groups[group_name] = true
-    end
-  end
-
-  local names = vim.tbl_keys(groups)
-  table.sort(names)
-  return names
+  return override_state.known_groups()
 end
 
 --- Restore one runtime override and group from persisted state and reapply it.
 --- @param name string Highlight group name
 --- @return nil
 function M.restore_persisted(name)
-  state.runtime[name] = deepcopy(state.persisted[name])
+  state.runtime[name] = override_state.deepcopy(state.persisted[name])
   state.runtime_groups[name] = state.persisted_groups[name]
-  rebuild_active()
-  refresh_base_specs()
-  apply_group(name)
+  override_state.rebuild_active()
+  apply.refresh_base_specs()
+  apply.apply_group(name)
 end
 
 --- Set the runtime TOML section for a highlight group.
@@ -358,8 +110,8 @@ function M.set_group(name, group_name)
   end
 
   state.runtime_groups[name] = normalized
-  rebuild_active()
-  apply_group(name)
+  override_state.rebuild_active()
+  apply.apply_group(name)
   return true, nil
 end
 
@@ -370,7 +122,7 @@ end
 --- @return boolean ok
 --- @return string|nil err
 function M.set_color(name, key, value)
-  if not vim.tbl_contains(color_keys, key) then
+  if not vim.tbl_contains(override_state.color_keys, key) then
     return false, ('Unsupported override key: %s'):format(tostring(key))
   end
 
@@ -379,7 +131,7 @@ function M.set_color(name, key, value)
     return false, err
   end
 
-  ensure_runtime_group(name)
+  override_state.ensure_runtime_group(name)
   state.runtime[name] = state.runtime[name] or {}
   state.runtime[name][key] = normalized
 
@@ -387,13 +139,9 @@ function M.set_color(name, key, value)
     state.runtime[name][key] = nil
   end
 
-  if next(state.runtime[name]) == nil then
-    state.runtime[name] = nil
-    state.runtime_groups[name] = nil
-  end
-
-  rebuild_active()
-  apply_group(name)
+  override_state.remove_empty_runtime_entry(name)
+  override_state.rebuild_active()
+  apply.apply_group(name)
   return true, nil
 end
 
@@ -404,7 +152,7 @@ end
 --- @return boolean ok
 --- @return string|nil err
 function M.set_style(name, key, value)
-  if not vim.tbl_contains(style_keys, key) then
+  if not vim.tbl_contains(override_state.style_keys, key) then
     return false, ('Unsupported style key: %s'):format(tostring(key))
   end
 
@@ -412,17 +160,13 @@ function M.set_style(name, key, value)
     return false, ('Style override %s must be boolean or nil'):format(key)
   end
 
-  ensure_runtime_group(name)
+  override_state.ensure_runtime_group(name)
   state.runtime[name] = state.runtime[name] or {}
   state.runtime[name][key] = value
 
-  if next(state.runtime[name]) == nil then
-    state.runtime[name] = nil
-    state.runtime_groups[name] = nil
-  end
-
-  rebuild_active()
-  apply_group(name)
+  override_state.remove_empty_runtime_entry(name)
+  override_state.rebuild_active()
+  apply.apply_group(name)
   return true, nil
 end
 
@@ -433,7 +177,7 @@ end
 --- @return boolean|nil value
 --- @return string|nil err
 function M.toggle_style(name, key)
-  if not vim.tbl_contains(style_keys, key) then
+  if not vim.tbl_contains(override_state.style_keys, key) then
     return false, nil, ('Unsupported style key: %s'):format(tostring(key))
   end
 
@@ -473,17 +217,13 @@ function M.set_blend(name, value)
     value = math.floor(number_value)
   end
 
-  ensure_runtime_group(name)
+  override_state.ensure_runtime_group(name)
   state.runtime[name] = state.runtime[name] or {}
   state.runtime[name].blend = value
 
-  if next(state.runtime[name]) == nil then
-    state.runtime[name] = nil
-    state.runtime_groups[name] = nil
-  end
-
-  rebuild_active()
-  apply_group(name)
+  override_state.remove_empty_runtime_entry(name)
+  override_state.rebuild_active()
+  apply.apply_group(name)
   return true, nil
 end
 
@@ -493,16 +233,16 @@ end
 function M.clear(name)
   state.runtime[name] = nil
   state.runtime_groups[name] = nil
-  rebuild_active()
-  apply_group(name)
+  override_state.rebuild_active()
+  apply.apply_group(name)
 end
 
 --- Persist the current runtime overrides to the configured hlcraft directory.
 --- @return boolean ok
 --- @return string|nil err
 function M.save()
-  local persisted = deepcopy(state.runtime)
-  local persisted_groups = deepcopy(state.runtime_groups)
+  local persisted = override_state.deepcopy(state.runtime)
+  local persisted_groups = override_state.deepcopy(state.runtime_groups)
   local ok, err = storage.save(persisted, persisted_groups)
   if not ok then
     return false, err
