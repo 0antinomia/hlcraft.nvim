@@ -35,8 +35,17 @@ function Instance.new(id)
       inputs = {},
       result_lines = {},
       detail_fields = {},
+      detail_menu = {},
+      editor_rows = {},
     },
     detail_form = {},
+    field_editor = {
+      field = nil,
+    },
+    unsaved_prompt = {
+      win = nil,
+      buf = nil,
+    },
     rendering = false,
     input_marks = {},
     placeholder_marks = {},

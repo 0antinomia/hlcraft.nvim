@@ -310,6 +310,35 @@ function M.get_persisted_group(name)
   return state.persisted_groups[name] or config.default_group_name()
 end
 
+--- Return sorted unique TOML section names known from defaults, persisted, and runtime state.
+--- @return string[]
+function M.known_groups()
+  local groups = {}
+  groups[config.default_group_name()] = true
+
+  for _, group_name in pairs(state.persisted_groups) do
+    groups[group_name] = true
+  end
+  for _, group_name in pairs(state.runtime_groups) do
+    groups[group_name] = true
+  end
+
+  local names = vim.tbl_keys(groups)
+  table.sort(names)
+  return names
+end
+
+--- Restore one runtime override and group from persisted state and reapply it.
+--- @param name string Highlight group name
+--- @return nil
+function M.restore_persisted(name)
+  state.runtime[name] = deepcopy(state.persisted[name])
+  state.runtime_groups[name] = state.persisted_groups[name]
+  rebuild_active()
+  refresh_base_specs()
+  apply_group(name)
+end
+
 --- Set the runtime TOML section for a highlight group.
 --- @param name string
 --- @param group_name string|nil
@@ -469,9 +498,16 @@ end
 --- @return boolean ok
 --- @return string|nil err
 function M.save()
-  state.persisted = deepcopy(state.runtime)
-  state.persisted_groups = deepcopy(state.runtime_groups)
-  return storage.save(state.persisted, state.persisted_groups)
+  local persisted = deepcopy(state.runtime)
+  local persisted_groups = deepcopy(state.runtime_groups)
+  local ok, err = storage.save(persisted, persisted_groups)
+  if not ok then
+    return false, err
+  end
+
+  state.persisted = persisted
+  state.persisted_groups = persisted_groups
+  return true, nil
 end
 
 --- Return whether a group currently has runtime overrides.

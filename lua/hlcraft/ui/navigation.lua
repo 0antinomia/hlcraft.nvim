@@ -8,11 +8,18 @@ local M = {}
 function M.allowed_rows(instance)
   local rows = {}
   for _, field in ipairs(instance.state.geometry.inputs or {}) do
-    if not instance.state.detail_index or field.kind == 'detail' then
+    if not instance.state.detail_index then
       rows[#rows + 1] = field.line
     end
   end
-  if not instance.state.detail_index then
+  if instance.state.detail_index then
+    for _, row in pairs(instance.state.geometry.detail_menu or {}) do
+      rows[#rows + 1] = row.line
+    end
+    for _, row in pairs(instance.state.geometry.editor_rows or {}) do
+      rows[#rows + 1] = row.line
+    end
+  else
     for line_nr in pairs(instance.state.geometry.result_lines or {}) do
       rows[#rows + 1] = line_nr
     end

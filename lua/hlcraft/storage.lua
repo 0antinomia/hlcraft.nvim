@@ -349,6 +349,14 @@ function M.save(overrides, groups, path)
     end
   end
 
+  for highlight_name, group_name in pairs(groups or {}) do
+    local section_name = normalize_group_name(group_name)
+    sections[section_name] = sections[section_name] or {}
+    sections[section_name][highlight_name] = sections[section_name][highlight_name]
+      or (overrides and overrides[highlight_name])
+      or {}
+  end
+
   local section_names = vim.tbl_keys(sections)
   table.sort(section_names)
 
