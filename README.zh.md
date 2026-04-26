@@ -184,19 +184,6 @@ preview_key = 'z'
 :Hlcraft
 ```
 
-## Public API
-
-稳定支持的 Lua 入口包括：
-
-- `require('hlcraft').setup(opts)`
-- `require('hlcraft').open(opts)`
-- `require('hlcraft').search_by_name(query)`
-- `require('hlcraft').search_by_color(query)`
-- `require('hlcraft').overrides` / `require('hlcraft.overrides')`
-- `require('hlcraft.storage')` 持久化 facade：`path`、`file_path`、`load`、`save`
-
-`hlcraft.ui.*`、`hlcraft.ui.render.*`、`hlcraft.storage.*` 和 `hlcraft.overrides.*` 下的更深层模块都视为 internal implementation modules。后续继续整理 UI 和持久化内部结构时，它们可能会变化。
-
 ### 搜索
 
 顶部区域有两个输入框：
@@ -222,8 +209,6 @@ vim.fn.stdpath('config') .. '/.hlcraft'
 ```
 
 每个文件保存一个顶层 TOML section。section 名称来自你在详情页里明确选择或新建的 group。如果某个 override 没有 group，hlcraft 会要求你先选择或新建一个 group，再进行保存。
-
-例如 `default.toml` 也只是一个普通 group 文件：`default` 只是普通分组名，不再是隐式回退值。
 
 持久化 override 会在 `setup()` 时加载，并在配置的 `reapply_events` 上再次应用。
 
