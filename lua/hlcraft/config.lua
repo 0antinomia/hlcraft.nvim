@@ -46,6 +46,13 @@ local function normalize_from_none(value)
 end
 
 local function normalize_reapply_events(value)
+  if type(value) == 'boolean' then
+    return {
+      enabled = value,
+      events = vim.deepcopy(default_reapply_events.events),
+    }
+  end
+
   if type(value) ~= 'table' then
     return vim.deepcopy(default_reapply_events)
   end
@@ -125,14 +132,14 @@ function M.validate(user_config)
     end
   end
 
-  -- from_none: boolean or table { enabled: boolean, scope?: "core"|"extended" }
+  -- from_none: boolean or table { enabled?: boolean, scope?: "core"|"extended" }
   if user_config.from_none ~= nil then
     local fn = user_config.from_none
     local fn_type = type(fn)
     if fn_type ~= 'boolean' and fn_type ~= 'table' then
       errors[#errors + 1] = 'from_none: must be boolean or table, got ' .. fn_type
     elseif fn_type == 'table' then
-      if type(fn.enabled) ~= 'boolean' then
+      if fn.enabled ~= nil and type(fn.enabled) ~= 'boolean' then
         errors[#errors + 1] = 'from_none.enabled: must be boolean, got ' .. type(fn.enabled)
       end
       if fn.scope ~= nil then
@@ -145,18 +152,19 @@ function M.validate(user_config)
     end
   end
 
-  -- reapply_events: table { enabled: boolean, events: array of string|table }
+  -- reapply_events: boolean or table { enabled?: boolean, events?: array of string|table }
   if user_config.reapply_events ~= nil then
     local reapply = user_config.reapply_events
-    if type(reapply) ~= 'table' then
-      errors[#errors + 1] = 'reapply_events: must be a table, got ' .. type(reapply)
+    local reapply_type = type(reapply)
+    if reapply_type ~= 'boolean' and reapply_type ~= 'table' then
+      errors[#errors + 1] = 'reapply_events: must be boolean or table, got ' .. reapply_type
     else
-      if type(reapply.enabled) ~= 'boolean' then
+      if reapply_type == 'table' and reapply.enabled ~= nil and type(reapply.enabled) ~= 'boolean' then
         errors[#errors + 1] = 'reapply_events.enabled: must be boolean, got ' .. type(reapply.enabled)
       end
-      if type(reapply.events) ~= 'table' then
+      if reapply_type == 'table' and reapply.events ~= nil and type(reapply.events) ~= 'table' then
         errors[#errors + 1] = 'reapply_events.events: must be a table, got ' .. type(reapply.events)
-      else
+      elseif reapply_type == 'table' and type(reapply.events) == 'table' then
         for i, entry in ipairs(reapply.events) do
           local entry_type = type(entry)
           if entry_type == 'string' then
