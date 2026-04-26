@@ -2,6 +2,7 @@ local source = require('hlcraft.source')
 local overrides = require('hlcraft.overrides')
 local render_util = require('hlcraft.render.util')
 local highlights = require('hlcraft.highlights')
+local theme = require('hlcraft.ui.theme')
 
 local M = {}
 
@@ -23,14 +24,14 @@ function M.build_virt_lines(result, get_color_hl, width)
   local sp_text = render_util.display_color(result.sp)
 
   return {
-    { { string.rep('─', math.max(20, width or 20)), 'HlcraftSectionHeader' } },
-    { { ('Name: %s'):format(result.name), 'Normal' } },
+    { { string.rep('─', math.max(20, width or 20)), theme.groups.rule } },
+    { { ('Name: %s'):format(result.name), theme.groups.text } },
     {
-      { 'Colors: FG ', 'Normal' },
+      { 'Colors: FG ', theme.groups.text },
       { fg_text, get_color_hl(resolved_fg, 'fg') },
-      { '   BG ', 'Normal' },
+      { '   BG ', theme.groups.text },
       { bg_text, get_color_hl(resolved_bg, 'bg') },
-      { '   SP ', 'Normal' },
+      { '   SP ', theme.groups.text },
       { sp_text, get_color_hl(result.sp, 'sp') },
     },
     {
@@ -40,13 +41,13 @@ function M.build_virt_lines(result, get_color_hl, width)
           result.blend ~= nil and tostring(result.blend) or '-',
           result.distance and ('%.1f'):format(result.distance) or '-'
         ),
-        'Normal',
+        theme.groups.text,
       },
     },
-    { { ('Source: %s'):format(render_util.truncate(source_text, 88)), 'Normal' } },
-    { { ('Links:  %s'):format(render_util.truncate(chain, 88)), 'Normal' } },
+    { { ('Source: %s'):format(render_util.truncate(source_text, 88)), theme.groups.text } },
+    { { ('Links:  %s'):format(render_util.truncate(chain, 88)), theme.groups.text } },
     { { '' } },
-    { { ('File: %s'):format(render_util.truncate(persist_path, 88)), 'Normal' } },
+    { { ('File: %s'):format(render_util.truncate(persist_path, 88)), theme.groups.text } },
     { { '' } },
   }
 end
