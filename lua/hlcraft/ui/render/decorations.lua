@@ -3,6 +3,7 @@ local color = require('hlcraft.color')
 local ui_detail = require('hlcraft.ui.detail')
 local workspace = require('hlcraft.ui.workspace')
 local input_model = require('hlcraft.ui.input.model')
+local theme = require('hlcraft.ui.theme')
 
 local M = {}
 
@@ -56,22 +57,22 @@ end
 --- @return table[] Array of {text, hl_group} pairs for virtual text
 function M.help_virt_line()
   local tokens = {
-    { text = 'Enter ', hl = 'Function' },
-    { text = 'confirm/apply', hl = 'Comment' },
+    { text = 'Enter ', hl = theme.groups.key },
+    { text = 'confirm/apply', hl = theme.groups.muted },
     { text = '   ' },
-    { text = '? ', hl = 'Function' },
-    { text = 'help', hl = 'Comment' },
+    { text = '? ', hl = theme.groups.key },
+    { text = 'help', hl = theme.groups.muted },
     { text = '   ' },
-    { text = 'q ', hl = 'Function' },
-    { text = 'close', hl = 'Comment' },
+    { text = 'q ', hl = theme.groups.key },
+    { text = 'close', hl = theme.groups.muted },
     { text = '   ' },
-    { text = 'Tab ', hl = 'Function' },
-    { text = 'next input', hl = 'Comment' },
+    { text = 'Tab ', hl = theme.groups.key },
+    { text = 'next input', hl = theme.groups.muted },
   }
 
   local virt = {}
   for _, token in ipairs(tokens) do
-    virt[#virt + 1] = { token.text, token.hl or 'Normal' }
+    virt[#virt + 1] = { token.text, token.hl or theme.groups.text }
   end
   return virt
 end
@@ -93,7 +94,7 @@ function M.set_input_header(instance, field, label, opts)
 
   local header = { { label, instance.input_label_hl } }
   if opts.extra and opts.extra ~= '' then
-    header[#header + 1] = { '  ' .. opts.extra, 'Comment' }
+    header[#header + 1] = { '  ' .. opts.extra, theme.groups.muted }
   end
   virt_lines[#virt_lines + 1] = header
 
@@ -118,7 +119,7 @@ function M.set_results_header(instance, row1, width)
     vim.api.nvim_buf_set_extmark(instance.state.buf, instance.ns, row1 - 1, 0, {
       id = instance.state.input_marks.results_header,
       virt_lines = {
-        { { separator, 'HlcraftSectionHeader' } },
+        { { separator, theme.groups.rule } },
       },
       virt_lines_leftcol = true,
       virt_lines_above = true,
@@ -155,7 +156,7 @@ end
 --- @return string Highlight group name
 function M.detail_color_hl(instance, bg, suffix)
   if not bg or bg == 'NONE' then
-    return 'Comment'
+    return theme.groups.muted
   end
   local hl_name = ('hlcraft_ui_%s_detail_%s_%s'):format(instance.id, suffix, bg:gsub('#', ''))
   vim.api.nvim_set_hl(instance.ns, hl_name, {
@@ -233,7 +234,7 @@ function M.refresh_input_placeholders(instance)
     local text = placeholder_text_for_field(instance, field)
     local value = input_model.field_line_text(instance, field)
     if value == '' and text and text ~= '' then
-      M.set_overlay(instance, instance.state.buf, key, field.line - 1, tostring(text), 'Comment')
+      M.set_overlay(instance, instance.state.buf, key, field.line - 1, tostring(text), theme.groups.muted)
     else
       M.clear_overlay(instance, key)
     end

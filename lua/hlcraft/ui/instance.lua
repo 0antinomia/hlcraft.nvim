@@ -1,10 +1,11 @@
 local results_state = require('hlcraft.ui.state.results')
 local workspace = require('hlcraft.ui.workspace')
 local workspace_render = require('hlcraft.ui.render.workspace')
+local theme = require('hlcraft.ui.theme')
 
 local ns = vim.api.nvim_create_namespace('hlcraft-ui')
 
-local input_label_hl = 'HlcraftInputLabel'
+local input_label_hl = theme.groups.label
 
 local Instance = {}
 Instance.__index = Instance

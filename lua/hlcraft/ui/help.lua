@@ -1,5 +1,7 @@
 local M = {}
 
+local theme = require('hlcraft.ui.theme')
+
 local function is_valid_buf(buf)
   return buf ~= nil and vim.api.nvim_buf_is_valid(buf)
 end
@@ -92,15 +94,16 @@ function M.toggle(instance)
   vim.wo[instance.state.help_win].cursorline = false
   vim.wo[instance.state.help_win].number = false
   vim.wo[instance.state.help_win].relativenumber = false
+  theme.apply(instance.ns)
   vim.api.nvim_win_set_hl_ns(instance.state.help_win, instance.ns)
-  vim.api.nvim_buf_add_highlight(instance.state.help_buf, instance.ns, 'Title', 0, 0, -1)
+  vim.api.nvim_buf_add_highlight(instance.state.help_buf, instance.ns, theme.groups.title, 0, 0, -1)
   local line_count = vim.api.nvim_buf_line_count(instance.state.help_buf)
   for line_nr = 2, line_count - 1 do
     local line = vim.api.nvim_buf_get_lines(instance.state.help_buf, line_nr, line_nr + 1, false)[1]
     if line and line ~= '' then
       local key = line:match('^(%S+)')
       if key then
-        vim.api.nvim_buf_add_highlight(instance.state.help_buf, instance.ns, 'Function', line_nr, 0, #key)
+        vim.api.nvim_buf_add_highlight(instance.state.help_buf, instance.ns, theme.groups.key, line_nr, 0, #key)
       end
     end
   end

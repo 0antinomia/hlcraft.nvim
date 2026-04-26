@@ -3,9 +3,11 @@ local render_util = require('hlcraft.render.util')
 local input_model = require('hlcraft.ui.input.model')
 local decorations = require('hlcraft.ui.render.decorations')
 local detail_menu = require('hlcraft.ui.render.detail_menu')
+local detail_values = require('hlcraft.ui.state.detail_values')
 local field_editor = require('hlcraft.ui.render.field_editor')
 local list = require('hlcraft.ui.render.list')
 local results_state = require('hlcraft.ui.state.results')
+local theme = require('hlcraft.ui.theme')
 local workspace = require('hlcraft.ui.workspace')
 
 local M = {}
@@ -128,10 +130,7 @@ function M.render(instance)
   vim.api.nvim_buf_clear_namespace(instance.state.buf, instance.ns, 0, -1)
   instance.state.input_marks = {}
   instance.state.placeholder_marks = {}
-  vim.api.nvim_set_hl(instance.ns, instance.input_label_hl, { fg = '#4fa6ff', bold = true })
-  vim.api.nvim_set_hl(instance.ns, 'HlcraftSectionHeader', { fg = '#4fa6ff', bold = true })
-  vim.api.nvim_set_hl(instance.ns, 'HlcraftSectionText', { fg = '#7f98ff', italic = true })
-  vim.api.nvim_set_hl(instance.ns, 'HlcraftColumnHeader', { fg = '#c0cbff', bold = true })
+  theme.apply(instance.ns)
   instance.state.geometry = geometry
   input_model.set_input_extmarks(instance)
 
@@ -178,13 +177,18 @@ function M.render(instance)
         geometry.color_swatch.field
       )
     end
+    if detail_values.is_dirty(detail_result.name) then
+      for _, row in pairs(geometry.detail_menu or {}) do
+        vim.api.nvim_buf_add_highlight(instance.state.buf, instance.ns, theme.groups.dirty, row.line - 1, 0, 1)
+      end
+    end
   else
     decorations.set_results_header(instance, results_top, width)
     if lines[results_top] then
-      vim.api.nvim_buf_add_highlight(instance.state.buf, instance.ns, 'HlcraftColumnHeader', results_top - 1, 0, -1)
+      vim.api.nvim_buf_add_highlight(instance.state.buf, instance.ns, theme.groups.header, results_top - 1, 0, -1)
     end
     if lines[results_top + 1] then
-      vim.api.nvim_buf_add_highlight(instance.state.buf, instance.ns, 'HlcraftSectionHeader', results_top, 0, -1)
+      vim.api.nvim_buf_add_highlight(instance.state.buf, instance.ns, theme.groups.rule, results_top, 0, -1)
     end
     for line_nr, result_index in pairs(geometry.result_lines) do
       local result = instance.state.results[result_index]
