@@ -134,7 +134,7 @@ local function parse_entry_line(text)
 
   if body ~= '' then
     for _, field in ipairs(split_top_level(body, ',')) do
-      local key, raw = vim.trim(field):match('^(%w+)%s*=%s*(.+)$')
+      local key, raw = vim.trim(field):match('^([%w_]+)%s*=%s*(.+)$')
       if key and raw then
         entry[key] = parse_scalar(raw)
       end
