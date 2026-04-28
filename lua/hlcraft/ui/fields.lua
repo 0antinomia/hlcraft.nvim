@@ -50,6 +50,10 @@ M.detail_kinds = {
 }
 
 M.color_step = 5
+M.dynamic_modes = { 'rgb', 'breath' }
+M.dynamic_speed_step = 250
+M.dynamic_min_speed = 250
+M.dynamic_max_speed = 10000
 M.blend_small_step = 1
 M.blend_large_step = 5
 
