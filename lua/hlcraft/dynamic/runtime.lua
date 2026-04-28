@@ -30,21 +30,18 @@ local function close_timer()
     return
   end
 
-  state.timer:stop()
-  state.timer:close()
+  pcall(function()
+    state.timer:stop()
+  end)
+  pcall(function()
+    state.timer:close()
+  end)
   state.timer = nil
-end
-
-local function compute_color(channel_spec, base_color, now_ms)
-  local value = effects.compute(channel_spec, base_color, now_ms)
-  if value == base_color and channel_spec.mode == 'breath' then
-    value = effects.compute(channel_spec, base_color, now_ms + math.floor(channel_spec.speed / 10))
-  end
-  return value
 end
 
 function M.tick(now_ms)
   if not config.config.dynamic.enabled then
+    M.stop()
     return
   end
 
@@ -55,7 +52,7 @@ function M.tick(now_ms)
     for _, channel in ipairs(model.channels) do
       local channel_spec = dynamic and dynamic[channel] or nil
       if channel_spec then
-        local value = compute_color(channel_spec, task.base_spec[channel], now_ms)
+        local value = effects.compute(channel_spec, task.base_spec[channel], now_ms)
         if value ~= nil then
           spec[channel] = value
         end
@@ -71,12 +68,33 @@ function M.start()
     return
   end
 
-  state.timer = vim.uv.new_timer()
-  state.timer:start(config.config.dynamic.interval_ms, config.config.dynamic.interval_ms, function()
-    vim.schedule(function()
-      M.tick(vim.uv.hrtime() / 1000000)
+  local ok, timer = pcall(vim.uv.new_timer)
+  if not ok or not timer then
+    state.timer = nil
+    return
+  end
+
+  local start_ok = pcall(function()
+    timer:start(config.config.dynamic.interval_ms, config.config.dynamic.interval_ms, function()
+      vim.schedule(function()
+        M.tick(vim.uv.hrtime() / 1000000)
+      end)
     end)
   end)
+  if not start_ok then
+    pcall(function()
+      timer:close()
+    end)
+    state.timer = nil
+    return
+  end
+
+  state.timer = timer
+end
+
+function M.base_spec(name)
+  local task = state.tasks[name]
+  return task and vim.deepcopy(task.base_spec) or nil
 end
 
 function M.clear_group(name, restore_spec)

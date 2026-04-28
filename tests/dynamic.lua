@@ -94,7 +94,7 @@ config.setup({
 runtime.sync_group('HlcraftDynamicRuntime', { fg = '#111111', bg = '#222222' }, {
   dynamic = {
     fg = { mode = 'rgb', speed = 3000 },
-    bg = { mode = 'breath', speed = 2000 },
+    bg = { mode = 'breath', speed = 3000 },
   },
 })
 runtime.tick(1000)
@@ -102,6 +102,42 @@ local enabled_spec = vim.api.nvim_get_hl(0, { name = 'HlcraftDynamicRuntime', cr
 h.assert_equal(enabled_spec.fg, tonumber('00ff00', 16), 'enabled rgb dynamic did not update fg', scope)
 h.assert_true(enabled_spec.bg ~= tonumber('222222', 16), 'enabled breath dynamic did not update bg', scope)
 
+vim.api.nvim_set_hl(0, 'HlcraftDynamicDisableRestore', { fg = '#333333' })
+runtime.sync_group('HlcraftDynamicDisableRestore', { fg = '#333333' }, {
+  dynamic = {
+    fg = { mode = 'rgb', speed = 3000 },
+  },
+})
+runtime.tick(1000)
+local animated_disable_spec = vim.api.nvim_get_hl(0, { name = 'HlcraftDynamicDisableRestore', create = false })
+h.assert_equal(
+  animated_disable_spec.fg,
+  tonumber('00ff00', 16),
+  'disable regression setup did not animate fg',
+  scope
+)
+config.setup({
+  dynamic = {
+    enabled = false,
+    interval_ms = 80,
+  },
+})
+runtime.tick(2000)
+local disabled_restore_spec = vim.api.nvim_get_hl(0, { name = 'HlcraftDynamicDisableRestore', create = false })
+h.assert_equal(
+  disabled_restore_spec.fg,
+  tonumber('333333', 16),
+  'disabling dynamic did not restore base fg',
+  scope
+)
+h.assert_equal(runtime.active_count(), 0, 'disabling dynamic left active runtime tasks', scope)
+
+config.setup({
+  dynamic = {
+    enabled = true,
+    interval_ms = 80,
+  },
+})
 runtime.stop()
 local stopped_spec = vim.api.nvim_get_hl(0, { name = 'HlcraftDynamicRuntime', create = false })
 h.assert_equal(stopped_spec.fg, tonumber('111111', 16), 'runtime stop did not restore fg', scope)
