@@ -1,14 +1,17 @@
-# IDE / Editor
-.idea/
-.vscode/
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+*.orig
+
+# Editor and IDE metadata
+/.vscode/
+/.idea/
 *.swp
 *.swo
 *~
-.project
-.classpath
-.settings/
 
-# OS
+# OS metadata
 .DS_Store
+._*
 Thumbs.db
-
