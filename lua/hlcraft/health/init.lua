@@ -47,6 +47,13 @@ function M.check()
       vim.health.error('Failed to parse TOML files: ' .. tostring(data))
     end
   end
+
+  vim.health.start('hlcraft: dynamic colors')
+  if config.config.dynamic.enabled then
+    vim.health.ok(('dynamic colors enabled, interval %dms'):format(config.config.dynamic.interval_ms))
+  else
+    vim.health.ok('dynamic colors disabled')
+  end
 end
 
 return M

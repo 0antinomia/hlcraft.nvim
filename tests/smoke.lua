@@ -388,6 +388,26 @@ overrides.bootstrap(true)
 assert_equal(overrides.get_persisted(result_name).fg, '#112233', 'persisted override did not reload after bootstrap')
 assert_equal(overrides.get_persisted_group(result_name), 'smoke', 'persisted group did not reload after bootstrap')
 
+local dynamic_runtime_ok, dynamic_runtime_err = detail_values.apply_runtime(instance, result_name, {
+  dynamic = {
+    fg = { mode = 'rgb', speed = 1500 },
+  },
+})
+assert_true(dynamic_runtime_ok, dynamic_runtime_err or 'dynamic runtime apply failed')
+local dynamic_save_ok, dynamic_save_err = detail_values.save(instance, result_name)
+assert_true(dynamic_save_ok, dynamic_save_err or 'dynamic save failed')
+local dynamic_loaded = storage.load(persist_dir)
+assert_equal(
+  dynamic_loaded.entries[result_name].dynamic.fg.mode,
+  'rgb',
+  'dynamic fg mode did not persist from smoke flow'
+)
+assert_equal(
+  dynamic_loaded.entries[result_name].dynamic.fg.speed,
+  1500,
+  'dynamic fg speed did not persist from smoke flow'
+)
+
 local group_only_name = 'Comment'
 overrides.clear(group_only_name)
 local group_only_ok, group_only_err = detail_values.apply_runtime(nil, group_only_name, { group = 'smoke-group-only' })
