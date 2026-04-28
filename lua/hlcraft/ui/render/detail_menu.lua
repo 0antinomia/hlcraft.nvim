@@ -1,6 +1,7 @@
 local ui_fields = require('hlcraft.ui.fields')
 local render_util = require('hlcraft.render.util')
 local detail_values = require('hlcraft.ui.state.detail_values')
+local dynamic_model = require('hlcraft.dynamic.model')
 
 local M = {}
 
@@ -30,6 +31,15 @@ function M.display_text(value)
   return tostring(value)
 end
 
+local function color_display_value(result, key)
+  local dynamic = detail_values.dynamic_value(result.name, key)
+  if dynamic_model.channel_set[key] and dynamic then
+    return ('dynamic:%s %dms'):format(dynamic.mode, dynamic.speed)
+  end
+  local fallback = M.fallback_value(result, key)
+  return detail_values.display_value(result.name, key, fallback)
+end
+
 function M.build(geometry, result, width)
   local lines = {
     'Detail fields  (<CR> edit/toggle, s save, q back)',
@@ -43,6 +53,7 @@ function M.build(geometry, result, width)
   for _, key in ipairs(ui_fields.detail_order) do
     local fallback = M.fallback_value(result, key)
     local value = key == 'group' and detail_values.display_group(result.name)
+      or ui_fields.detail_kinds[key] == 'color' and color_display_value(result, key)
       or detail_values.display_value(result.name, key, fallback)
     local line = ('%s %s  %s'):format(
       dirty_mark,

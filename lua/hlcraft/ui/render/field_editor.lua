@@ -3,6 +3,8 @@ local render_util = require('hlcraft.render.util')
 local detail_values = require('hlcraft.ui.state.detail_values')
 local overrides = require('hlcraft.overrides')
 local detail_menu = require('hlcraft.ui.render.detail_menu')
+local dynamic_model = require('hlcraft.dynamic.model')
+local dynamic_effects = require('hlcraft.dynamic.effects')
 
 local M = {}
 
@@ -22,22 +24,51 @@ local function build_color_editor_lines(geometry, result, field, width)
   local value = detail_values.display_value(result.name, field, fallback)
   local display_value = detail_menu.display_text(value)
   local sample = 'The quick brown fox jumps over hlcraft.'
+  local dynamic = dynamic_model.channel_set[field] and detail_values.dynamic_value(result.name, field) or nil
+
+  if dynamic then
+    local preview = dynamic_effects.compute(dynamic, fallback, 0) or value
+    local display_preview = detail_menu.display_text(preview)
+    local lines = {
+      ('Color editor: %s'):format(label),
+      string.rep('─', math.max(20, math.min(width, 36))),
+      'Mode: dynamic',
+      ('Effect: %s'):format(dynamic.mode),
+      ('Speed: %dms'):format(dynamic.speed),
+      ('Preview: %s'):format(display_preview),
+    }
+
+    geometry.color_swatch = {
+      line = 6,
+      text = display_preview,
+      value = preview,
+      field = field,
+    }
+    append_editor_row(lines, geometry, 'dynamic_keys', 'Keys: m mode, -/+ speed, d static, s save, q back')
+
+    for index, line in ipairs(lines) do
+      lines[index] = render_util.truncate(line, width)
+    end
+    return lines
+  end
+
   local lines = {
     ('Color editor: %s'):format(label),
     string.rep('─', math.max(20, math.min(width, 36))),
+    'Mode: static',
     ('Current: %s'):format(display_value),
     ('Sample: %s'):format(sample),
     ('Swatch: %s'):format(display_value),
   }
 
   geometry.color_sample = {
-    line = 4,
+    line = 5,
     text = sample,
     value = value,
     field = field,
   }
   geometry.color_swatch = {
-    line = 5,
+    line = 6,
     text = display_value,
     value = value,
     field = field,
@@ -46,7 +77,7 @@ local function build_color_editor_lines(geometry, result, field, width)
     lines,
     geometry,
     'color_keys',
-    ('Keys: r/R red -/+%d, g/G green -/+%d, b/B blue -/+%d, n NONE, i input, s save, q back'):format(
+    ('Keys: r/R red -/+%d, g/G green -/+%d, b/B blue -/+%d, n NONE, i input, d dynamic, s save, q back'):format(
       ui_fields.color_step,
       ui_fields.color_step,
       ui_fields.color_step
