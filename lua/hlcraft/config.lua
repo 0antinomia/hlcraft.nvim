@@ -13,6 +13,11 @@ local default_reapply_events = {
   },
 }
 
+local default_dynamic = {
+  enabled = false,
+  interval_ms = 80,
+}
+
 --- @type table
 local defaults = {
   from_none = default_from_none, -- Start from a broad NONE-based transparent baseline before adding custom overrides
@@ -20,6 +25,7 @@ local defaults = {
   include_sp_in_color_search = false, -- Whether special/underline color participates in color search
   persist_dir = vim.fn.stdpath('config') .. '/.hlcraft', -- Directory used to persist highlight overrides as multiple TOML files
   reapply_events = default_reapply_events, -- Controls whether persisted overrides are replayed automatically and on which events
+  dynamic = default_dynamic, -- Controls dynamic highlight effect scheduling
   debounce_ms = 100, -- Debounce delay in milliseconds for search input (0 disables)
   preview_key = 'z', -- Global normal-mode key active while the workspace is open for flashing the current result
 }
@@ -70,6 +76,24 @@ local function normalize_reapply_events(value)
   }
 end
 
+local function normalize_dynamic(value)
+  if type(value) ~= 'table' then
+    return vim.deepcopy(default_dynamic)
+  end
+
+  local interval_ms = tonumber(value.interval_ms)
+  if interval_ms == nil then
+    interval_ms = default_dynamic.interval_ms
+  else
+    interval_ms = math.floor(interval_ms)
+  end
+
+  return {
+    enabled = value.enabled == true,
+    interval_ms = interval_ms,
+  }
+end
+
 --- Validate user config before merging with defaults.
 --- Aggregates ALL errors using per-field pcall(vim.validate) instead of stopping at first.
 --- @param user_config table|nil User configuration options
@@ -93,6 +117,7 @@ function M.validate(user_config)
     include_sp_in_color_search = true,
     persist_dir = true,
     reapply_events = true,
+    dynamic = true,
     debounce_ms = true,
     preview_key = true,
   }
@@ -189,6 +214,25 @@ function M.validate(user_config)
     end
   end
 
+  -- dynamic: table { enabled?: boolean, interval_ms?: number between 16 and 1000 }
+  if user_config.dynamic ~= nil then
+    local dynamic = user_config.dynamic
+    if type(dynamic) ~= 'table' then
+      errors[#errors + 1] = 'dynamic: must be a table, got ' .. type(dynamic)
+    else
+      if dynamic.enabled ~= nil and type(dynamic.enabled) ~= 'boolean' then
+        errors[#errors + 1] = 'dynamic.enabled: must be boolean, got ' .. type(dynamic.enabled)
+      end
+      if dynamic.interval_ms ~= nil then
+        if type(dynamic.interval_ms) ~= 'number' then
+          errors[#errors + 1] = 'dynamic.interval_ms: must be a number, got ' .. type(dynamic.interval_ms)
+        elseif dynamic.interval_ms < 16 or dynamic.interval_ms > 1000 then
+          errors[#errors + 1] = 'dynamic.interval_ms: must be between 16 and 1000'
+        end
+      end
+    end
+  end
+
   -- debounce_ms: non-negative number
   if user_config.debounce_ms ~= nil then
     if type(user_config.debounce_ms) ~= 'number' then
@@ -223,6 +267,7 @@ function M.setup(user_config)
   M.config = vim.tbl_deep_extend('force', vim.deepcopy(defaults), user_config or {})
   M.config.from_none = normalize_from_none(M.config.from_none)
   M.config.reapply_events = normalize_reapply_events(M.config.reapply_events)
+  M.config.dynamic = normalize_dynamic(M.config.dynamic)
   if M.config.preview_key == false then
     M.config.preview_key = false
   else
