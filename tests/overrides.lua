@@ -111,28 +111,12 @@ local frame_dynamic_ok, frame_dynamic_err = overrides.set_dynamic('HlcraftTestCl
 h.assert_true(frame_dynamic_ok, frame_dynamic_err or 'clear dynamic frame set_dynamic failed', scope)
 runtime.tick(1000)
 local animated_frame_spec = vim.api.nvim_get_hl(0, { name = 'HlcraftTestClearDynamicFrame', create = false })
-h.assert_equal(
-  animated_frame_spec.fg,
-  tonumber('00ff00', 16),
-  'clear dynamic frame setup did not animate fg',
-  scope
-)
-local clear_frame_dynamic_ok, clear_frame_dynamic_err =
-  overrides.set_dynamic('HlcraftTestClearDynamicFrame', 'fg', nil)
+h.assert_equal(animated_frame_spec.fg, tonumber('00ff00', 16), 'clear dynamic frame setup did not animate fg', scope)
+local clear_frame_dynamic_ok, clear_frame_dynamic_err = overrides.set_dynamic('HlcraftTestClearDynamicFrame', 'fg', nil)
 h.assert_true(clear_frame_dynamic_ok, clear_frame_dynamic_err or 'clear dynamic frame clear failed', scope)
 local cleared_frame_spec = vim.api.nvim_get_hl(0, { name = 'HlcraftTestClearDynamicFrame', create = false })
-h.assert_equal(
-  cleared_frame_spec.fg,
-  tonumber('444444', 16),
-  'clearing dynamic preserved animated fg frame',
-  scope
-)
-h.assert_equal(
-  cleared_frame_spec.bg,
-  tonumber('555555', 16),
-  'clearing dynamic dropped static bg override',
-  scope
-)
+h.assert_equal(cleared_frame_spec.fg, tonumber('444444', 16), 'clearing dynamic preserved animated fg frame', scope)
+h.assert_equal(cleared_frame_spec.bg, tonumber('555555', 16), 'clearing dynamic dropped static bg override', scope)
 runtime.stop()
 
 overrides.clear('HlcraftTestComment')

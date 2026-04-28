@@ -25,30 +25,64 @@ local entry = model.inflate_entry({
   fg = '#101010',
   dyn_fg_mode = 'rgb',
   dyn_fg_speed = 1500,
+  dyn_fg_params = '{"phase":0.25}',
+  dyn_fg_palette = '["#000000","#ffffff"]',
   dyn_bg_mode = 'breath',
   dyn_bg_speed = 'bad',
+  dyn_bg_params = 'not json',
+  dyn_bg_palette = '"not a table"',
 })
 h.assert_equal(entry.dynamic.fg.mode, 'rgb', 'dyn_fg_mode did not inflate', scope)
 h.assert_equal(entry.dynamic.fg.speed, 1500, 'dyn_fg_speed did not inflate', scope)
+h.assert_equal(entry.dynamic.fg.params.phase, 0.25, 'dyn_fg_params did not inflate', scope)
+h.assert_equal(entry.dynamic.fg.palette[1], '#000000', 'dyn_fg_palette did not inflate', scope)
+h.assert_equal(entry.dynamic.fg.palette[2], '#ffffff', 'dyn_fg_palette second color did not inflate', scope)
 h.assert_equal(entry.dynamic.bg.mode, 'breath', 'dyn_bg_mode did not inflate', scope)
 h.assert_equal(entry.dynamic.bg.speed, 2000, 'invalid dyn_bg_speed did not default', scope)
+h.assert_true(next(entry.dynamic.bg.params) == nil, 'invalid dyn_bg_params was not ignored', scope)
+h.assert_true(entry.dynamic.bg.palette == nil, 'non-table dyn_bg_palette was not ignored', scope)
 h.assert_true(entry.dyn_fg_mode == nil, 'flat dyn key was not removed during inflate', scope)
 h.assert_true(entry.dyn_fg_speed == nil, 'flat dyn speed key was not removed during inflate', scope)
+h.assert_true(entry.dyn_fg_params == nil, 'flat dyn params key was not removed during inflate', scope)
+h.assert_true(entry.dyn_fg_palette == nil, 'flat dyn palette key was not removed during inflate', scope)
 h.assert_true(entry.dyn_bg_mode == nil, 'flat dyn bg mode key was not removed during inflate', scope)
 h.assert_true(entry.dyn_bg_speed == nil, 'flat dyn bg speed key was not removed during inflate', scope)
+h.assert_true(entry.dyn_bg_params == nil, 'flat dyn bg params key was not removed during inflate', scope)
+h.assert_true(entry.dyn_bg_palette == nil, 'flat dyn bg palette key was not removed during inflate', scope)
 
 local flat = model.flatten_entry({
   fg = '#101010',
   dynamic = {
-    fg = { mode = 'rgb', speed = 1500 },
+    fg = {
+      mode = 'rgb',
+      speed = 1500,
+      params = { phase = 0.25 },
+      palette = { '#000000', '#ffffff' },
+    },
     sp = { mode = 'breath', speed = 2500 },
   },
 })
 h.assert_equal(flat.dyn_fg_mode, 'rgb', 'dynamic fg mode did not flatten', scope)
 h.assert_equal(flat.dyn_fg_speed, 1500, 'dynamic fg speed did not flatten', scope)
+h.assert_true(type(flat.dyn_fg_params) == 'string', 'dynamic fg params did not flatten', scope)
+h.assert_true(type(flat.dyn_fg_palette) == 'string', 'dynamic fg palette did not flatten', scope)
 h.assert_equal(flat.dyn_sp_mode, 'breath', 'dynamic sp mode did not flatten', scope)
 h.assert_equal(flat.dyn_sp_speed, 2500, 'dynamic sp speed did not flatten', scope)
 h.assert_true(flat.dynamic == nil, 'runtime dynamic table leaked into flat entry', scope)
+
+local flat_round_trip = model.inflate_entry(flat)
+h.assert_equal(flat_round_trip.dynamic.fg.params.phase, 0.25, 'flat dyn params did not round-trip', scope)
+h.assert_equal(flat_round_trip.dynamic.fg.palette[2], '#ffffff', 'flat dyn palette did not round-trip', scope)
+
+local stale_flat = model.flatten_entry({
+  dyn_fg_params = '{"phase":0.25}',
+  dyn_fg_palette = '["#000000"]',
+  dynamic = {
+    fg = { mode = 'rgb', speed = 1500, params = {}, palette = {} },
+  },
+})
+h.assert_true(stale_flat.dyn_fg_params == nil, 'empty dynamic params did not clear stale flat key', scope)
+h.assert_true(stale_flat.dyn_fg_palette == nil, 'empty dynamic palette did not clear stale flat key', scope)
 
 h.assert_equal(effects.rgb(0, 3000), '#ff0000', 'rgb start color is wrong', scope)
 h.assert_equal(effects.rgb(1000, 3000), '#00ff00', 'rgb one-third color is wrong', scope)
@@ -110,12 +144,7 @@ runtime.sync_group('HlcraftDynamicDisableRestore', { fg = '#333333' }, {
 })
 runtime.tick(1000)
 local animated_disable_spec = vim.api.nvim_get_hl(0, { name = 'HlcraftDynamicDisableRestore', create = false })
-h.assert_equal(
-  animated_disable_spec.fg,
-  tonumber('00ff00', 16),
-  'disable regression setup did not animate fg',
-  scope
-)
+h.assert_equal(animated_disable_spec.fg, tonumber('00ff00', 16), 'disable regression setup did not animate fg', scope)
 config.setup({
   dynamic = {
     enabled = false,
@@ -124,12 +153,7 @@ config.setup({
 })
 runtime.tick(2000)
 local disabled_restore_spec = vim.api.nvim_get_hl(0, { name = 'HlcraftDynamicDisableRestore', create = false })
-h.assert_equal(
-  disabled_restore_spec.fg,
-  tonumber('333333', 16),
-  'disabling dynamic did not restore base fg',
-  scope
-)
+h.assert_equal(disabled_restore_spec.fg, tonumber('333333', 16), 'disabling dynamic did not restore base fg', scope)
 h.assert_equal(runtime.active_count(), 0, 'disabling dynamic left active runtime tasks', scope)
 
 config.setup({

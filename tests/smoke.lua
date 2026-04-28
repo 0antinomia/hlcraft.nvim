@@ -122,6 +122,20 @@ instance:rerender()
 assert_equal(instance.state.name_query, 'normal', 'name query did not sync from buffer')
 assert_true(#instance.state.results > 0, 'search produced no results for query "normal"')
 
+local name_start_row = select(1, input_model.get_input_pos(instance, 'name'))
+assert_true(name_start_row ~= nil, 'failed to locate name input row')
+local lines_before_input_delete = vim.api.nvim_buf_get_lines(instance.state.buf, 0, -1, false)
+vim.api.nvim_win_set_cursor(win, { name_start_row + 1, 0 })
+press_normal('dd')
+local lines_after_input_delete = vim.api.nvim_buf_get_lines(instance.state.buf, 0, -1, false)
+assert_equal(input_model.get_input_value(instance, 'name'), 'normal', 'd/dd modified the name input row')
+assert_equal(#lines_after_input_delete, #lines_before_input_delete, 'd/dd changed workspace buffer line count')
+assert_equal(
+  lines_after_input_delete[name_start_row + 1],
+  lines_before_input_delete[name_start_row + 1],
+  'd/dd deleted the name input row'
+)
+
 local target_line = find_result_line(instance, 1)
 assert_true(target_line ~= nil, 'failed to find first result line')
 vim.api.nvim_win_set_cursor(win, { target_line, 0 })
