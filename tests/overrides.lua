@@ -63,6 +63,32 @@ h.assert_equal(
   scope
 )
 
+local dynamic_ok, dynamic_err = overrides.set_dynamic('HlcraftTestNormal', 'fg', {
+  mode = 'rgb',
+  speed = 1500,
+})
+h.assert_true(dynamic_ok, dynamic_err or 'set_dynamic failed', scope)
+h.assert_equal(overrides.get('HlcraftTestNormal').dynamic.fg.mode, 'rgb', 'runtime dynamic mode was not set', scope)
+h.assert_equal(overrides.get('HlcraftTestNormal').dynamic.fg.speed, 1500, 'runtime dynamic speed was not set', scope)
+
+local dynamic_save_ok, dynamic_save_err = overrides.save()
+h.assert_true(dynamic_save_ok, dynamic_save_err or 'dynamic save failed', scope)
+local dynamic_loaded = storage.load(persist_dir)
+h.assert_equal(
+  dynamic_loaded.entries.HlcraftTestNormal.dynamic.fg.mode,
+  'rgb',
+  'saved dynamic override did not reload',
+  scope
+)
+
+local clear_dynamic_ok, clear_dynamic_err = overrides.set_dynamic('HlcraftTestNormal', 'fg', nil)
+h.assert_true(clear_dynamic_ok, clear_dynamic_err or 'clearing dynamic failed', scope)
+h.assert_true(
+  overrides.get('HlcraftTestNormal').dynamic == nil,
+  'clearing last dynamic channel left dynamic table',
+  scope
+)
+
 overrides.clear('HlcraftTestComment')
 local group_only_ok, group_only_err = detail_values.apply_runtime(nil, 'HlcraftTestComment', { group = 'group-only' })
 h.assert_true(group_only_ok, group_only_err or 'group-only apply failed', scope)

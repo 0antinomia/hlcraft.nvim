@@ -65,4 +65,48 @@ local breath_high = effects.breath('#808080', 1000, 2000)
 h.assert_true(breath_low ~= breath_high, 'breath color did not change over phase', scope)
 h.assert_true(effects.breath('NONE', 1000, 2000) == nil, 'breath accepted NONE base color', scope)
 
+local config = require('hlcraft.config')
+local runtime = require('hlcraft.dynamic.runtime')
+
+config.setup({
+  dynamic = {
+    enabled = false,
+    interval_ms = 80,
+  },
+})
+vim.api.nvim_set_hl(0, 'HlcraftDynamicRuntime', { fg = '#111111', bg = '#222222' })
+runtime.stop()
+runtime.sync_group('HlcraftDynamicRuntime', { fg = '#111111', bg = '#222222' }, {
+  dynamic = {
+    fg = { mode = 'rgb', speed = 3000 },
+  },
+})
+runtime.tick(1000)
+local disabled_spec = vim.api.nvim_get_hl(0, { name = 'HlcraftDynamicRuntime', create = false })
+h.assert_equal(disabled_spec.fg, tonumber('111111', 16), 'disabled dynamic runtime changed fg', scope)
+
+config.setup({
+  dynamic = {
+    enabled = true,
+    interval_ms = 80,
+  },
+})
+runtime.sync_group('HlcraftDynamicRuntime', { fg = '#111111', bg = '#222222' }, {
+  dynamic = {
+    fg = { mode = 'rgb', speed = 3000 },
+    bg = { mode = 'breath', speed = 2000 },
+  },
+})
+runtime.tick(1000)
+local enabled_spec = vim.api.nvim_get_hl(0, { name = 'HlcraftDynamicRuntime', create = false })
+h.assert_equal(enabled_spec.fg, tonumber('00ff00', 16), 'enabled rgb dynamic did not update fg', scope)
+h.assert_true(enabled_spec.bg ~= tonumber('222222', 16), 'enabled breath dynamic did not update bg', scope)
+
+runtime.stop()
+local stopped_spec = vim.api.nvim_get_hl(0, { name = 'HlcraftDynamicRuntime', create = false })
+h.assert_equal(stopped_spec.fg, tonumber('111111', 16), 'runtime stop did not restore fg', scope)
+h.assert_equal(stopped_spec.bg, tonumber('222222', 16), 'runtime stop did not restore bg', scope)
+
+config.setup({})
+
 print('hlcraft dynamic: OK')

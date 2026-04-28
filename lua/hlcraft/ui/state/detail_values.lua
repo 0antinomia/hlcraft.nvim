@@ -1,4 +1,5 @@
 local overrides = require('hlcraft.overrides')
+local dynamic_model = require('hlcraft.dynamic.model')
 
 local M = {}
 
@@ -82,6 +83,17 @@ local function apply_entry(name, entry, group, keep_group)
       end
     end
   end
+  local dynamic = dynamic_model.normalize_dynamic(entry.dynamic)
+  if dynamic then
+    for _, key in ipairs(dynamic_model.channels) do
+      if dynamic[key] ~= nil then
+        local ok, err = overrides.set_dynamic(name, key, dynamic[key])
+        if not ok then
+          return false, err
+        end
+      end
+    end
+  end
 
   return true, nil
 end
@@ -112,6 +124,20 @@ function M.display_value(name, key, fallback)
     return entry[key]
   end
   return fallback
+end
+
+function M.dynamic_value(name, key)
+  local entry = M.runtime_entry(name)
+  local dynamic = dynamic_model.normalize_dynamic(entry.dynamic)
+  return dynamic and dynamic[key] or nil
+end
+
+function M.display_color_value(name, key, fallback)
+  local dynamic = M.dynamic_value(name, key)
+  if dynamic then
+    return ('dynamic:%s %dms'):format(dynamic.mode, dynamic.speed)
+  end
+  return M.display_value(name, key, fallback)
 end
 
 function M.is_dirty(name)
@@ -153,6 +179,23 @@ function M.apply_runtime(instance, name, patch)
         next_entry[key] = patch[key]
       end
     end
+  end
+  if type(patch.dynamic) == 'table' then
+    next_entry.dynamic = type(next_entry.dynamic) == 'table' and vim.deepcopy(next_entry.dynamic) or {}
+    for _, key in ipairs(dynamic_model.channels) do
+      if patch.dynamic[key] ~= nil then
+        if patch.dynamic[key] == vim.NIL then
+          next_entry.dynamic[key] = nil
+        else
+          local normalized = dynamic_model.normalize_channel(patch.dynamic[key])
+          if not normalized then
+            return false, ('Invalid dynamic spec for %s'):format(key)
+          end
+          next_entry.dynamic[key] = normalized
+        end
+      end
+    end
+    next_entry.dynamic = dynamic_model.normalize_dynamic(next_entry.dynamic)
   end
 
   local keep_group = patch.group ~= nil or group ~= M.persisted_group(name)

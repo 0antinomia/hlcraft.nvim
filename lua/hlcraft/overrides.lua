@@ -1,6 +1,7 @@
 local M = {}
 
 local color = require('hlcraft.color')
+local dynamic_model = require('hlcraft.dynamic.model')
 local highlights = require('hlcraft.highlights')
 local storage = require('hlcraft.storage')
 local apply = require('hlcraft.overrides.apply')
@@ -41,6 +42,8 @@ function M.bootstrap(force)
   if next(state.pending) ~= nil then
     apply.install_pending_hook()
   end
+
+  require('hlcraft.dynamic.runtime').start()
 end
 
 --- Apply all active overrides to the current colorscheme.
@@ -140,6 +143,40 @@ function M.set_color(name, key, value)
   end
 
   override_state.remove_empty_runtime_entry(name)
+  override_state.rebuild_active()
+  apply.apply_group(name)
+  return true, nil
+end
+
+--- Set or clear one dynamic color channel and apply it immediately.
+--- @param name string
+--- @param key '"fg"'|'"bg"'|'"sp"'
+--- @param spec table|nil
+--- @return boolean ok
+--- @return string|nil err
+function M.set_dynamic(name, key, spec)
+  if not dynamic_model.channel_set[key] then
+    return false, ('Unsupported dynamic key: %s'):format(tostring(key))
+  end
+
+  local normalized
+  if spec ~= nil then
+    normalized = dynamic_model.normalize_channel(spec)
+    if not normalized then
+      return false, ('Invalid dynamic spec for %s'):format(key)
+    end
+  end
+
+  override_state.ensure_runtime_group(name)
+  state.runtime[name] = state.runtime[name] or {}
+  state.runtime[name].dynamic = state.runtime[name].dynamic or {}
+  state.runtime[name].dynamic[key] = normalized
+  state.runtime[name] = override_state.compact_entry(state.runtime[name])
+
+  if state.runtime[name] == nil then
+    state.runtime_groups[name] = nil
+  end
+
   override_state.rebuild_active()
   apply.apply_group(name)
   return true, nil

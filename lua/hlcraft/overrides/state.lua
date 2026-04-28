@@ -1,5 +1,7 @@
 local M = {}
 
+local dynamic_model = require('hlcraft.dynamic.model')
+
 M.color_keys = { 'fg', 'bg', 'sp' }
 M.style_keys = {
   'bold',
@@ -43,6 +45,19 @@ function M.refresh_base_specs()
   M.data.base_specs = {}
 end
 
+function M.compact_entry(entry)
+  if type(entry) ~= 'table' then
+    return nil
+  end
+
+  entry.dynamic = dynamic_model.normalize_dynamic(entry.dynamic)
+  if next(entry) == nil then
+    return nil
+  end
+
+  return entry
+end
+
 function M.ensure_runtime_group(name)
   if M.data.runtime_groups[name] == nil or vim.trim(tostring(M.data.runtime_groups[name])) == '' then
     M.data.runtime_groups[name] = M.data.persisted_groups[name]
@@ -69,7 +84,8 @@ function M.known_groups()
 end
 
 function M.remove_empty_runtime_entry(name)
-  if M.data.runtime[name] and next(M.data.runtime[name]) == nil then
+  M.data.runtime[name] = M.compact_entry(M.data.runtime[name])
+  if M.data.runtime[name] == nil then
     M.data.runtime[name] = nil
     M.data.runtime_groups[name] = nil
   end

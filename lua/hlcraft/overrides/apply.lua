@@ -1,4 +1,5 @@
 local config = require('hlcraft.config')
+local dynamic_runtime = require('hlcraft.dynamic.runtime')
 local highlights = require('hlcraft.highlights')
 local presets = require('hlcraft.presets')
 local override_state = require('hlcraft.overrides.state')
@@ -84,6 +85,7 @@ function M.build_preset_overrides()
 end
 
 function M.refresh_base_specs()
+  dynamic_runtime.stop()
   override_state.refresh_base_specs()
 end
 
@@ -105,6 +107,7 @@ function M.apply_group(name)
   if not override or next(override) == nil then
     state.pending[name] = nil
     restore_group(name)
+    dynamic_runtime.clear_group(name, state.base_specs[name])
     return
   end
 
@@ -116,12 +119,16 @@ function M.apply_group(name)
 
   state.pending[name] = nil
   state.applying = true
-  local ok, err = pcall(state.original_set_hl, 0, name, merged_spec(name))
+  local spec = merged_spec(name)
+  local ok, err = pcall(state.original_set_hl, 0, name, spec)
   state.applying = false
 
   if not ok then
     vim.notify(('hlcraft: failed to apply highlight %s: %s'):format(name, tostring(err)), vim.log.levels.WARN)
+    return
   end
+
+  dynamic_runtime.sync_group(name, spec, override)
 end
 
 function M.install_pending_hook()
