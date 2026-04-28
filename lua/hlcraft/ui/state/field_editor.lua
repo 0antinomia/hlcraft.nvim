@@ -1,5 +1,7 @@
 local color = require('hlcraft.color')
+local dynamic_model = require('hlcraft.dynamic.model')
 local detail_values = require('hlcraft.ui.state.detail_values')
+local ui_fields = require('hlcraft.ui.fields')
 local results_state = require('hlcraft.ui.state.results')
 local workspace = require('hlcraft.ui.workspace')
 
@@ -30,6 +32,20 @@ end
 
 local function current_field(instance)
   return instance.state.field_editor and instance.state.field_editor.field or nil
+end
+
+local function current_dynamic(result, key)
+  return detail_values.dynamic_value(result.name, key)
+end
+
+local function next_mode(mode)
+  local modes = ui_fields.dynamic_modes
+  for index, candidate in ipairs(modes) do
+    if candidate == mode then
+      return modes[index + 1] or modes[1]
+    end
+  end
+  return modes[1]
 end
 
 local function menu_row_at_cursor(instance)
@@ -150,6 +166,9 @@ function M.set_color(instance, value)
   if not result or not color_keys[key] then
     return false, 'No color field is active'
   end
+  if current_dynamic(result, key) then
+    return false, 'Static color controls are disabled in dynamic mode'
+  end
 
   local normalized, err = color.normalize(value)
   if err then
@@ -165,6 +184,9 @@ function M.adjust_color(instance, channel, delta)
   local result = current_result(instance)
   if not result or not color_keys[key] then
     return false, 'No color field is active'
+  end
+  if current_dynamic(result, key) then
+    return false, 'Static color controls are disabled in dynamic mode'
   end
 
   local shift = channel_shifts[tostring(channel or ''):lower()]
@@ -191,6 +213,61 @@ function M.adjust_color(instance, channel, delta)
   local next_rgb = rgb + ((adjusted - component) * (2 ^ shift))
 
   return M.set_color(instance, color.int_to_hex(next_rgb))
+end
+
+function M.toggle_dynamic(instance)
+  local key = current_field(instance)
+  local result = current_result(instance)
+  if not result or not color_keys[key] then
+    return false, 'No color field is active'
+  end
+
+  local next_value = current_dynamic(result, key) and vim.NIL or dynamic_model.default_spec()
+  return apply_patch(instance, result, { dynamic = { [key] = next_value } }, key)
+end
+
+function M.cycle_dynamic_mode(instance)
+  local key = current_field(instance)
+  local result = current_result(instance)
+  if not result or not color_keys[key] then
+    return false, 'No color field is active'
+  end
+
+  local dynamic = current_dynamic(result, key)
+  if not dynamic then
+    return false, 'No dynamic color field is active'
+  end
+
+  return apply_patch(instance, result, {
+    dynamic = {
+      [key] = {
+        mode = next_mode(dynamic.mode),
+        speed = dynamic.speed,
+      },
+    },
+  }, key)
+end
+
+function M.adjust_dynamic_speed(instance, delta)
+  local key = current_field(instance)
+  local result = current_result(instance)
+  if not result or not color_keys[key] then
+    return false, 'No color field is active'
+  end
+
+  local dynamic = current_dynamic(result, key)
+  if not dynamic then
+    return false, 'No dynamic color field is active'
+  end
+
+  return apply_patch(instance, result, {
+    dynamic = {
+      [key] = {
+        mode = dynamic.mode,
+        speed = dynamic_model.normalize_speed(dynamic.speed + (tonumber(delta) or 0)),
+      },
+    },
+  }, key)
 end
 
 function M.set_group(instance, group_name)
