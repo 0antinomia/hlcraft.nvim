@@ -30,6 +30,9 @@ h.assert_equal(entry.dynamic.fg.speed, 1500, 'dyn_fg_speed did not inflate', sco
 h.assert_equal(entry.dynamic.bg.mode, 'breath', 'dyn_bg_mode did not inflate', scope)
 h.assert_equal(entry.dynamic.bg.speed, 2000, 'invalid dyn_bg_speed did not default', scope)
 h.assert_true(entry.dyn_fg_mode == nil, 'flat dyn key was not removed during inflate', scope)
+h.assert_true(entry.dyn_fg_speed == nil, 'flat dyn speed key was not removed during inflate', scope)
+h.assert_true(entry.dyn_bg_mode == nil, 'flat dyn bg mode key was not removed during inflate', scope)
+h.assert_true(entry.dyn_bg_speed == nil, 'flat dyn bg speed key was not removed during inflate', scope)
 
 local flat = model.flatten_entry({
   fg = '#101010',
