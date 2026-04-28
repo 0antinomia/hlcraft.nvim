@@ -33,6 +33,10 @@ local defaults = {
 --- @type table
 M.config = vim.deepcopy(defaults)
 
+local function is_finite_number(value)
+  return type(value) == 'number' and value == value and value ~= math.huge and value ~= -math.huge
+end
+
 local function normalize_from_none(value)
   if type(value) == 'boolean' then
     return {
@@ -226,6 +230,8 @@ function M.validate(user_config)
       if dynamic.interval_ms ~= nil then
         if type(dynamic.interval_ms) ~= 'number' then
           errors[#errors + 1] = 'dynamic.interval_ms: must be a number, got ' .. type(dynamic.interval_ms)
+        elseif not is_finite_number(dynamic.interval_ms) then
+          errors[#errors + 1] = 'dynamic.interval_ms: must be finite'
         elseif dynamic.interval_ms < 16 or dynamic.interval_ms > 1000 then
           errors[#errors + 1] = 'dynamic.interval_ms: must be between 16 and 1000'
         end

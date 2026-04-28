@@ -15,6 +15,9 @@ h.assert_equal(normalized.speed, 3000, 'speed did not normalize', scope)
 local fallback_speed = model.normalize_channel({ mode = 'rgb', speed = 'fast' })
 h.assert_equal(fallback_speed.speed, 2000, 'invalid speed did not use default', scope)
 
+local fallback_nan_speed = model.normalize_channel({ mode = 'rgb', speed = 0 / 0 })
+h.assert_equal(fallback_nan_speed.speed, 2000, 'NaN speed did not use default', scope)
+
 local unsupported = model.normalize_channel({ mode = 'sparkle', speed = 3000 })
 h.assert_true(unsupported == nil, 'unsupported mode was accepted', scope)
 
@@ -50,6 +53,12 @@ h.assert_true(flat.dynamic == nil, 'runtime dynamic table leaked into flat entry
 h.assert_equal(effects.rgb(0, 3000), '#ff0000', 'rgb start color is wrong', scope)
 h.assert_equal(effects.rgb(1000, 3000), '#00ff00', 'rgb one-third color is wrong', scope)
 h.assert_equal(effects.rgb(2000, 3000), '#0000ff', 'rgb two-third color is wrong', scope)
+h.assert_equal(
+  effects.compute({ mode = 'rgb', speed = 3000 }, '#111111', 1000),
+  '#00ff00',
+  'rgb compute dispatch is wrong',
+  scope
+)
 
 local breath_low = effects.breath('#808080', 0, 2000)
 local breath_high = effects.breath('#808080', 1000, 2000)

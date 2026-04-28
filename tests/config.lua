@@ -197,6 +197,9 @@ h.assert_true(not invalid_dynamic_enabled_ok, 'dynamic.enabled string was accept
 local invalid_dynamic_interval_ok = config.validate({ dynamic = { interval_ms = 0 } })
 h.assert_true(not invalid_dynamic_interval_ok, 'dynamic.interval_ms=0 was accepted', scope)
 
+local invalid_dynamic_nan_interval_ok = config.validate({ dynamic = { interval_ms = 0 / 0 } })
+h.assert_true(not invalid_dynamic_nan_interval_ok, 'dynamic.interval_ms=NaN was accepted', scope)
+
 local default_dynamic = config.setup({}).dynamic
 h.assert_equal(default_dynamic.enabled, false, 'empty config did not keep default dynamic.enabled', scope)
 h.assert_equal(default_dynamic.interval_ms, 80, 'empty config did not keep default dynamic.interval_ms', scope)
