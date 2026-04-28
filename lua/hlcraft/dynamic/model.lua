@@ -8,6 +8,10 @@ M.default_speed = 2000
 M.min_speed = 250
 M.max_speed = 10000
 
+local function is_finite_number(value)
+  return type(value) == 'number' and value == value and value ~= math.huge and value ~= -math.huge
+end
+
 function M.default_spec()
   return {
     mode = 'rgb',
@@ -19,7 +23,7 @@ end
 
 function M.normalize_speed(value)
   local speed = tonumber(value)
-  if speed == nil then
+  if not is_finite_number(speed) then
     return M.default_speed
   end
 
