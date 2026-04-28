@@ -64,6 +64,10 @@ require('hlcraft').setup({
       'ColorScheme',
     },
   },
+  dynamic = {
+    enabled = false,
+    interval_ms = 80,
+  },
   debounce_ms = 100,
   preview_key = 'z',
 })
@@ -153,6 +157,22 @@ Structured entries support:
 
 Set `enabled = false` to disable automatic replay entirely.
 
+#### `dynamic`
+
+Controls whether saved dynamic color overrides are animated at runtime.
+
+```lua
+dynamic = {
+  enabled = false,
+  interval_ms = 80,
+}
+```
+
+- `enabled`: when `false`, dynamic configuration is loaded and saved but does not animate
+- `interval_ms`: animation tick interval in milliseconds
+
+Dynamic color configuration is edited from the existing `FG`, `BG`, and `SP` editors. Press `d` in a color editor to toggle dynamic mode, `m` to switch between `rgb` and `breath`, and `+` / `-` to change speed.
+
 #### `debounce_ms`
 
 Debounce delay for search input updates.
@@ -209,6 +229,8 @@ vim.fn.stdpath('config') .. '/.hlcraft'
 ```
 
 Each file stores one top-level TOML section. Section names come from groups you explicitly select or create in the detail view. If an override has no group, hlcraft asks you to choose or create one before saving.
+
+Dynamic color settings are stored as hlcraft-specific flat keys such as `dyn_fg_mode` and `dyn_fg_speed`.
 
 Persisted overrides are loaded during `setup()` and replayed again on configured `reapply_events`.
 

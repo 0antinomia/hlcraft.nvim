@@ -64,6 +64,10 @@ require('hlcraft').setup({
       'ColorScheme',
     },
   },
+  dynamic = {
+    enabled = false,
+    interval_ms = 80,
+  },
   debounce_ms = 100,
   preview_key = 'z',
 })
@@ -153,6 +157,22 @@ reapply_events = {
 
 将 `enabled = false` 可以完全关闭自动重放。
 
+#### `dynamic`
+
+控制已保存的动态颜色 override 是否在运行时播放动画。
+
+```lua
+dynamic = {
+  enabled = false,
+  interval_ms = 80,
+}
+```
+
+- `enabled`：为 `false` 时，动态配置会被加载和保存，但不会播放
+- `interval_ms`：动画 tick 间隔，单位为毫秒
+
+动态颜色配置在现有 `FG`、`BG`、`SP` 编辑器里完成。在颜色编辑器中按 `d` 切换动态模式，按 `m` 在 `rgb` 和 `breath` 间切换，按 `+` / `-` 调整速度。
+
 #### `debounce_ms`
 
 搜索输入更新的 debounce 延迟。
@@ -209,6 +229,8 @@ vim.fn.stdpath('config') .. '/.hlcraft'
 ```
 
 每个文件保存一个顶层 TOML section。section 名称来自你在详情页里明确选择或新建的 group。如果某个 override 没有 group，hlcraft 会要求你先选择或新建一个 group，再进行保存。
+
+动态颜色会保存为 hlcraft 专属的扁平键，比如 `dyn_fg_mode` 和 `dyn_fg_speed`。
 
 持久化 override 会在 `setup()` 时加载，并在配置的 `reapply_events` 上再次应用。
 
