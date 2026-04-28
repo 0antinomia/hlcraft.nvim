@@ -188,4 +188,21 @@ local events_only_reapply = config.setup({
 h.assert_equal(events_only_reapply.enabled, true, 'events-only reapply_events did not default to enabled', scope)
 h.assert_equal(events_only_reapply.events[1], 'User', 'events-only reapply_events did not preserve events', scope)
 
+local dynamic_ok, dynamic_err = config.validate({ dynamic = { enabled = true, interval_ms = 120 } })
+h.assert_true(dynamic_ok, dynamic_err or 'valid dynamic config was rejected', scope)
+
+local invalid_dynamic_enabled_ok = config.validate({ dynamic = { enabled = 'yes' } })
+h.assert_true(not invalid_dynamic_enabled_ok, 'dynamic.enabled string was accepted', scope)
+
+local invalid_dynamic_interval_ok = config.validate({ dynamic = { interval_ms = 0 } })
+h.assert_true(not invalid_dynamic_interval_ok, 'dynamic.interval_ms=0 was accepted', scope)
+
+local default_dynamic = config.setup({}).dynamic
+h.assert_equal(default_dynamic.enabled, false, 'empty config did not keep default dynamic.enabled', scope)
+h.assert_equal(default_dynamic.interval_ms, 80, 'empty config did not keep default dynamic.interval_ms', scope)
+
+local custom_dynamic = config.setup({ dynamic = { enabled = true, interval_ms = 120 } }).dynamic
+h.assert_equal(custom_dynamic.enabled, true, 'dynamic enabled was not preserved', scope)
+h.assert_equal(custom_dynamic.interval_ms, 120, 'dynamic interval_ms was not preserved', scope)
+
 print('hlcraft config: OK')
