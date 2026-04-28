@@ -50,6 +50,17 @@ h.assert_true(
   'flat dynamic key leaked after load',
   scope
 )
+h.assert_equal(
+  dynamic_decoded.sections['dynamic.group'].DynamicNormal.dynamic.fg.mode,
+  'rgb',
+  'dynamic section fg mode did not load',
+  scope
+)
+h.assert_true(
+  dynamic_decoded.sections['dynamic.group'].DynamicNormal.dyn_fg_mode == nil,
+  'flat dynamic key leaked into section after load',
+  scope
+)
 
 local codec_data = codec.decode_lines({
   '["group"]',
@@ -57,6 +68,23 @@ local codec_data = codec.decode_lines({
 })
 h.assert_equal(codec_data.groups.Normal, 'group', 'codec.decode_lines did not assign group', scope)
 h.assert_equal(codec_data.entries.Normal.fg, '#ffffff', 'codec.decode_lines did not parse entry', scope)
+
+local codec_dynamic_data = codec.decode_lines({
+  '["group"]',
+  '"Normal" = { dyn_fg_mode = "rgb", dyn_fg_speed = 1500 }',
+})
+h.assert_equal(
+  codec_dynamic_data.entries.Normal.dyn_fg_mode,
+  'rgb',
+  'codec.decode_lines dropped underscored dynamic mode key',
+  scope
+)
+h.assert_equal(
+  codec_dynamic_data.entries.Normal.dyn_fg_speed,
+  1500,
+  'codec.decode_lines dropped underscored dynamic speed key',
+  scope
+)
 
 local encoded = table.concat(
   codec.encode_section('group', {
@@ -121,6 +149,17 @@ h.assert_equal(
   saved.entries.DynamicNormal.dynamic.bg.speed,
   2500,
   'saved dynamic bg speed did not reload',
+  scope
+)
+h.assert_equal(
+  saved.sections['dynamic/group'].DynamicNormal.dynamic.fg.mode,
+  'rgb',
+  'saved dynamic section fg mode did not reload',
+  scope
+)
+h.assert_true(
+  saved.sections['dynamic/group'].DynamicNormal.dyn_fg_mode == nil,
+  'flat dynamic key leaked into saved section after reload',
   scope
 )
 local dynamic_content = h.read_file(files.file_path(persist_dir, 'dynamic/group'))
