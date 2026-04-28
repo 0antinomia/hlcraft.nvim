@@ -27,6 +27,30 @@ h.assert_equal(decoded.entries['Normal Float'].note, 'quoted "value"', 'escaped 
 h.assert_equal(decoded.groups['Line,WithComma'], 'ui.group', 'quoted key with comma did not parse', scope)
 h.assert_equal(decoded.entries['Line,WithComma'].italic, false, 'false boolean scalar did not parse', scope)
 
+h.write_file(persist_dir .. '/dynamic.toml', {
+  '["dynamic.group"]',
+  '"DynamicNormal" = { fg = "#101010", dyn_fg_mode = "rgb", dyn_fg_speed = 1500 }',
+})
+
+local dynamic_decoded = storage.load(persist_dir)
+h.assert_equal(
+  dynamic_decoded.entries.DynamicNormal.dynamic.fg.mode,
+  'rgb',
+  'dynamic fg mode did not load',
+  scope
+)
+h.assert_equal(
+  dynamic_decoded.entries.DynamicNormal.dynamic.fg.speed,
+  1500,
+  'dynamic fg speed did not load',
+  scope
+)
+h.assert_true(
+  dynamic_decoded.entries.DynamicNormal.dyn_fg_mode == nil,
+  'flat dynamic key leaked after load',
+  scope
+)
+
 local codec_data = codec.decode_lines({
   '["group"]',
   '"Normal" = { fg = "#ffffff", bg = "NONE" }',
@@ -55,9 +79,17 @@ h.write_file(persist_dir .. '/stale.toml', {
 local save_ok, save_err = storage.save({
   Normal = { fg = '#111111' },
   Comment = {},
+  DynamicNormal = {
+    fg = '#101010',
+    dynamic = {
+      fg = { mode = 'rgb', speed = 1500 },
+      bg = { mode = 'breath', speed = 2500 },
+    },
+  },
 }, {
   Normal = 'main/group',
   Comment = 'group-only',
+  DynamicNormal = 'dynamic/group',
 }, persist_dir)
 h.assert_true(save_ok, save_err or 'storage.save failed', scope)
 
@@ -79,6 +111,29 @@ h.assert_equal(saved.groups.Normal, 'main/group', 'saved override group did not 
 h.assert_true(saved.entries.Comment ~= nil, 'group-only save did not reload entry', scope)
 h.assert_equal(next(saved.entries.Comment), nil, 'group-only save persisted fields', scope)
 h.assert_equal(saved.groups.Comment, 'group-only', 'group-only save did not reload group', scope)
+h.assert_equal(
+  saved.entries.DynamicNormal.dynamic.fg.mode,
+  'rgb',
+  'saved dynamic fg mode did not reload',
+  scope
+)
+h.assert_equal(
+  saved.entries.DynamicNormal.dynamic.bg.speed,
+  2500,
+  'saved dynamic bg speed did not reload',
+  scope
+)
+local dynamic_content = h.read_file(files.file_path(persist_dir, 'dynamic/group'))
+h.assert_true(
+  dynamic_content:find('dyn_fg_mode = "rgb"', 1, true) ~= nil,
+  'saved TOML did not include dyn_fg_mode',
+  scope
+)
+h.assert_true(
+  dynamic_content:find('dyn_bg_speed = 2500', 1, true) ~= nil,
+  'saved TOML did not include dyn_bg_speed',
+  scope
+)
 
 vim.fn.delete(persist_dir, 'rf')
 print('hlcraft storage: OK')
