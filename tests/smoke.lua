@@ -190,6 +190,24 @@ assert_equal(overrides.get(result_name).fg, '#112733', 'G key did not increase g
 press_normal('g')
 assert_equal(overrides.get(result_name).fg, '#112233', 'g key did not decrease green channel in color editor')
 
+press_normal('d')
+assert_equal(overrides.get(result_name).dynamic.fg.mode, 'rgb', 'd key did not enable dynamic fg')
+assert_equal(overrides.get(result_name).dynamic.fg.speed, 2000, 'dynamic fg default speed is wrong')
+local dynamic_editor_text = table.concat(vim.api.nvim_buf_get_lines(instance.state.buf, 0, -1, false), '\n')
+assert_true(dynamic_editor_text:find('Mode: dynamic', 1, true) ~= nil, 'dynamic editor did not render after d key')
+
+press_normal('m')
+assert_equal(overrides.get(result_name).dynamic.fg.mode, 'breath', 'm key did not cycle dynamic mode')
+press_normal('+')
+assert_equal(overrides.get(result_name).dynamic.fg.speed, 2250, '+ key did not increase dynamic speed')
+press_normal('-')
+assert_equal(overrides.get(result_name).dynamic.fg.speed, 2000, '- key did not decrease dynamic speed')
+
+press_normal('r')
+assert_equal(overrides.get(result_name).fg, '#112233', 'r key mutated static color in dynamic mode')
+press_normal('d')
+assert_true(overrides.get(result_name).dynamic == nil, 'd key did not disable dynamic fg')
+
 field_editor.open(instance, 'blend')
 field_editor.set_blend(instance, 10)
 press_normal('+')

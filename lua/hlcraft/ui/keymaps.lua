@@ -29,7 +29,7 @@ local function setup_input_boundary_keys(instance, buf)
   setup_deletion('<C-u>', input_actions.should_block_backward_delete)
   setup_deletion('<Del>', input_actions.should_block_forward_delete)
 
-  for _, lhs in ipairs({ 'x', 'X', 'S', 'd', 'D', 'c', 'C' }) do
+  for _, lhs in ipairs({ 'x', 'X', 'S', 'D', 'c', 'C' }) do
     vim.keymap.set('n', lhs, function()
       local win = workspace.get_win(instance)
       if not workspace.is_valid_win(win) then
@@ -92,7 +92,44 @@ function M.setup_workspace_keymaps(instance, buf)
     return ui_fields.detail_kinds[field]
   end
 
+  local function current_color_field_is_dynamic()
+    local field = instance.state.field_editor and instance.state.field_editor.field
+    local result = results_state.current_detail_result(instance)
+    return current_field_kind() == 'color'
+      and result ~= nil
+      and detail_values.dynamic_value(result.name, field) ~= nil
+  end
+
+  local function toggle_dynamic_color(fallback_key)
+    if current_field_kind() ~= 'color' then
+      if fallback_key then
+        feed_normal_key(fallback_key)
+      end
+      return
+    end
+    local ok, err = field_editor.toggle_dynamic(instance)
+    if not ok then
+      notify_error(err)
+    end
+  end
+
+  local function cycle_dynamic_mode(fallback_key)
+    if not current_color_field_is_dynamic() then
+      if fallback_key then
+        feed_normal_key(fallback_key)
+      end
+      return
+    end
+    local ok, err = field_editor.cycle_dynamic_mode(instance)
+    if not ok then
+      notify_error(err)
+    end
+  end
+
   local function adjust_color(channel, delta, fallback_key)
+    if current_color_field_is_dynamic() then
+      return
+    end
     if current_field_kind() == 'color' then
       local ok, err = field_editor.adjust_color(instance, channel, delta)
       if not ok then
@@ -290,10 +327,30 @@ function M.setup_workspace_keymaps(instance, buf)
   vim.keymap.set('n', 'n', function()
     set_color('NONE', 'n')
   end, opts)
+  vim.keymap.set('n', 'd', function()
+    toggle_dynamic_color('d')
+  end, opts)
+  vim.keymap.set('n', 'm', function()
+    cycle_dynamic_mode('m')
+  end, opts)
   vim.keymap.set('n', '+', function()
+    if current_color_field_is_dynamic() then
+      local ok, err = field_editor.adjust_dynamic_speed(instance, ui_fields.dynamic_speed_step)
+      if not ok then
+        notify_error(err)
+      end
+      return
+    end
     adjust_blend(ui_fields.blend_small_step, '+')
   end, opts)
   vim.keymap.set('n', '-', function()
+    if current_color_field_is_dynamic() then
+      local ok, err = field_editor.adjust_dynamic_speed(instance, -ui_fields.dynamic_speed_step)
+      if not ok then
+        notify_error(err)
+      end
+      return
+    end
     adjust_blend(-ui_fields.blend_small_step, '-')
   end, opts)
   vim.keymap.set('n', '>', function()
