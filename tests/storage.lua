@@ -29,25 +29,33 @@ h.assert_equal(decoded.entries['Line,WithComma'].italic, false, 'false boolean s
 
 h.write_file(persist_dir .. '/dynamic.toml', {
   '["dynamic.group"]',
-  '"DynamicNormal" = { fg = "#101010", dyn_fg_mode = "rgb", dyn_fg_speed = 1500 }',
+  '"DynamicNormal" = { fg = "#101010", dyn_fg_mode = "rgb", dyn_fg_params = "{\\"phase\\":0.25}", dyn_fg_palette = "[\\"#000000\\",\\"#ffffff\\"]", dyn_fg_speed = 1500 }',
 })
 
 local dynamic_decoded = storage.load(persist_dir)
+h.assert_equal(dynamic_decoded.entries.DynamicNormal.dynamic.fg.mode, 'rgb', 'dynamic fg mode did not load', scope)
+h.assert_equal(dynamic_decoded.entries.DynamicNormal.dynamic.fg.speed, 1500, 'dynamic fg speed did not load', scope)
 h.assert_equal(
-  dynamic_decoded.entries.DynamicNormal.dynamic.fg.mode,
-  'rgb',
-  'dynamic fg mode did not load',
+  dynamic_decoded.entries.DynamicNormal.dynamic.fg.params.phase,
+  0.25,
+  'dynamic fg params did not load',
   scope
 )
 h.assert_equal(
-  dynamic_decoded.entries.DynamicNormal.dynamic.fg.speed,
-  1500,
-  'dynamic fg speed did not load',
+  dynamic_decoded.entries.DynamicNormal.dynamic.fg.palette[2],
+  '#ffffff',
+  'dynamic fg palette did not load',
+  scope
+)
+h.assert_true(dynamic_decoded.entries.DynamicNormal.dyn_fg_mode == nil, 'flat dynamic key leaked after load', scope)
+h.assert_true(
+  dynamic_decoded.entries.DynamicNormal.dyn_fg_params == nil,
+  'flat dynamic params key leaked after load',
   scope
 )
 h.assert_true(
-  dynamic_decoded.entries.DynamicNormal.dyn_fg_mode == nil,
-  'flat dynamic key leaked after load',
+  dynamic_decoded.entries.DynamicNormal.dyn_fg_palette == nil,
+  'flat dynamic palette key leaked after load',
   scope
 )
 h.assert_equal(
@@ -110,7 +118,12 @@ local save_ok, save_err = storage.save({
   DynamicNormal = {
     fg = '#101010',
     dynamic = {
-      fg = { mode = 'rgb', speed = 1500 },
+      fg = {
+        mode = 'rgb',
+        speed = 1500,
+        params = { phase = 0.25 },
+        palette = { '#000000', '#ffffff' },
+      },
       bg = { mode = 'breath', speed = 2500 },
     },
   },
@@ -139,16 +152,18 @@ h.assert_equal(saved.groups.Normal, 'main/group', 'saved override group did not 
 h.assert_true(saved.entries.Comment ~= nil, 'group-only save did not reload entry', scope)
 h.assert_equal(next(saved.entries.Comment), nil, 'group-only save persisted fields', scope)
 h.assert_equal(saved.groups.Comment, 'group-only', 'group-only save did not reload group', scope)
+h.assert_equal(saved.entries.DynamicNormal.dynamic.fg.mode, 'rgb', 'saved dynamic fg mode did not reload', scope)
+h.assert_equal(saved.entries.DynamicNormal.dynamic.bg.speed, 2500, 'saved dynamic bg speed did not reload', scope)
 h.assert_equal(
-  saved.entries.DynamicNormal.dynamic.fg.mode,
-  'rgb',
-  'saved dynamic fg mode did not reload',
+  saved.entries.DynamicNormal.dynamic.fg.params.phase,
+  0.25,
+  'saved dynamic fg params did not reload',
   scope
 )
 h.assert_equal(
-  saved.entries.DynamicNormal.dynamic.bg.speed,
-  2500,
-  'saved dynamic bg speed did not reload',
+  saved.entries.DynamicNormal.dynamic.fg.palette[2],
+  '#ffffff',
+  'saved dynamic fg palette did not reload',
   scope
 )
 h.assert_equal(
@@ -171,6 +186,16 @@ h.assert_true(
 h.assert_true(
   dynamic_content:find('dyn_bg_speed = 2500', 1, true) ~= nil,
   'saved TOML did not include dyn_bg_speed',
+  scope
+)
+h.assert_true(
+  dynamic_content:find('dyn_fg_params = ', 1, true) ~= nil,
+  'saved TOML did not include dyn_fg_params',
+  scope
+)
+h.assert_true(
+  dynamic_content:find('dyn_fg_palette = ', 1, true) ~= nil,
+  'saved TOML did not include dyn_fg_palette',
   scope
 )
 

@@ -95,16 +95,11 @@ function M.setup_workspace_keymaps(instance, buf)
   local function current_color_field_is_dynamic()
     local field = instance.state.field_editor and instance.state.field_editor.field
     local result = results_state.current_detail_result(instance)
-    return current_field_kind() == 'color'
-      and result ~= nil
-      and detail_values.dynamic_value(result.name, field) ~= nil
+    return current_field_kind() == 'color' and result ~= nil and detail_values.dynamic_value(result.name, field) ~= nil
   end
 
-  local function toggle_dynamic_color(fallback_key)
+  local function toggle_dynamic_color()
     if current_field_kind() ~= 'color' then
-      if fallback_key then
-        feed_normal_key(fallback_key)
-      end
       return
     end
     local ok, err = field_editor.toggle_dynamic(instance)
@@ -328,7 +323,7 @@ function M.setup_workspace_keymaps(instance, buf)
     set_color('NONE', 'n')
   end, opts)
   vim.keymap.set('n', 'd', function()
-    toggle_dynamic_color('d')
+    toggle_dynamic_color()
   end, opts)
   vim.keymap.set('n', 'm', function()
     cycle_dynamic_mode('m')
