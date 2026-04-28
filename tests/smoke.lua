@@ -208,6 +208,27 @@ assert_equal(overrides.get(result_name).fg, '#112233', 'r key mutated static col
 press_normal('d')
 assert_true(overrides.get(result_name).dynamic == nil, 'd key did not disable dynamic fg')
 
+local dynamic_with_extensions_ok, dynamic_with_extensions_err = detail_values.apply_runtime(instance, result_name, {
+  dynamic = {
+    fg = {
+      mode = 'rgb',
+      speed = 2000,
+      params = { phase = 0.25 },
+      palette = { '#000000', '#ffffff' },
+    },
+  },
+})
+assert_true(dynamic_with_extensions_ok, dynamic_with_extensions_err or 'failed to seed dynamic fg extensions')
+field_editor.cycle_dynamic_mode(instance)
+assert_equal(overrides.get(result_name).dynamic.fg.mode, 'breath', 'dynamic mode did not cycle with extensions')
+assert_equal(overrides.get(result_name).dynamic.fg.params.phase, 0.25, 'dynamic mode cycle dropped params')
+assert_equal(overrides.get(result_name).dynamic.fg.palette[1], '#000000', 'dynamic mode cycle dropped palette')
+field_editor.adjust_dynamic_speed(instance, 250)
+assert_equal(overrides.get(result_name).dynamic.fg.speed, 2250, 'dynamic speed did not adjust with extensions')
+assert_equal(overrides.get(result_name).dynamic.fg.params.phase, 0.25, 'dynamic speed adjust dropped params')
+assert_equal(overrides.get(result_name).dynamic.fg.palette[1], '#000000', 'dynamic speed adjust dropped palette')
+field_editor.toggle_dynamic(instance)
+
 field_editor.open(instance, 'blend')
 field_editor.set_blend(instance, 10)
 press_normal('+')

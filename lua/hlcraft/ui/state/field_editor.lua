@@ -238,12 +238,12 @@ function M.cycle_dynamic_mode(instance)
     return false, 'No dynamic color field is active'
   end
 
+  local next_dynamic = vim.deepcopy(dynamic)
+  next_dynamic.mode = next_mode(dynamic.mode)
+
   return apply_patch(instance, result, {
     dynamic = {
-      [key] = {
-        mode = next_mode(dynamic.mode),
-        speed = dynamic.speed,
-      },
+      [key] = next_dynamic,
     },
   }, key)
 end
@@ -260,12 +260,12 @@ function M.adjust_dynamic_speed(instance, delta)
     return false, 'No dynamic color field is active'
   end
 
+  local next_dynamic = vim.deepcopy(dynamic)
+  next_dynamic.speed = dynamic_model.normalize_speed(dynamic.speed + (tonumber(delta) or 0))
+
   return apply_patch(instance, result, {
     dynamic = {
-      [key] = {
-        mode = dynamic.mode,
-        speed = dynamic_model.normalize_speed(dynamic.speed + (tonumber(delta) or 0)),
-      },
+      [key] = next_dynamic,
     },
   }, key)
 end
