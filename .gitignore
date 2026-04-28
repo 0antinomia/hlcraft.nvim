@@ -1,17 +1,33 @@
-# IDE / Editor
-.idea/
-.vscode/
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+*.orig
+
+# Documentation drafts and local agent notes
+/docs/*
+/AGENTS.md
+/CLAUDE.md
+/GEMINI.md
+
+# Editor and IDE metadata
+/.vscode/
+/.idea/
 *.swp
 *.swo
 *~
-.project
-.classpath
-.settings/
 
-# OS
+# Agent and local tooling metadata
+/.codex/
+/.claude/
+/.gemini/
+/.opencode/
+/.agent/
+/.agents/
+/.superpowers/
+/.worktrees/
+
+# OS metadata
 .DS_Store
+._*
 Thumbs.db
-
-# AI tools
-.claude/
-.codex/
