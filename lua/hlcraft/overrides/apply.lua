@@ -118,6 +118,11 @@ function M.apply_group(name)
   end
 
   state.pending[name] = nil
+  local dynamic_base_spec = dynamic_runtime.base_spec(name)
+  if dynamic_base_spec then
+    dynamic_runtime.clear_group(name, dynamic_base_spec)
+  end
+
   state.applying = true
   local spec = merged_spec(name)
   local ok, err = pcall(state.original_set_hl, 0, name, spec)

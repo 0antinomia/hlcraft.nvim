@@ -89,6 +89,52 @@ h.assert_true(
   scope
 )
 
+local config = require('hlcraft.config')
+local runtime = require('hlcraft.dynamic.runtime')
+local dynamic_config = vim.deepcopy(config.config)
+dynamic_config.dynamic = {
+  enabled = true,
+  interval_ms = 80,
+}
+config.setup(dynamic_config)
+
+vim.api.nvim_set_hl(0, 'HlcraftTestClearDynamicFrame', { fg = '#444444', bg = '#111111' })
+overrides.clear('HlcraftTestClearDynamicFrame')
+local frame_group_ok, frame_group_err = overrides.set_group('HlcraftTestClearDynamicFrame', 'main')
+h.assert_true(frame_group_ok, frame_group_err or 'clear dynamic frame set_group failed', scope)
+local frame_bg_ok, frame_bg_err = overrides.set_color('HlcraftTestClearDynamicFrame', 'bg', '#555555')
+h.assert_true(frame_bg_ok, frame_bg_err or 'clear dynamic frame set bg failed', scope)
+local frame_dynamic_ok, frame_dynamic_err = overrides.set_dynamic('HlcraftTestClearDynamicFrame', 'fg', {
+  mode = 'rgb',
+  speed = 3000,
+})
+h.assert_true(frame_dynamic_ok, frame_dynamic_err or 'clear dynamic frame set_dynamic failed', scope)
+runtime.tick(1000)
+local animated_frame_spec = vim.api.nvim_get_hl(0, { name = 'HlcraftTestClearDynamicFrame', create = false })
+h.assert_equal(
+  animated_frame_spec.fg,
+  tonumber('00ff00', 16),
+  'clear dynamic frame setup did not animate fg',
+  scope
+)
+local clear_frame_dynamic_ok, clear_frame_dynamic_err =
+  overrides.set_dynamic('HlcraftTestClearDynamicFrame', 'fg', nil)
+h.assert_true(clear_frame_dynamic_ok, clear_frame_dynamic_err or 'clear dynamic frame clear failed', scope)
+local cleared_frame_spec = vim.api.nvim_get_hl(0, { name = 'HlcraftTestClearDynamicFrame', create = false })
+h.assert_equal(
+  cleared_frame_spec.fg,
+  tonumber('444444', 16),
+  'clearing dynamic preserved animated fg frame',
+  scope
+)
+h.assert_equal(
+  cleared_frame_spec.bg,
+  tonumber('555555', 16),
+  'clearing dynamic dropped static bg override',
+  scope
+)
+runtime.stop()
+
 overrides.clear('HlcraftTestComment')
 local group_only_ok, group_only_err = detail_values.apply_runtime(nil, 'HlcraftTestComment', { group = 'group-only' })
 h.assert_true(group_only_ok, group_only_err or 'group-only apply failed', scope)
