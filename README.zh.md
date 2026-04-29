@@ -159,7 +159,7 @@ reapply_events = {
 
 #### `dynamic`
 
-控制已保存的动态颜色 override 是否在运行时播放动画。
+控制已保存的动态颜色 override 是否在运行时播放动画。动态颜色是 hlcraft 目前的一个早期实验能力：它可以让某个颜色通道在 override 生效后持续变化，而不是固定为一个静态的 `fg`、`bg` 或 `sp` 值。
 
 ```lua
 dynamic = {
@@ -168,10 +168,17 @@ dynamic = {
 }
 ```
 
-- `enabled`：为 `false` 时，动态配置会被加载和保存，但不会播放
-- `interval_ms`：动画 tick 间隔，单位为毫秒
+- `enabled`：为 `false` 时，动态配置会被加载和保存，但不会播放。
+- `interval_ms`：动画 tick 间隔，单位为毫秒。数值越小越流畅，但也会更频繁地写入高亮。
 
-动态颜色配置在现有 `FG`、`BG`、`SP` 编辑器里完成。在颜色编辑器中按 `d` 切换动态模式，按 `m` 在 `rgb` 和 `breath` 间切换，按 `+` / `-` 调整速度。
+动态颜色配置在现有 `FG`、`BG`、`SP` 编辑器里完成：
+
+- 在颜色编辑器中按 `d`，为当前通道切换动态模式。
+- 按 `m` 在当前支持的模式间切换：`rgb` 和 `breath`。
+- 按 `+` / `-` 调整效果速度。
+- 在详情页按 `s` 保存，保存流程和静态颜色 override 一致。
+
+当前实现刻意保持较小的可配置面。交互式 UI 目前只开放动态 `fg`、`bg`、`sp` 通道、两个内置模式和速度控制。效果参数、调色板等扩展字段已经会被持久化保留，便于后续实验，但暂时还不能在 UI 中配置。
 
 #### `debounce_ms`
 
@@ -230,7 +237,7 @@ vim.fn.stdpath('config') .. '/.hlcraft'
 
 每个文件保存一个顶层 TOML section。section 名称来自你在详情页里明确选择或新建的 group。如果某个 override 没有 group，hlcraft 会要求你先选择或新建一个 group，再进行保存。
 
-动态颜色会保存为 hlcraft 专属的扁平键，比如 `dyn_fg_mode` 和 `dyn_fg_speed`。
+动态颜色会保存为 hlcraft 专属的扁平键，比如 `dyn_fg_mode` 和 `dyn_fg_speed`。更高级的扩展数据会以 JSON 字符串形式保存到 `dyn_fg_params`、`dyn_fg_palette` 这类扁平键中。
 
 持久化 override 会在 `setup()` 时加载，并在配置的 `reapply_events` 上再次应用。
 
