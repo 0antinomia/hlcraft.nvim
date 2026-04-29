@@ -159,7 +159,7 @@ Set `enabled = false` to disable automatic replay entirely.
 
 #### `dynamic`
 
-Controls whether saved dynamic color overrides are animated at runtime.
+Controls whether saved dynamic color overrides are animated at runtime. Dynamic colors are an early experimental feature in hlcraft: they let a color channel keep changing after the override has been applied, instead of staying on one static `fg`, `bg`, or `sp` value.
 
 ```lua
 dynamic = {
@@ -168,10 +168,17 @@ dynamic = {
 }
 ```
 
-- `enabled`: when `false`, dynamic configuration is loaded and saved but does not animate
-- `interval_ms`: animation tick interval in milliseconds
+- `enabled`: when `false`, dynamic configuration is loaded and saved but does not animate.
+- `interval_ms`: animation tick interval in milliseconds. Lower values feel smoother but write highlights more often.
 
-Dynamic color configuration is edited from the existing `FG`, `BG`, and `SP` editors. Press `d` in a color editor to toggle dynamic mode, `m` to switch between `rgb` and `breath`, and `+` / `-` to change speed.
+Dynamic color configuration is edited from the existing `FG`, `BG`, and `SP` editors:
+
+- Press `d` in a color editor to toggle dynamic mode for that channel.
+- Press `m` to switch between the current modes: `rgb` and `breath`.
+- Press `+` / `-` to change the effect speed.
+- Press `s` in the detail view to persist the override, just like static color changes.
+
+The current implementation is intentionally small. It only exposes dynamic `fg`, `bg`, and `sp` channels, two built-in modes, and speed control in the interactive UI. Extension fields such as effect params and palettes are preserved by persistence for future experiments, but they are not yet configurable from the UI.
 
 #### `debounce_ms`
 
@@ -230,7 +237,7 @@ vim.fn.stdpath('config') .. '/.hlcraft'
 
 Each file stores one top-level TOML section. Section names come from groups you explicitly select or create in the detail view. If an override has no group, hlcraft asks you to choose or create one before saving.
 
-Dynamic color settings are stored as hlcraft-specific flat keys such as `dyn_fg_mode` and `dyn_fg_speed`.
+Dynamic color settings are stored as hlcraft-specific flat keys such as `dyn_fg_mode` and `dyn_fg_speed`. Advanced extension data is stored as JSON strings in flat keys such as `dyn_fg_params` and `dyn_fg_palette`.
 
 Persisted overrides are loaded during `setup()` and replayed again on configured `reapply_events`.
 
