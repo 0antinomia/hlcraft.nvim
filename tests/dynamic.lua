@@ -154,6 +154,38 @@ local breath_high = effects.breath('#808080', 1000, 2000)
 h.assert_true(breath_low ~= breath_high, 'breath color did not change over phase', scope)
 h.assert_true(effects.breath('NONE', 1000, 2000) == nil, 'breath accepted NONE base color', scope)
 
+h.assert_equal(
+  effects.rgb(500, 2000, { '#000000', '#ffffff' }),
+  '#808080',
+  'custom two-color rgb palette did not interpolate halfway',
+  scope
+)
+h.assert_equal(
+  effects.rgb(1500, 2000, { '#000000', '#ffffff' }),
+  '#808080',
+  'custom two-color rgb palette did not interpolate closed loop',
+  scope
+)
+
+local breath_low = effects.breath('#808080', 0, 2000, { min = 0.25, max = 0.75 })
+local breath_high = effects.breath('#808080', 1000, 2000, { min = 0.25, max = 0.75 })
+h.assert_equal(breath_low, '#202020', 'breath min parameter did not affect low point', scope)
+h.assert_equal(breath_high, '#606060', 'breath max parameter did not affect high point', scope)
+
+local computed_palette = effects.compute({
+  mode = 'rgb',
+  speed = 2000,
+  palette = { '#000000', '#ffffff' },
+}, '#123456', 500)
+h.assert_equal(computed_palette, '#808080', 'compute did not pass palette to rgb effect', scope)
+
+local computed_breath = effects.compute({
+  mode = 'breath',
+  speed = 2000,
+  params = { min = 0.25, max = 0.75 },
+}, '#808080', 1000)
+h.assert_equal(computed_breath, '#606060', 'compute did not pass params to breath effect', scope)
+
 local config = require('hlcraft.config')
 local runtime = require('hlcraft.dynamic.runtime')
 
