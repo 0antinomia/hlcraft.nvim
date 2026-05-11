@@ -52,6 +52,7 @@ M.detail_kinds = {
 M.color_step = 5
 M.dynamic_modes = { 'rgb', 'breath' }
 M.dynamic_speed_step = 250
+M.dynamic_param_step = 0.05
 M.dynamic_min_speed = 250
 M.dynamic_max_speed = 10000
 M.dynamic_palette_min_size = 2

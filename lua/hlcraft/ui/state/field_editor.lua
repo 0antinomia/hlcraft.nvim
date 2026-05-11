@@ -103,6 +103,16 @@ local function selected_palette_index(instance, dynamic)
   return math.max(1, math.min(count, stored))
 end
 
+local function selected_param_name(instance)
+  local editor_row = editor_row_at_cursor(instance)
+  local row_key = editor_row and editor_row.key or ''
+  return tostring(row_key):match('^dynamic_param:(%w+)$')
+end
+
+local function is_finite_number(value)
+  return type(value) == 'number' and value == value and value ~= math.huge and value ~= -math.huge
+end
+
 local function apply_patch(instance, result, patch, preserve_field)
   local ok, err = detail_values.apply_runtime(instance, result.name, patch)
   if not ok then
@@ -308,6 +318,55 @@ function M.adjust_dynamic_speed(instance, delta)
       [key] = next_dynamic,
     },
   }, key)
+end
+
+function M.set_dynamic_param(instance, name, value)
+  local key = current_field(instance)
+  local result = current_result(instance)
+  if not result or not color_keys[key] then
+    return false, 'No color field is active'
+  end
+  local dynamic = current_dynamic_copy(result, key)
+  if not dynamic or dynamic.mode ~= 'breath' then
+    return false, 'No breath dynamic field is active'
+  end
+  if name ~= 'min' and name ~= 'max' then
+    return false, ('Unsupported dynamic param: %s'):format(tostring(name))
+  end
+  local number_value = tonumber(value)
+  if not is_finite_number(number_value) then
+    return false, 'Breath dynamic param must be a number'
+  end
+  dynamic.params = dynamic_model.normalize_params('breath', dynamic.params)
+  dynamic.params[name] = number_value
+  dynamic.params = dynamic_model.normalize_params('breath', dynamic.params)
+  return apply_dynamic(instance, result, key, dynamic)
+end
+
+function M.selected_param_name(instance)
+  return selected_param_name(instance)
+end
+
+M.selected_dynamic_param_name = M.selected_param_name
+
+function M.adjust_dynamic_param(instance, name, delta)
+  local key = current_field(instance)
+  local result = current_result(instance)
+  if not result or not color_keys[key] then
+    return false, 'No color field is active'
+  end
+
+  local dynamic = current_dynamic(result, key)
+  if not dynamic or dynamic.mode ~= 'breath' then
+    return false, 'No breath dynamic field is active'
+  end
+
+  local params = dynamic_model.normalize_params('breath', dynamic.params)
+  local param_name = name or M.selected_param_name(instance) or 'min'
+  if param_name ~= 'min' and param_name ~= 'max' then
+    return false, ('Unsupported dynamic param: %s'):format(tostring(param_name))
+  end
+  return M.set_dynamic_param(instance, param_name, params[param_name] + (tonumber(delta) or 0))
 end
 
 function M.select_dynamic_palette(instance, delta)
