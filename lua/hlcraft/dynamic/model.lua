@@ -1,3 +1,5 @@
+local color = require('hlcraft.color')
+
 local M = {}
 
 M.channels = { 'fg', 'bg', 'sp' }
@@ -7,9 +9,29 @@ M.mode_set = { rgb = true, breath = true }
 M.default_speed = 2000
 M.min_speed = 250
 M.max_speed = 10000
+M.default_rgb_palette = { '#ff0000', '#00ff00', '#0000ff' }
+M.default_breath_params = {
+  min = 0.45,
+  max = 1.0,
+}
+M.breath_param_step = 0.05
 
 local function is_finite_number(value)
   return type(value) == 'number' and value == value and value ~= math.huge and value ~= -math.huge
+end
+
+local function clamp_number(value, min, max, fallback)
+  local number = tonumber(value)
+  if not is_finite_number(number) then
+    return fallback
+  end
+  if number < min then
+    return min
+  end
+  if number > max then
+    return max
+  end
+  return number
 end
 
 local function non_empty_table(value)
@@ -45,8 +67,44 @@ function M.default_spec()
     mode = 'rgb',
     speed = M.default_speed,
     params = {},
-    palette = nil,
+    palette = M.default_palette(),
   }
+end
+
+function M.default_palette()
+  return vim.deepcopy(M.default_rgb_palette)
+end
+
+function M.normalize_palette(palette)
+  local normalized = {}
+  if type(palette) == 'table' then
+    for _, value in ipairs(palette) do
+      if type(value) == 'string' then
+        local normalized_color = color.normalize(value)
+        if normalized_color and normalized_color ~= 'NONE' then
+          normalized[#normalized + 1] = normalized_color
+        end
+      end
+    end
+  end
+  if #normalized < 2 then
+    return M.default_palette()
+  end
+  return normalized
+end
+
+function M.normalize_params(mode, params)
+  local normalized = type(params) == 'table' and vim.deepcopy(params) or {}
+  if mode ~= 'breath' then
+    return normalized
+  end
+
+  normalized.min = clamp_number(normalized.min, 0, 1, M.default_breath_params.min)
+  normalized.max = clamp_number(normalized.max, 0, 1, M.default_breath_params.max)
+  if normalized.min > normalized.max then
+    normalized.min, normalized.max = normalized.max, normalized.min
+  end
+  return normalized
 end
 
 function M.normalize_speed(value)
@@ -70,12 +128,21 @@ function M.normalize_channel(spec)
     return nil
   end
 
-  return {
-    mode = spec.mode,
+  local mode = spec.mode
+  local normalized = {
+    mode = mode,
     speed = M.normalize_speed(spec.speed),
-    params = type(spec.params) == 'table' and vim.deepcopy(spec.params) or {},
-    palette = type(spec.palette) == 'table' and vim.deepcopy(spec.palette) or nil,
+    params = M.normalize_params(mode, spec.params),
+    palette = nil,
   }
+
+  if mode == 'rgb' then
+    normalized.palette = M.normalize_palette(spec.palette)
+  elseif type(spec.palette) == 'table' then
+    normalized.palette = vim.deepcopy(spec.palette)
+  end
+
+  return normalized
 end
 
 function M.normalize_dynamic(dynamic)
