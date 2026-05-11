@@ -38,6 +38,14 @@ local function current_dynamic(result, key)
   return detail_values.dynamic_value(result.name, key)
 end
 
+local function current_dynamic_copy(result, key)
+  local dynamic = current_dynamic(result, key)
+  if not dynamic then
+    return nil
+  end
+  return vim.deepcopy(dynamic)
+end
+
 local function next_mode(mode)
   local modes = ui_fields.dynamic_modes
   for index, candidate in ipairs(modes) do
@@ -79,6 +87,22 @@ local function editor_row_at_cursor(instance)
   return nil
 end
 
+local function selected_palette_index(instance, dynamic)
+  local editor_row = editor_row_at_cursor(instance)
+  local row_key = editor_row and editor_row.key or ''
+  local index = tonumber(tostring(row_key):match('^dynamic_palette:(%d+)$'))
+  local count = type(dynamic.palette) == 'table' and #dynamic.palette or 0
+  if index and dynamic.palette and dynamic.palette[index] then
+    return index
+  end
+  if count == 0 then
+    return 1
+  end
+
+  local stored = tonumber(instance.state.field_editor.palette_index) or 1
+  return math.max(1, math.min(count, stored))
+end
+
 local function apply_patch(instance, result, patch, preserve_field)
   local ok, err = detail_values.apply_runtime(instance, result.name, patch)
   if not ok then
@@ -90,6 +114,22 @@ local function apply_patch(instance, result, patch, preserve_field)
     instance.state.field_editor.field = preserve_field
   end
   return true, nil
+end
+
+local function apply_dynamic(instance, result, key, dynamic)
+  return apply_patch(instance, result, {
+    dynamic = {
+      [key] = dynamic,
+    },
+  }, key)
+end
+
+local function jump_to_palette_index(instance, index)
+  local row = instance.state.geometry.editor_rows[('dynamic_palette:%d'):format(index)]
+  local win = workspace.get_win(instance)
+  if row and workspace.is_valid_win(win) then
+    pcall(vim.api.nvim_win_set_cursor, win, { row.line, 0 })
+  end
 end
 
 local function fallback_color(result, key)
@@ -268,6 +308,99 @@ function M.adjust_dynamic_speed(instance, delta)
       [key] = next_dynamic,
     },
   }, key)
+end
+
+function M.select_dynamic_palette(instance, delta)
+  local key = current_field(instance)
+  local result = current_result(instance)
+  if not result or not color_keys[key] then
+    return false, 'No color field is active'
+  end
+  local dynamic = current_dynamic(result, key)
+  if not dynamic or dynamic.mode ~= 'rgb' then
+    return false, 'No RGB dynamic field is active'
+  end
+
+  local count = #(dynamic.palette or dynamic_model.default_palette())
+  local current = selected_palette_index(instance, dynamic)
+  local next_index = ((current - 1 + delta) % count) + 1
+  instance.state.field_editor.palette_index = next_index
+  instance:rerender()
+  jump_to_palette_index(instance, next_index)
+
+  return true, nil
+end
+
+function M.add_dynamic_palette_color(instance)
+  local key = current_field(instance)
+  local result = current_result(instance)
+  if not result or not color_keys[key] then
+    return false, 'No color field is active'
+  end
+  local dynamic = current_dynamic_copy(result, key)
+  if not dynamic or dynamic.mode ~= 'rgb' then
+    return false, 'No RGB dynamic field is active'
+  end
+
+  dynamic.palette = dynamic_model.normalize_palette(dynamic.palette)
+  local index = selected_palette_index(instance, dynamic)
+  table.insert(dynamic.palette, index + 1, dynamic.palette[index])
+  instance.state.field_editor.palette_index = index + 1
+  local ok, err = apply_dynamic(instance, result, key, dynamic)
+  if ok then
+    jump_to_palette_index(instance, index + 1)
+  end
+  return ok, err
+end
+
+function M.delete_dynamic_palette_color(instance)
+  local key = current_field(instance)
+  local result = current_result(instance)
+  if not result or not color_keys[key] then
+    return false, 'No color field is active'
+  end
+  local dynamic = current_dynamic_copy(result, key)
+  if not dynamic or dynamic.mode ~= 'rgb' then
+    return false, 'No RGB dynamic field is active'
+  end
+
+  dynamic.palette = dynamic_model.normalize_palette(dynamic.palette)
+  if #dynamic.palette <= ui_fields.dynamic_palette_min_size then
+    return false, 'Palette must keep at least two colors'
+  end
+  local index = selected_palette_index(instance, dynamic)
+  table.remove(dynamic.palette, index)
+  instance.state.field_editor.palette_index = math.min(index, #dynamic.palette)
+  local ok, err = apply_dynamic(instance, result, key, dynamic)
+  if ok then
+    jump_to_palette_index(instance, instance.state.field_editor.palette_index)
+  end
+  return ok, err
+end
+
+function M.set_dynamic_palette_color(instance, value)
+  local key = current_field(instance)
+  local result = current_result(instance)
+  if not result or not color_keys[key] then
+    return false, 'No color field is active'
+  end
+  local dynamic = current_dynamic_copy(result, key)
+  if not dynamic or dynamic.mode ~= 'rgb' then
+    return false, 'No RGB dynamic field is active'
+  end
+
+  local normalized, err = color.normalize(value)
+  if err or normalized == nil or normalized == 'NONE' then
+    return false, err or 'Palette color must be a real color'
+  end
+  dynamic.palette = dynamic_model.normalize_palette(dynamic.palette)
+  local index = selected_palette_index(instance, dynamic)
+  dynamic.palette[index] = normalized
+  local ok, apply_err = apply_dynamic(instance, result, key, dynamic)
+  if ok then
+    jump_to_palette_index(instance, index)
+  end
+  return ok, apply_err
 end
 
 function M.set_group(instance, group_name)
