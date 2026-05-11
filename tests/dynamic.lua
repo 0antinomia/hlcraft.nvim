@@ -121,6 +121,20 @@ h.assert_equal(flat.dyn_sp_mode, 'breath', 'dynamic sp mode did not flatten', sc
 h.assert_equal(flat.dyn_sp_speed, 2500, 'dynamic sp speed did not flatten', scope)
 h.assert_true(flat.dynamic == nil, 'runtime dynamic table leaked into flat entry', scope)
 
+local flat_default_rgb = model.flatten_entry({
+  dynamic = {
+    fg = { mode = 'rgb', speed = 1500 },
+  },
+})
+h.assert_true(flat_default_rgb.dyn_fg_palette == nil, 'default rgb palette should not flatten', scope)
+
+local flat_custom_rgb = model.flatten_entry({
+  dynamic = {
+    fg = { mode = 'rgb', speed = 1500, palette = { '#000000', '#ffffff' } },
+  },
+})
+h.assert_true(type(flat_custom_rgb.dyn_fg_palette) == 'string', 'custom rgb palette should flatten', scope)
+
 local flat_round_trip = model.inflate_entry(flat)
 h.assert_equal(flat_round_trip.dynamic.fg.params.phase, 0.25, 'flat dyn params did not round-trip', scope)
 h.assert_equal(flat_round_trip.dynamic.fg.palette[2], '#ffffff', 'flat dyn palette did not round-trip', scope)
@@ -133,11 +147,7 @@ local stale_flat = model.flatten_entry({
   },
 })
 h.assert_true(stale_flat.dyn_fg_params == nil, 'empty dynamic params did not clear stale flat key', scope)
-h.assert_true(
-  type(stale_flat.dyn_fg_palette) == 'string',
-  'empty dynamic palette did not flatten default palette',
-  scope
-)
+h.assert_true(stale_flat.dyn_fg_palette == nil, 'default dynamic palette did not clear stale flat key', scope)
 
 h.assert_equal(effects.rgb(0, 3000), '#ff0000', 'rgb start color is wrong', scope)
 h.assert_equal(effects.rgb(1000, 3000), '#00ff00', 'rgb one-third color is wrong', scope)

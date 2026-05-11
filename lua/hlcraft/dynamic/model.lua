@@ -62,6 +62,26 @@ local function encode_extension(value)
   return nil
 end
 
+local function same_list(left, right)
+  if type(left) ~= 'table' or type(right) ~= 'table' or #left ~= #right then
+    return false
+  end
+
+  for index, value in ipairs(left) do
+    if value ~= right[index] then
+      return false
+    end
+  end
+  return true
+end
+
+local function encode_palette(spec)
+  if spec.mode == 'rgb' and same_list(spec.palette, M.default_rgb_palette) then
+    return nil
+  end
+  return encode_extension(spec.palette)
+end
+
 function M.default_spec()
   return {
     mode = 'rgb',
@@ -219,7 +239,7 @@ function M.flatten_entry(entry)
       result[mode_key] = spec.mode
       result[speed_key] = spec.speed
       result[params_key] = encode_extension(spec.params)
-      result[palette_key] = encode_extension(spec.palette)
+      result[palette_key] = encode_palette(spec)
     end
   end
 
