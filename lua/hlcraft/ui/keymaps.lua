@@ -29,7 +29,7 @@ local function setup_input_boundary_keys(instance, buf)
   setup_deletion('<C-u>', input_actions.should_block_backward_delete)
   setup_deletion('<Del>', input_actions.should_block_forward_delete)
 
-  for _, lhs in ipairs({ 'x', 'X', 'S', 'D', 'c', 'C' }) do
+  for _, lhs in ipairs({ 'X', 'S', 'D', 'c', 'C' }) do
     vim.keymap.set('n', lhs, function()
       local win = workspace.get_win(instance)
       if not workspace.is_valid_win(win) then
@@ -92,10 +92,22 @@ function M.setup_workspace_keymaps(instance, buf)
     return ui_fields.detail_kinds[field]
   end
 
-  local function current_color_field_is_dynamic()
+  local function current_color_dynamic()
     local field = instance.state.field_editor and instance.state.field_editor.field
     local result = results_state.current_detail_result(instance)
-    return current_field_kind() == 'color' and result ~= nil and detail_values.dynamic_value(result.name, field) ~= nil
+    if current_field_kind() ~= 'color' or not result then
+      return nil
+    end
+    return detail_values.dynamic_value(result.name, field)
+  end
+
+  local function current_color_field_is_dynamic()
+    return current_color_dynamic() ~= nil
+  end
+
+  local function current_color_field_is_rgb_dynamic()
+    local dynamic = current_color_dynamic()
+    return dynamic ~= nil and dynamic.mode == 'rgb'
   end
 
   local function toggle_dynamic_color()
@@ -184,6 +196,18 @@ function M.setup_workspace_keymaps(instance, buf)
 
     local kind = ui_fields.detail_kinds[field]
     if kind == 'color' then
+      if current_color_field_is_rgb_dynamic() then
+        vim.ui.input({ prompt = 'Palette color: ' }, function(value)
+          if value == nil then
+            return
+          end
+          local ok, err = field_editor.set_dynamic_palette_color(instance, value)
+          if not ok then
+            notify_error(err)
+          end
+        end)
+        return true
+      end
       vim.ui.input({ prompt = field .. ': ' }, function(value)
         if value == nil then
           return
@@ -328,6 +352,26 @@ function M.setup_workspace_keymaps(instance, buf)
   vim.keymap.set('n', 'm', function()
     cycle_dynamic_mode('m')
   end, opts)
+  vim.keymap.set('n', '[', function()
+    if not current_color_field_is_rgb_dynamic() then
+      feed_normal_key('[')
+      return
+    end
+    local ok, err = field_editor.select_dynamic_palette(instance, -1)
+    if not ok then
+      notify_error(err)
+    end
+  end, opts)
+  vim.keymap.set('n', ']', function()
+    if not current_color_field_is_rgb_dynamic() then
+      feed_normal_key(']')
+      return
+    end
+    local ok, err = field_editor.select_dynamic_palette(instance, 1)
+    if not ok then
+      notify_error(err)
+    end
+  end, opts)
   vim.keymap.set('n', '+', function()
     if current_color_field_is_dynamic() then
       local ok, err = field_editor.adjust_dynamic_speed(instance, ui_fields.dynamic_speed_step)
@@ -370,6 +414,16 @@ function M.setup_workspace_keymaps(instance, buf)
       navigation.jump_to_row(instance, field.line, true)
     end
   end, opts)
+  vim.keymap.set('n', 'x', function()
+    if current_color_field_is_rgb_dynamic() then
+      local ok, err = field_editor.delete_dynamic_palette_color(instance)
+      if not ok then
+        notify_error(err)
+      end
+      return
+    end
+    feed_normal_key('x')
+  end, opts)
   vim.keymap.set('n', 'a', function()
     local win = workspace.get_win(instance)
     if not workspace.is_valid_win(win) then
@@ -378,6 +432,13 @@ function M.setup_workspace_keymaps(instance, buf)
     local field = input_model.get_input_field_at_row(instance, vim.api.nvim_win_get_cursor(win)[1] - 1)
     if field then
       navigation.jump_to_row(instance, field.line, true)
+      return
+    end
+    if current_color_field_is_rgb_dynamic() then
+      local ok, err = field_editor.add_dynamic_palette_color(instance)
+      if not ok then
+        notify_error(err)
+      end
     end
   end, opts)
 

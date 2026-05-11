@@ -50,7 +50,39 @@ local function build_color_editor_lines(instance, geometry, result, field, width
       base = fallback,
       dynamic = dynamic,
     })
-    append_editor_row(lines, geometry, 'dynamic_keys', 'Keys: m mode, -/+ speed, d static, s save, q back')
+    if dynamic.mode == 'rgb' then
+      for index, palette_color in ipairs(dynamic.palette or dynamic_model.default_palette()) do
+        local prefix = ('Palette %d: '):format(index)
+        local row = append_editor_row(
+          lines,
+          geometry,
+          ('dynamic_palette:%d'):format(index),
+          ('%s%s %s'):format(prefix, ui_fields.dynamic_palette_swatch, palette_color)
+        )
+        local col_start = vim.fn.strdisplaywidth(prefix)
+        dynamic_preview.register(instance, {
+          line = row.line + line_offset,
+          col_start = col_start,
+          col_end = swatch_end_col(col_start, ui_fields.dynamic_palette_swatch),
+          text = ui_fields.dynamic_palette_swatch,
+          field = field,
+          base = palette_color,
+          dynamic = {
+            mode = 'rgb',
+            speed = dynamic.speed,
+            palette = { palette_color, palette_color },
+          },
+        })
+      end
+      append_editor_row(
+        lines,
+        geometry,
+        'dynamic_keys',
+        'Keys: m mode, -/+ speed, [/] palette, a add, x delete, i input, d static, s save, q back'
+      )
+    else
+      append_editor_row(lines, geometry, 'dynamic_keys', 'Keys: m mode, -/+ speed, d static, s save, q back')
+    end
 
     for index, line in ipairs(lines) do
       lines[index] = render_util.truncate(line, width)

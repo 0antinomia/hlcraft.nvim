@@ -230,6 +230,24 @@ assert_equal(
   'dynamic editor preview text metadata is wrong'
 )
 
+press_normal(']')
+press_normal('a')
+local after_add_dynamic = overrides.get(result_name).dynamic.fg
+assert_equal(#after_add_dynamic.palette, 4, 'a key did not add a palette stop')
+assert_equal(
+  after_add_dynamic.palette[3],
+  after_add_dynamic.palette[2],
+  'new palette stop was not inserted after selected stop'
+)
+
+field_editor.set_dynamic_palette_color(instance, '#123456')
+local after_palette_edit = overrides.get(result_name).dynamic.fg
+assert_equal(after_palette_edit.palette[3], '#123456', 'palette color edit did not update selected stop')
+
+press_normal('x')
+local after_palette_delete = overrides.get(result_name).dynamic.fg
+assert_equal(#after_palette_delete.palette, 3, 'x key did not remove selected palette stop')
+
 press_normal('m')
 assert_equal(overrides.get(result_name).dynamic.fg.mode, 'breath', 'm key did not cycle dynamic mode')
 press_normal('+')
@@ -242,6 +260,40 @@ assert_equal(overrides.get(result_name).fg, '#112233', 'r key mutated static col
 press_normal('d')
 assert_true(overrides.get(result_name).dynamic == nil, 'd key did not disable dynamic fg')
 
+instance.state.field_editor.palette_index = 9
+local select_static_ok, select_static_err = field_editor.select_dynamic_palette(instance, 1)
+assert_true(not select_static_ok, 'palette select unexpectedly succeeded outside RGB dynamic mode')
+assert_equal(
+  select_static_err,
+  'No RGB dynamic field is active',
+  'palette select outside RGB dynamic mode returned wrong error'
+)
+assert_equal(instance.state.field_editor.palette_index, 9, 'palette select outside RGB dynamic mode mutated state')
+assert_true(overrides.get(result_name).dynamic == nil, 'palette select outside RGB dynamic mode changed dynamic state')
+
+local original_feedkeys = vim.api.nvim_feedkeys
+local fallback_keys = {}
+vim.api.nvim_feedkeys = function(keys, mode, escape_ks)
+  fallback_keys[#fallback_keys + 1] = { keys = keys, mode = mode, escape_ks = escape_ks }
+end
+local fallback_ok, fallback_err = pcall(function()
+  local left_map = vim.fn.maparg('[', 'n', false, true)
+  local right_map = vim.fn.maparg(']', 'n', false, true)
+  assert_equal(type(left_map.callback), 'function', '[ keymap callback was not registered')
+  assert_equal(type(right_map.callback), 'function', '] keymap callback was not registered')
+  left_map.callback()
+  right_map.callback()
+end)
+vim.api.nvim_feedkeys = original_feedkeys
+if not fallback_ok then
+  error(fallback_err, 0)
+end
+assert_equal(#fallback_keys, 2, 'bracket key fallback did not feed normal keys outside RGB dynamic mode')
+assert_equal(fallback_keys[1].keys, '[', '[ fallback fed wrong key')
+assert_equal(fallback_keys[1].mode, 'n', '[ fallback used wrong feed mode')
+assert_equal(fallback_keys[2].keys, ']', '] fallback fed wrong key')
+assert_equal(fallback_keys[2].mode, 'n', '] fallback used wrong feed mode')
+
 local dynamic_with_extensions_ok, dynamic_with_extensions_err = detail_values.apply_runtime(instance, result_name, {
   dynamic = {
     fg = {
@@ -253,6 +305,57 @@ local dynamic_with_extensions_ok, dynamic_with_extensions_err = detail_values.ap
   },
 })
 assert_true(dynamic_with_extensions_ok, dynamic_with_extensions_err or 'failed to seed dynamic fg extensions')
+local two_color_palette = vim.deepcopy(overrides.get(result_name).dynamic.fg.palette)
+local edit_none_ok, edit_none_err = field_editor.set_dynamic_palette_color(instance, 'NONE')
+assert_true(not edit_none_ok, 'NONE palette color edit unexpectedly succeeded')
+assert_equal(edit_none_err, 'Palette color must be a real color', 'NONE palette color edit returned wrong error')
+assert_equal(
+  #overrides.get(result_name).dynamic.fg.palette,
+  #two_color_palette,
+  'NONE palette color edit changed palette size'
+)
+assert_equal(
+  overrides.get(result_name).dynamic.fg.palette[1],
+  two_color_palette[1],
+  'NONE palette color edit changed first color'
+)
+assert_equal(
+  overrides.get(result_name).dynamic.fg.palette[2],
+  two_color_palette[2],
+  'NONE palette color edit changed second color'
+)
+local edit_invalid_ok = field_editor.set_dynamic_palette_color(instance, 'not-a-color')
+assert_true(not edit_invalid_ok, 'invalid palette color edit unexpectedly succeeded')
+assert_equal(
+  #overrides.get(result_name).dynamic.fg.palette,
+  #two_color_palette,
+  'invalid palette color edit changed palette size'
+)
+assert_equal(
+  overrides.get(result_name).dynamic.fg.palette[1],
+  two_color_palette[1],
+  'invalid palette color edit changed first color'
+)
+assert_equal(
+  overrides.get(result_name).dynamic.fg.palette[2],
+  two_color_palette[2],
+  'invalid palette color edit changed second color'
+)
+local delete_min_ok, delete_min_err = field_editor.delete_dynamic_palette_color(instance)
+assert_true(not delete_min_ok, 'two-color palette delete unexpectedly succeeded')
+assert_equal(delete_min_err, 'Palette must keep at least two colors', 'two-color palette delete returned wrong error')
+assert_equal(#overrides.get(result_name).dynamic.fg.palette, 2, 'two-color palette delete changed palette size')
+assert_equal(
+  overrides.get(result_name).dynamic.fg.palette[1],
+  two_color_palette[1],
+  'two-color palette delete changed first color'
+)
+assert_equal(
+  overrides.get(result_name).dynamic.fg.palette[2],
+  two_color_palette[2],
+  'two-color palette delete changed second color'
+)
+
 field_editor.cycle_dynamic_mode(instance)
 assert_equal(overrides.get(result_name).dynamic.fg.mode, 'breath', 'dynamic mode did not cycle with extensions')
 assert_equal(overrides.get(result_name).dynamic.fg.params.phase, 0.25, 'dynamic mode cycle dropped params')
