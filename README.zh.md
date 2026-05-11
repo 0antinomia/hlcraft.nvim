@@ -173,12 +173,16 @@ dynamic = {
 
 动态颜色配置在现有 `FG`、`BG`、`SP` 编辑器里完成：
 
-- 在颜色编辑器中按 `d`，为当前通道切换动态模式。
+- 在颜色编辑器中按 `d`，为当前 `FG`、`BG` 或 `SP` 通道切换动态模式。
 - 按 `m` 在当前支持的模式间切换：`rgb` 和 `breath`。
-- 按 `+` / `-` 调整效果速度。
+- 按 `+` / `-` 调整效果速度；如果当前选中的是动态参数行，则调整该参数。
+- 在 `rgb` 模式中，可以选中并编辑 palette 行，用来修改动画颜色停靠点。
+- 在 `breath` 模式中，参数行提供可编辑的 `min`、`max` 亮度值。
 - 在详情页按 `s` 保存，保存流程和静态颜色 override 一致。
 
-当前实现刻意保持较小的可配置面。交互式 UI 目前只开放动态 `fg`、`bg`、`sp` 通道、两个内置模式和速度控制。效果参数、调色板等扩展字段已经会被持久化保留，便于后续实验，但暂时还不能在 UI 中配置。
+动态颜色行会以动画色块作为主要预览。类似 `rgb 2000ms` 的紧凑文本仍会显示，作为元数据，也作为无法播放动画时的 fallback。
+
+当前实现仍处于早期阶段，并且刻意保持较小的可配置面。交互式 UI 目前开放动态 `fg`、`bg`、`sp` 通道、两个内置模式、速度控制、可编辑的 `rgb` palette 停靠点，以及可编辑的 `breath` 亮度边界；更宽泛的可配置能力仍会有意保持受限，直到这个功能稳定下来。
 
 #### `debounce_ms`
 
@@ -237,7 +241,7 @@ vim.fn.stdpath('config') .. '/.hlcraft'
 
 每个文件保存一个顶层 TOML section。section 名称来自你在详情页里明确选择或新建的 group。如果某个 override 没有 group，hlcraft 会要求你先选择或新建一个 group，再进行保存。
 
-动态颜色会保存为 hlcraft 专属的扁平键，比如 `dyn_fg_mode` 和 `dyn_fg_speed`。更高级的扩展数据会以 JSON 字符串形式保存到 `dyn_fg_params`、`dyn_fg_palette` 这类扁平键中。
+动态颜色会保存为 hlcraft 专属的扁平键，比如 `dyn_fg_mode` 和 `dyn_fg_speed`。Palette 停靠点和模式参数会在可选的扁平键中以 JSON 字符串形式序列化，例如 `dyn_fg_palette` 和 `dyn_fg_params`；每个动态通道都使用同样模式，例如 `dyn_bg_palette`、`dyn_bg_params`、`dyn_sp_palette` 和 `dyn_sp_params`。根据模式和默认值不同，缺少 palette 或 params 键也可能是有效配置。
 
 持久化 override 会在 `setup()` 时加载，并在配置的 `reapply_events` 上再次应用。
 

@@ -173,12 +173,16 @@ dynamic = {
 
 Dynamic color configuration is edited from the existing `FG`, `BG`, and `SP` editors:
 
-- Press `d` in a color editor to toggle dynamic mode for that channel.
+- Press `d` in a color editor to toggle dynamic mode for the current `FG`, `BG`, or `SP` channel.
 - Press `m` to switch between the current modes: `rgb` and `breath`.
-- Press `+` / `-` to change the effect speed.
+- Press `+` / `-` to change the effect speed, or the selected dynamic parameter when a parameter row is selected.
+- In `rgb` mode, palette rows can be selected and edited to change the animated color stops.
+- In `breath` mode, parameter rows expose editable `min` and `max` brightness values.
 - Press `s` in the detail view to persist the override, just like static color changes.
 
-The current implementation is intentionally small. It only exposes dynamic `fg`, `bg`, and `sp` channels, two built-in modes, and speed control in the interactive UI. Extension fields such as effect params and palettes are preserved by persistence for future experiments, but they are not yet configurable from the UI.
+Dynamic rows use animated color swatches as the primary preview. Compact text such as `rgb 2000ms` remains visible as metadata and as a fallback for environments where the preview cannot animate.
+
+The current implementation is still early-stage and intentionally small. It exposes dynamic `fg`, `bg`, and `sp` channels, two built-in modes, speed control, editable `rgb` palette stops, and editable `breath` brightness bounds, but broader configurability is deliberately limited while the feature settles.
 
 #### `debounce_ms`
 
@@ -237,7 +241,7 @@ vim.fn.stdpath('config') .. '/.hlcraft'
 
 Each file stores one top-level TOML section. Section names come from groups you explicitly select or create in the detail view. If an override has no group, hlcraft asks you to choose or create one before saving.
 
-Dynamic color settings are stored as hlcraft-specific flat keys such as `dyn_fg_mode` and `dyn_fg_speed`. Advanced extension data is stored as JSON strings in flat keys such as `dyn_fg_params` and `dyn_fg_palette`.
+Dynamic color settings are stored as hlcraft-specific flat keys such as `dyn_fg_mode` and `dyn_fg_speed`. Palette stops and mode parameters are serialized as JSON strings in optional flat keys such as `dyn_fg_palette` and `dyn_fg_params`; the same pattern applies to each dynamic channel, for example `dyn_bg_palette`, `dyn_bg_params`, `dyn_sp_palette`, and `dyn_sp_params`. Depending on mode and defaults, absent palette or params keys can still be valid.
 
 Persisted overrides are loaded during `setup()` and replayed again on configured `reapply_events`.
 
