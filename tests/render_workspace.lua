@@ -4,6 +4,7 @@ local scope = 'hlcraft render workspace'
 local list = require('hlcraft.ui.render.list')
 local detail_menu = require('hlcraft.ui.render.detail_menu')
 local field_editor = require('hlcraft.ui.render.field_editor')
+local detail_values = require('hlcraft.ui.state.detail_values')
 
 local list_lines, selectable = list.build({
   state = {
@@ -64,8 +65,13 @@ local dynamic_geometry = {
 }
 local dynamic_menu_lines = detail_menu.build(dynamic_geometry, dynamic_result, 80)
 h.assert_true(
-  table.concat(dynamic_menu_lines, '\n'):find('dynamic:rgb 1500ms', 1, true) ~= nil,
-  'detail menu did not render dynamic color state',
+  table.concat(dynamic_menu_lines, '\n'):find('dynamic:rgb', 1, true) == nil,
+  'detail menu still used old dynamic string primary display',
+  scope
+)
+h.assert_true(
+  table.concat(dynamic_menu_lines, '\n'):find('rgb 1500ms', 1, true) ~= nil,
+  'detail menu did not render compact dynamic metadata',
   scope
 )
 
@@ -77,10 +83,56 @@ local dynamic_editor_text = table.concat(dynamic_editor_lines, '\n')
 h.assert_true(dynamic_editor_text:find('Mode: dynamic', 1, true) ~= nil, 'dynamic editor mode missing', scope)
 h.assert_true(dynamic_editor_text:find('Effect: rgb', 1, true) ~= nil, 'dynamic editor effect missing', scope)
 h.assert_true(dynamic_editor_text:find('Speed: 1500ms', 1, true) ~= nil, 'dynamic editor speed missing', scope)
+h.assert_true(dynamic_editor_text:find('Swatch:', 1, true) ~= nil, 'dynamic editor swatch missing', scope)
+h.assert_true(dynamic_editor_text:find('Preview:', 1, true) == nil, 'dynamic editor still rendered preview row', scope)
 h.assert_true(dynamic_editor_geometry.editor_rows.dynamic_keys ~= nil, 'dynamic editor keys row missing', scope)
 
 local dynamic_preview = require('hlcraft.ui.dynamic_preview')
 local Instance = require('hlcraft.ui.instance')
+local results_state = require('hlcraft.ui.state.results')
+local workspace_instance = Instance.new('render-workspace-dynamic-swatch')
+vim.api.nvim_set_hl(0, 'HlcraftRenderTarget', { fg = '#112233' })
+workspace_instance:open()
+workspace_instance.state.name_query = 'HlcraftRenderTarget'
+workspace_instance:rerender()
+local workspace_target_line = h.find_result_line(workspace_instance, 1)
+h.assert_true(workspace_target_line ~= nil, 'failed to find render target result', scope)
+local workspace_win = vim.fn.bufwinid(workspace_instance.state.buf)
+h.assert_true(workspace_win ~= -1, 'render workspace window is not visible', scope)
+vim.api.nvim_win_set_cursor(workspace_win, { workspace_target_line, 0 })
+results_state.open_detail(workspace_instance)
+local dynamic_apply_ok, dynamic_apply_err = detail_values.apply_runtime(workspace_instance, 'HlcraftRenderTarget', {
+  dynamic = {
+    fg = {
+      mode = 'rgb',
+      speed = 2000,
+      palette = { '#000000', '#ffffff' },
+    },
+  },
+})
+h.assert_true(dynamic_apply_ok, dynamic_apply_err or 'failed to seed render dynamic fg', scope)
+workspace_instance:rerender()
+local dynamic_render_text = table.concat(vim.api.nvim_buf_get_lines(workspace_instance.state.buf, 0, -1, false), '\n')
+h.assert_true(
+  dynamic_render_text:find('dynamic:rgb', 1, true) == nil,
+  'dynamic detail row still used old dynamic string primary display',
+  scope
+)
+h.assert_true(
+  dynamic_render_text:find('rgb 2000ms', 1, true) ~= nil,
+  'dynamic detail row did not render compact metadata',
+  scope
+)
+h.assert_true(
+  workspace_instance.state.dynamic_preview_items ~= nil and next(workspace_instance.state.dynamic_preview_items) ~= nil,
+  'dynamic detail row did not register preview swatch',
+  scope
+)
+local workspace_buf = workspace_instance.state.buf
+workspace_instance:cleanup()
+h.assert_true(not vim.api.nvim_buf_is_valid(workspace_buf), 'workspace cleanup left owned render buffer alive', scope)
+require('hlcraft.highlights').invalidate_cache()
+
 local preview_instance = {
   ns = vim.api.nvim_create_namespace('hlcraft-preview-test'),
   state = {
@@ -143,16 +195,26 @@ h.assert_true(
   'dynamic preview did not use generated highlight group',
   scope
 )
-dynamic_preview.clear(preview_instance)
-local unrelated_mark_after_clear = vim.api.nvim_buf_get_extmark_by_id(
-  preview_instance.state.buf,
-  preview_instance.ns,
-  unrelated_preview_mark,
-  { details = true }
-)
+vim.api.nvim_buf_clear_namespace(preview_instance.state.buf, preview_instance.ns, 0, -1)
+local reused_id = vim.api.nvim_buf_set_extmark(preview_instance.state.buf, preview_instance.ns, 0, 0, {
+  id = preview_mark[1],
+  virt_text = { { 'reused', 'Normal' } },
+  virt_text_pos = 'eol',
+})
+dynamic_preview.tick(preview_instance, 1000)
+local reused_mark_after_tick =
+  vim.api.nvim_buf_get_extmark_by_id(preview_instance.state.buf, preview_instance.ns, reused_id, { details = true })
 h.assert_true(
-  #unrelated_mark_after_clear > 0 and unrelated_mark_after_clear[3].virt_text[1][1] == 'keep',
-  'dynamic preview clear removed unrelated extmark',
+  #reused_mark_after_tick > 0 and reused_mark_after_tick[3].virt_text[1][1] == 'reused',
+  'dynamic preview tick deleted unrelated extmark after namespace clear reused a stale preview mark id',
+  scope
+)
+dynamic_preview.clear(preview_instance)
+local reused_mark_after_clear =
+  vim.api.nvim_buf_get_extmark_by_id(preview_instance.state.buf, preview_instance.ns, reused_id, { details = true })
+h.assert_true(
+  #reused_mark_after_clear > 0 and reused_mark_after_clear[3].virt_text[1][1] == 'reused',
+  'dynamic preview clear removed unrelated extmark after namespace clear reused a stale preview mark id',
   scope
 )
 local marks_after_clear = vim.api.nvim_buf_get_extmarks(preview_instance.state.buf, preview_instance.ns, 0, -1, {

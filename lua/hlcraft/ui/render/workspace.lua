@@ -4,6 +4,7 @@ local input_model = require('hlcraft.ui.input.model')
 local decorations = require('hlcraft.ui.render.decorations')
 local detail_menu = require('hlcraft.ui.render.detail_menu')
 local detail_values = require('hlcraft.ui.state.detail_values')
+local dynamic_preview = require('hlcraft.ui.dynamic_preview')
 local field_editor = require('hlcraft.ui.render.field_editor')
 local list = require('hlcraft.ui.render.list')
 local results_state = require('hlcraft.ui.state.results')
@@ -86,6 +87,8 @@ function M.render(instance)
     return
   end
 
+  instance.state.dynamic_preview_items = {}
+
   local width = math.max(50, vim.api.nvim_win_get_width(win) - 1)
   local lines = {}
   local geometry = {
@@ -106,8 +109,12 @@ function M.render(instance)
   if instance.state.detail_index then
     if detail_result then
       local field = instance.state.field_editor and instance.state.field_editor.field or nil
-      local detail_lines = field and field_editor.build(geometry, detail_result, field, width)
-        or detail_menu.build(geometry, detail_result, width)
+      local detail_lines = nil
+      if field then
+        detail_lines = field_editor.build(instance, geometry, detail_result, field, width, results_top - 1)
+      else
+        detail_lines = detail_menu.build(instance, geometry, detail_result, width, results_top - 1)
+      end
       for _, line in ipairs(detail_lines) do
         lines[#lines + 1] = line
       end
@@ -128,6 +135,7 @@ function M.render(instance)
 
   set_buffer_lines(instance, lines)
   vim.api.nvim_buf_clear_namespace(instance.state.buf, instance.ns, 0, -1)
+  dynamic_preview.reset_marks(instance)
   instance.state.input_marks = {}
   instance.state.placeholder_marks = {}
   theme.apply(instance.ns)
@@ -206,6 +214,8 @@ function M.render(instance)
   end
 
   decorations.refresh_input_placeholders(instance)
+  dynamic_preview.tick(instance, vim.uv.hrtime() / 1000000)
+  dynamic_preview.sync(instance)
 end
 
 return M

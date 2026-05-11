@@ -37,10 +37,41 @@ local function close_timer(instance)
   instance.state.dynamic_preview_timer = nil
 end
 
+local function expected_hl_name(instance, item_id)
+  local key = instance.state.dynamic_preview_instance_id
+  if not key then
+    return nil
+  end
+  return ('HlcraftDynamicPreview_%s_%d'):format(tostring(key), item_id)
+end
+
+local function is_tracked_preview_mark(instance, item_id, mark_id)
+  local item = instance.state.dynamic_preview_items and instance.state.dynamic_preview_items[item_id] or nil
+  if not item then
+    return false
+  end
+  local expected_hl = expected_hl_name(instance, item_id)
+  if not expected_hl then
+    return false
+  end
+  local ok, mark = pcall(vim.api.nvim_buf_get_extmark_by_id, instance.state.buf, instance.ns, mark_id, {
+    details = true,
+  })
+  if not ok or #mark == 0 then
+    return false
+  end
+
+  local virt_text = mark[3] and mark[3].virt_text or nil
+  local chunk = virt_text and virt_text[1] or nil
+  return chunk and chunk[1] == item.text and chunk[2] == expected_hl
+end
+
 local function clear_preview_marks(instance)
   ensure_state(instance)
-  for _, mark_id in pairs(instance.state.dynamic_preview_marks) do
-    pcall(vim.api.nvim_buf_del_extmark, instance.state.buf, instance.ns, mark_id)
+  for item_id, mark_id in pairs(instance.state.dynamic_preview_marks) do
+    if is_tracked_preview_mark(instance, item_id, mark_id) then
+      pcall(vim.api.nvim_buf_del_extmark, instance.state.buf, instance.ns, mark_id)
+    end
   end
   instance.state.dynamic_preview_marks = {}
 end
@@ -97,6 +128,12 @@ function M.tick(instance, now_ms)
     if hl_name then
       instance.state.dynamic_preview_marks[item.id] = set_preview_mark(instance, item, hl_name)
     end
+  end
+end
+
+function M.reset_marks(instance)
+  if instance and instance.state then
+    instance.state.dynamic_preview_marks = {}
   end
 end
 
