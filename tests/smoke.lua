@@ -12,6 +12,14 @@ local function assert_file_missing(path, message)
   return h.assert_file_missing(path, message, 'hlcraft smoke')
 end
 
+local function assert_sequence(actual, expected, message)
+  actual = actual or {}
+  assert_equal(#actual, #expected, message .. ' length mismatch')
+  for index, expected_value in ipairs(expected) do
+    assert_equal(actual[index], expected_value, ('%s item %d mismatch'):format(message, index))
+  end
+end
+
 local find_result_line = h.find_result_line
 local press_normal = h.press_normal
 local list_contains = h.list_contains
@@ -31,6 +39,7 @@ local detail_values = require('hlcraft.ui.state.detail_values')
 local results_state = require('hlcraft.ui.state.results')
 local overrides = require('hlcraft.overrides')
 local storage = require('hlcraft.storage')
+local dynamic_model = require('hlcraft.dynamic.model')
 
 local origin_win = vim.api.nvim_get_current_win()
 local origin_buf = vim.api.nvim_get_current_buf()
@@ -677,6 +686,100 @@ assert_equal(
   dynamic_loaded.entries[result_name].dynamic.fg.speed,
   1500,
   'dynamic fg speed did not persist from smoke flow'
+)
+local default_dynamic_palette = dynamic_model.default_palette()
+assert_sequence(
+  dynamic_loaded.entries[result_name].dynamic.fg.palette,
+  default_dynamic_palette,
+  'default rgb palette reload from smoke flow'
+)
+overrides.bootstrap(true)
+assert_sequence(
+  overrides.get_persisted(result_name).dynamic.fg.palette,
+  default_dynamic_palette,
+  'default rgb palette reload after dynamic bootstrap'
+)
+
+local dynamic_config_ok, dynamic_config_err = detail_values.apply_runtime(instance, result_name, {
+  dynamic = {
+    fg = {
+      mode = 'rgb',
+      speed = 2000,
+      params = { phase = 0.25 },
+      palette = { '#000000', '#ffffff' },
+    },
+  },
+})
+assert_true(dynamic_config_ok, dynamic_config_err or 'configurable dynamic runtime apply failed')
+field_editor.open(instance, 'fg')
+local dynamic_first_palette_row = instance.state.geometry.editor_rows['dynamic_palette:1']
+assert_true(dynamic_first_palette_row ~= nil, 'first dynamic palette row was not rendered before configurable save')
+vim.api.nvim_win_set_cursor(win, { dynamic_first_palette_row.line, 0 })
+local dynamic_add_ok, dynamic_add_err = field_editor.add_dynamic_palette_color(instance)
+assert_true(dynamic_add_ok, dynamic_add_err or 'configurable dynamic palette add failed')
+local dynamic_palette_edit_ok, dynamic_palette_edit_err = field_editor.set_dynamic_palette_color(instance, '#123456')
+assert_true(dynamic_palette_edit_ok, dynamic_palette_edit_err or 'configurable dynamic palette color edit failed')
+local dynamic_config_save_ok, dynamic_config_save_err = detail_values.save(instance, result_name)
+assert_true(dynamic_config_save_ok, dynamic_config_save_err or 'configurable dynamic save failed')
+local dynamic_config_loaded = storage.load(persist_dir)
+assert_equal(
+  dynamic_config_loaded.entries[result_name].dynamic.fg.params.phase,
+  0.25,
+  'dynamic params did not persist after configurable smoke edit'
+)
+local expected_dynamic_palette = { '#000000', '#123456', '#ffffff' }
+assert_sequence(
+  dynamic_config_loaded.entries[result_name].dynamic.fg.palette,
+  expected_dynamic_palette,
+  'custom dynamic palette persist after configurable smoke edit'
+)
+overrides.bootstrap(true)
+assert_equal(
+  overrides.get_persisted(result_name).dynamic.fg.params.phase,
+  0.25,
+  'dynamic params did not reload after configurable dynamic bootstrap'
+)
+assert_sequence(
+  overrides.get_persisted(result_name).dynamic.fg.palette,
+  expected_dynamic_palette,
+  'custom dynamic palette reload after configurable dynamic bootstrap'
+)
+
+field_editor.open(instance, 'fg')
+local dynamic_breath_mode_ok, dynamic_breath_mode_err = field_editor.cycle_dynamic_mode(instance)
+assert_true(dynamic_breath_mode_ok, dynamic_breath_mode_err or 'configurable dynamic breath mode switch failed')
+local breath_save_min_ok, breath_save_min_err = field_editor.set_dynamic_param(instance, 'min', 0.2)
+assert_true(breath_save_min_ok, breath_save_min_err or 'configurable dynamic breath min edit failed')
+local breath_save_max_ok, breath_save_max_err = field_editor.set_dynamic_param(instance, 'max', 0.8)
+assert_true(breath_save_max_ok, breath_save_max_err or 'configurable dynamic breath max edit failed')
+local breath_config_save_ok, breath_config_save_err = detail_values.save(instance, result_name)
+assert_true(breath_config_save_ok, breath_config_save_err or 'configurable dynamic breath save failed')
+local breath_config_loaded = storage.load(persist_dir)
+assert_equal(
+  breath_config_loaded.entries[result_name].dynamic.fg.mode,
+  'breath',
+  'configured breath dynamic mode did not persist'
+)
+assert_equal(
+  breath_config_loaded.entries[result_name].dynamic.fg.params.min,
+  0.2,
+  'configured breath min did not persist'
+)
+assert_equal(
+  breath_config_loaded.entries[result_name].dynamic.fg.params.max,
+  0.8,
+  'configured breath max did not persist'
+)
+overrides.bootstrap(true)
+assert_equal(
+  overrides.get_persisted(result_name).dynamic.fg.params.min,
+  0.2,
+  'configured breath min did not reload after bootstrap'
+)
+assert_equal(
+  overrides.get_persisted(result_name).dynamic.fg.params.max,
+  0.8,
+  'configured breath max did not reload after bootstrap'
 )
 
 local group_only_name = 'Comment'

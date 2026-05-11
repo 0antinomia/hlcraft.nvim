@@ -233,6 +233,39 @@ local enabled_spec = vim.api.nvim_get_hl(0, { name = 'HlcraftDynamicRuntime', cr
 h.assert_equal(enabled_spec.fg, tonumber('00ff00', 16), 'enabled rgb dynamic did not update fg', scope)
 h.assert_true(enabled_spec.bg ~= tonumber('222222', 16), 'enabled breath dynamic did not update bg', scope)
 
+vim.api.nvim_set_hl(0, 'HlcraftDynamicRuntimePalette', { fg = '#123456' })
+runtime.sync_group('HlcraftDynamicRuntimePalette', { fg = '#123456' }, {
+  dynamic = {
+    fg = {
+      mode = 'rgb',
+      speed = 2000,
+      palette = { '#000000', '#ffffff' },
+    },
+  },
+})
+runtime.tick(500)
+local palette_spec = vim.api.nvim_get_hl(0, { name = 'HlcraftDynamicRuntimePalette', create = false })
+h.assert_equal(palette_spec.fg, tonumber('808080', 16), 'runtime rgb dynamic did not use configured palette', scope)
+
+vim.api.nvim_set_hl(0, 'HlcraftDynamicRuntimeBreathParams', { fg = '#808080' })
+runtime.sync_group('HlcraftDynamicRuntimeBreathParams', { fg = '#808080' }, {
+  dynamic = {
+    fg = {
+      mode = 'breath',
+      speed = 2000,
+      params = { min = 0.25, max = 0.75 },
+    },
+  },
+})
+runtime.tick(1000)
+local breath_params_spec = vim.api.nvim_get_hl(0, { name = 'HlcraftDynamicRuntimeBreathParams', create = false })
+h.assert_equal(
+  breath_params_spec.fg,
+  tonumber('606060', 16),
+  'runtime breath dynamic did not use configured params',
+  scope
+)
+
 vim.api.nvim_set_hl(0, 'HlcraftDynamicDisableRestore', { fg = '#333333' })
 runtime.sync_group('HlcraftDynamicDisableRestore', { fg = '#333333' }, {
   dynamic = {
