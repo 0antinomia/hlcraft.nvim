@@ -25,6 +25,10 @@ local function cleanup_preview(instance)
   require('hlcraft.ui.preview').cleanup(instance)
 end
 
+local function cleanup_dynamic_preview(instance)
+  require('hlcraft.ui.dynamic_preview').clear(instance)
+end
+
 local function install_preview_keymap(instance)
   require('hlcraft.ui.preview').install_keymap(instance)
 end
@@ -99,6 +103,11 @@ end
 --- @return boolean True if window is valid
 function M.is_valid_win(win)
   return win ~= nil and vim.api.nvim_win_is_valid(win)
+end
+
+local function is_wiping_buffer(buf)
+  local ok, autocmd_buf = pcall(vim.fn.expand, '<abuf>')
+  return ok and tonumber(autocmd_buf) == buf
 end
 
 --- Get the window displaying the workspace buffer
@@ -258,6 +267,7 @@ function M.hide(instance)
   local ok, err = pcall(function()
     close_unsaved_prompt(instance)
     cleanup_preview(instance)
+    cleanup_dynamic_preview(instance)
     uninstall_preview_keymap(instance)
     help.close(instance)
     restore_origin(instance)
@@ -292,11 +302,14 @@ function M.cleanup(instance)
     return
   end
   instance.state.closing = true
+  local workspace_buf = instance.state.buf
 
   local ok, err = pcall(function()
     close_unsaved_prompt(instance)
     cleanup_preview(instance)
+    cleanup_dynamic_preview(instance)
     uninstall_preview_keymap(instance)
+    restore_origin(instance)
     restore_all_workspace_windows(instance)
     if instance.state.origin_win_options ~= nil then
       restore_origin_window_options(instance)
@@ -309,6 +322,9 @@ function M.cleanup(instance)
     end
 
     stop_debounce_timer(instance)
+    if M.is_valid_buf(workspace_buf) and not is_wiping_buffer(workspace_buf) then
+      pcall(vim.api.nvim_buf_delete, workspace_buf, { force = true })
+    end
 
     instance.group = nil
     instance.state.buf = nil

@@ -209,6 +209,26 @@ assert_equal(overrides.get(result_name).dynamic.fg.mode, 'rgb', 'd key did not e
 assert_equal(overrides.get(result_name).dynamic.fg.speed, 2000, 'dynamic fg default speed is wrong')
 local dynamic_editor_text = table.concat(vim.api.nvim_buf_get_lines(instance.state.buf, 0, -1, false), '\n')
 assert_true(dynamic_editor_text:find('Mode: dynamic', 1, true) ~= nil, 'dynamic editor did not render after d key')
+assert_true(dynamic_editor_text:find('Swatch:', 1, true) ~= nil, 'dynamic editor did not render swatch row')
+assert_true(dynamic_editor_text:find('Preview:', 1, true) == nil, 'dynamic editor still rendered string preview row')
+local dynamic_swatch_line = nil
+for index, line in ipairs(vim.api.nvim_buf_get_lines(instance.state.buf, 0, -1, false)) do
+  if line:find('Swatch: ████████████', 1, true) then
+    dynamic_swatch_line = index
+    break
+  end
+end
+local dynamic_preview_item = instance.state.dynamic_preview_items and instance.state.dynamic_preview_items[1] or nil
+assert_true(dynamic_preview_item ~= nil, 'dynamic editor did not register preview item')
+assert_equal(dynamic_preview_item.line, dynamic_swatch_line, 'dynamic editor preview line metadata is wrong')
+assert_equal(dynamic_preview_item.col_start, 8, 'dynamic editor preview start column metadata is wrong')
+assert_equal(dynamic_preview_item.col_end, 20, 'dynamic editor preview end column metadata is wrong')
+assert_equal(dynamic_preview_item.field, 'fg', 'dynamic editor preview field metadata is wrong')
+assert_equal(
+  dynamic_preview_item.text,
+  '████████████',
+  'dynamic editor preview text metadata is wrong'
+)
 
 press_normal('m')
 assert_equal(overrides.get(result_name).dynamic.fg.mode, 'breath', 'm key did not cycle dynamic mode')
