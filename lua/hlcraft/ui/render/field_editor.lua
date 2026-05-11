@@ -80,6 +80,11 @@ local function build_color_editor_lines(instance, geometry, result, field, width
         'dynamic_keys',
         'Keys: m mode, -/+ speed, [/] palette, a add, x delete, i input, d static, s save, q back'
       )
+    elseif dynamic.mode == 'breath' then
+      local params = dynamic_model.normalize_params('breath', dynamic.params)
+      append_editor_row(lines, geometry, 'dynamic_param:min', ('Min: %.2f'):format(params.min))
+      append_editor_row(lines, geometry, 'dynamic_param:max', ('Max: %.2f'):format(params.max))
+      append_editor_row(lines, geometry, 'dynamic_param_keys', 'Keys: m mode, -/+ speed/param, i input, d/s/q')
     else
       append_editor_row(lines, geometry, 'dynamic_keys', 'Keys: m mode, -/+ speed, d static, s save, q back')
     end

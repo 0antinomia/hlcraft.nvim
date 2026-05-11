@@ -110,6 +110,11 @@ function M.setup_workspace_keymaps(instance, buf)
     return dynamic ~= nil and dynamic.mode == 'rgb'
   end
 
+  local function current_color_field_is_breath_dynamic()
+    local dynamic = current_color_dynamic()
+    return dynamic ~= nil and dynamic.mode == 'breath'
+  end
+
   local function toggle_dynamic_color()
     if current_field_kind() ~= 'color' then
       return
@@ -188,6 +193,22 @@ function M.setup_workspace_keymaps(instance, buf)
     end
   end
 
+  local function adjust_dynamic_param_or_speed(param_delta, speed_delta)
+    local param_name = field_editor.selected_param_name(instance)
+    if param_name then
+      local ok, err = field_editor.adjust_dynamic_param(instance, param_name, param_delta)
+      if not ok then
+        notify_error(err)
+      end
+      return
+    end
+
+    local ok, err = field_editor.adjust_dynamic_speed(instance, speed_delta)
+    if not ok then
+      notify_error(err)
+    end
+  end
+
   local function input_current_editor_field()
     local field = instance.state.field_editor and instance.state.field_editor.field
     if not field then
@@ -202,6 +223,19 @@ function M.setup_workspace_keymaps(instance, buf)
             return
           end
           local ok, err = field_editor.set_dynamic_palette_color(instance, value)
+          if not ok then
+            notify_error(err)
+          end
+        end)
+        return true
+      end
+      if current_color_field_is_breath_dynamic() then
+        local param_name = field_editor.selected_param_name(instance) or 'min'
+        vim.ui.input({ prompt = ('Breath %s: '):format(param_name) }, function(value)
+          if value == nil then
+            return
+          end
+          local ok, err = field_editor.set_dynamic_param(instance, param_name, value)
           if not ok then
             notify_error(err)
           end
@@ -374,20 +408,14 @@ function M.setup_workspace_keymaps(instance, buf)
   end, opts)
   vim.keymap.set('n', '+', function()
     if current_color_field_is_dynamic() then
-      local ok, err = field_editor.adjust_dynamic_speed(instance, ui_fields.dynamic_speed_step)
-      if not ok then
-        notify_error(err)
-      end
+      adjust_dynamic_param_or_speed(ui_fields.dynamic_param_step, ui_fields.dynamic_speed_step)
       return
     end
     adjust_blend(ui_fields.blend_small_step, '+')
   end, opts)
   vim.keymap.set('n', '-', function()
     if current_color_field_is_dynamic() then
-      local ok, err = field_editor.adjust_dynamic_speed(instance, -ui_fields.dynamic_speed_step)
-      if not ok then
-        notify_error(err)
-      end
+      adjust_dynamic_param_or_speed(-ui_fields.dynamic_param_step, -ui_fields.dynamic_speed_step)
       return
     end
     adjust_blend(-ui_fields.blend_small_step, '-')

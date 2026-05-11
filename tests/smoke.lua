@@ -250,10 +250,127 @@ assert_equal(#after_palette_delete.palette, 3, 'x key did not remove selected pa
 
 press_normal('m')
 assert_equal(overrides.get(result_name).dynamic.fg.mode, 'breath', 'm key did not cycle dynamic mode')
+local breath_min_row = instance.state.geometry.editor_rows['dynamic_param:min']
+assert_true(breath_min_row ~= nil, 'breath min param row was not rendered')
+vim.api.nvim_win_set_cursor(win, { breath_min_row.line, 0 })
+local breath_key_speed = overrides.get(result_name).dynamic.fg.speed
+local breath_key_min = overrides.get(result_name).dynamic.fg.params.min
 press_normal('+')
-assert_equal(overrides.get(result_name).dynamic.fg.speed, 2250, '+ key did not increase dynamic speed')
+assert_equal(overrides.get(result_name).dynamic.fg.params.min, breath_key_min + 0.05, '+ key did not adjust breath min')
+assert_equal(overrides.get(result_name).dynamic.fg.speed, breath_key_speed, '+ key changed breath speed in breath mode')
 press_normal('-')
-assert_equal(overrides.get(result_name).dynamic.fg.speed, 2000, '- key did not decrease dynamic speed')
+assert_equal(overrides.get(result_name).dynamic.fg.params.min, breath_key_min, '- key did not adjust breath min')
+assert_equal(overrides.get(result_name).dynamic.fg.speed, breath_key_speed, '- key changed breath speed in breath mode')
+local original_ui_input = vim.ui.input
+local breath_param_input_prompts = {}
+vim.ui.input = function(opts, on_confirm)
+  breath_param_input_prompts[#breath_param_input_prompts + 1] = opts.prompt
+  on_confirm('0.65')
+end
+local breath_param_input_ok, breath_param_input_err = pcall(function()
+  press_normal('i')
+end)
+vim.ui.input = original_ui_input
+if not breath_param_input_ok then
+  error(breath_param_input_err, 0)
+end
+assert_equal(breath_param_input_prompts[1], 'Breath min: ', 'breath param input prompt was wrong')
+assert_equal(overrides.get(result_name).dynamic.fg.params.min, 0.65, 'i key did not input breath min')
+
+local breath_invalid_params = vim.deepcopy(overrides.get(result_name).dynamic.fg.params)
+local invalid_breath_param_ok, invalid_breath_param_err = field_editor.set_dynamic_param(instance, 'min', 'abc')
+assert_true(not invalid_breath_param_ok, 'invalid breath param edit unexpectedly succeeded')
+assert_equal(
+  invalid_breath_param_err,
+  'Breath dynamic param must be a number',
+  'invalid breath param edit returned wrong error'
+)
+assert_equal(
+  overrides.get(result_name).dynamic.fg.params.min,
+  breath_invalid_params.min,
+  'invalid breath param edit changed min'
+)
+local empty_breath_param_ok, empty_breath_param_err = field_editor.set_dynamic_param(instance, 'max', '')
+assert_true(not empty_breath_param_ok, 'empty breath param edit unexpectedly succeeded')
+assert_equal(
+  empty_breath_param_err,
+  'Breath dynamic param must be a number',
+  'empty breath param edit returned wrong error'
+)
+assert_equal(
+  overrides.get(result_name).dynamic.fg.params.max,
+  breath_invalid_params.max,
+  'empty breath param edit changed max'
+)
+local nan_breath_param_ok, nan_breath_param_err = field_editor.set_dynamic_param(instance, 'min', 'nan')
+assert_true(not nan_breath_param_ok, 'nan breath param edit unexpectedly succeeded')
+assert_equal(
+  nan_breath_param_err,
+  'Breath dynamic param must be a number',
+  'nan breath param edit returned wrong error'
+)
+assert_equal(
+  overrides.get(result_name).dynamic.fg.params.min,
+  breath_invalid_params.min,
+  'nan breath param edit changed min'
+)
+local inf_breath_param_ok, inf_breath_param_err = field_editor.set_dynamic_param(instance, 'max', 'inf')
+assert_true(not inf_breath_param_ok, 'inf breath param edit unexpectedly succeeded')
+assert_equal(
+  inf_breath_param_err,
+  'Breath dynamic param must be a number',
+  'inf breath param edit returned wrong error'
+)
+assert_equal(
+  overrides.get(result_name).dynamic.fg.params.max,
+  breath_invalid_params.max,
+  'inf breath param edit changed max'
+)
+local unsupported_breath_param_ok, unsupported_breath_param_err =
+  field_editor.adjust_dynamic_param(instance, 'bogus', 0.05)
+assert_true(not unsupported_breath_param_ok, 'unsupported breath param adjustment unexpectedly succeeded')
+assert_equal(
+  unsupported_breath_param_err,
+  'Unsupported dynamic param: bogus',
+  'unsupported breath param adjustment returned wrong error'
+)
+assert_equal(
+  overrides.get(result_name).dynamic.fg.params.min,
+  breath_invalid_params.min,
+  'unsupported breath param adjustment changed min'
+)
+local breath_keys_text = table.concat(vim.api.nvim_buf_get_lines(instance.state.buf, 0, -1, false), '\n')
+assert_true(
+  breath_keys_text:find('Keys: m mode, -/+ speed/param, i input, d/s/q', 1, true) ~= nil,
+  'breath dynamic keys row did not document mode and speed fallback'
+)
+local breath_keys_row = instance.state.geometry.editor_rows.dynamic_param_keys
+assert_true(breath_keys_row ~= nil, 'breath dynamic keys row was not rendered')
+vim.api.nvim_win_set_cursor(win, { breath_keys_row.line, 0 })
+local breath_keys_speed = overrides.get(result_name).dynamic.fg.speed
+local breath_keys_min = overrides.get(result_name).dynamic.fg.params.min
+press_normal('+')
+assert_equal(
+  overrides.get(result_name).dynamic.fg.speed,
+  breath_keys_speed + 250,
+  '+ key did not adjust breath speed from non-param row'
+)
+assert_equal(
+  overrides.get(result_name).dynamic.fg.params.min,
+  breath_keys_min,
+  '+ key adjusted breath min from non-param row'
+)
+local direct_adjust_default_min_ok, direct_adjust_default_min_err =
+  field_editor.adjust_dynamic_param(instance, nil, 0.05)
+assert_true(
+  direct_adjust_default_min_ok,
+  direct_adjust_default_min_err or 'direct breath param adjustment from non-param row failed'
+)
+assert_equal(
+  overrides.get(result_name).dynamic.fg.params.min,
+  breath_keys_min + 0.05,
+  'direct breath param adjustment from non-param row did not default to min'
+)
 
 press_normal('r')
 assert_equal(overrides.get(result_name).fg, '#112233', 'r key mutated static color in dynamic mode')
@@ -358,6 +475,23 @@ assert_equal(
 
 field_editor.cycle_dynamic_mode(instance)
 assert_equal(overrides.get(result_name).dynamic.fg.mode, 'breath', 'dynamic mode did not cycle with extensions')
+field_editor.set_dynamic_param(instance, 'min', 0.2)
+field_editor.set_dynamic_param(instance, 'max', 0.8)
+local breath_dynamic = overrides.get(result_name).dynamic.fg
+assert_equal(breath_dynamic.params.min, 0.2, 'breath min helper did not update runtime state')
+assert_equal(breath_dynamic.params.max, 0.8, 'breath max helper did not update runtime state')
+field_editor.adjust_dynamic_param(instance, 'min', 0.05)
+assert_equal(
+  overrides.get(result_name).dynamic.fg.params.min,
+  0.25,
+  'breath min adjustment did not update runtime state'
+)
+field_editor.adjust_dynamic_param(instance, 'max', -0.05)
+assert_equal(
+  overrides.get(result_name).dynamic.fg.params.max,
+  0.75,
+  'breath max adjustment did not update runtime state'
+)
 assert_equal(overrides.get(result_name).dynamic.fg.params.phase, 0.25, 'dynamic mode cycle dropped params')
 assert_equal(overrides.get(result_name).dynamic.fg.palette[1], '#000000', 'dynamic mode cycle dropped palette')
 field_editor.adjust_dynamic_speed(instance, 250)
