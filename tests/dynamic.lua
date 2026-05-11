@@ -8,9 +8,59 @@ local default_spec = model.default_spec()
 h.assert_equal(default_spec.mode, 'rgb', 'default mode is wrong', scope)
 h.assert_equal(default_spec.speed, 2000, 'default speed is wrong', scope)
 
+local rgb_defaults = model.default_palette()
+h.assert_equal(rgb_defaults[1], '#ff0000', 'default palette first color changed', scope)
+h.assert_equal(rgb_defaults[2], '#00ff00', 'default palette second color changed', scope)
+h.assert_equal(rgb_defaults[3], '#0000ff', 'default palette third color changed', scope)
+
+local normalized_palette = model.normalize_palette({
+  '#000000',
+  'ffffff',
+  'bad',
+  'NONE',
+})
+h.assert_equal(#normalized_palette, 2, 'normalize_palette did not keep two valid colors', scope)
+h.assert_equal(normalized_palette[1], '#000000', 'normalize_palette changed first color', scope)
+h.assert_equal(normalized_palette[2], '#ffffff', 'normalize_palette did not normalize bare hex', scope)
+
+local fallback_palette = model.normalize_palette({ 'bad', '#111111' })
+h.assert_equal(#fallback_palette, 3, 'invalid short palette did not fall back to default', scope)
+h.assert_equal(fallback_palette[1], '#ff0000', 'fallback palette first color is wrong', scope)
+
+local non_string_fallback_palette = model.normalize_palette({ 123, true, '#111111' })
+h.assert_equal(#non_string_fallback_palette, 3, 'non-string invalid palette did not fall back to default', scope)
+h.assert_equal(non_string_fallback_palette[1], '#ff0000', 'non-string fallback palette first color is wrong', scope)
+
+local breath_params = model.normalize_params('breath', {
+  min = 1.2,
+  max = -0.2,
+  phase = 0.25,
+  custom = 'kept',
+})
+h.assert_equal(breath_params.min, 0, 'breath min was not clamped after swap', scope)
+h.assert_equal(breath_params.max, 1, 'breath max was not clamped after swap', scope)
+h.assert_equal(breath_params.phase, 0.25, 'breath phase was not preserved', scope)
+h.assert_equal(breath_params.custom, 'kept', 'unknown breath param was not preserved', scope)
+
 local normalized = model.normalize_channel({ mode = 'breath', speed = 3000 })
 h.assert_equal(normalized.mode, 'breath', 'breath mode did not normalize', scope)
 h.assert_equal(normalized.speed, 3000, 'speed did not normalize', scope)
+
+local normalized_rgb = model.normalize_channel({
+  mode = 'rgb',
+  speed = 2000,
+  palette = { '#123456', '#abcdef' },
+})
+h.assert_equal(normalized_rgb.palette[1], '#123456', 'rgb palette was not normalized into channel spec', scope)
+h.assert_equal(normalized_rgb.palette[2], '#abcdef', 'rgb palette second color was not normalized', scope)
+
+local normalized_breath = model.normalize_channel({
+  mode = 'breath',
+  speed = 2000,
+  params = { min = 0.2, max = 0.8 },
+})
+h.assert_equal(normalized_breath.params.min, 0.2, 'breath min did not normalize into channel spec', scope)
+h.assert_equal(normalized_breath.params.max, 0.8, 'breath max did not normalize into channel spec', scope)
 
 local fallback_speed = model.normalize_channel({ mode = 'rgb', speed = 'fast' })
 h.assert_equal(fallback_speed.speed, 2000, 'invalid speed did not use default', scope)
@@ -39,7 +89,8 @@ h.assert_equal(entry.dynamic.fg.palette[1], '#000000', 'dyn_fg_palette did not i
 h.assert_equal(entry.dynamic.fg.palette[2], '#ffffff', 'dyn_fg_palette second color did not inflate', scope)
 h.assert_equal(entry.dynamic.bg.mode, 'breath', 'dyn_bg_mode did not inflate', scope)
 h.assert_equal(entry.dynamic.bg.speed, 2000, 'invalid dyn_bg_speed did not default', scope)
-h.assert_true(next(entry.dynamic.bg.params) == nil, 'invalid dyn_bg_params was not ignored', scope)
+h.assert_equal(entry.dynamic.bg.params.min, 0.45, 'invalid dyn_bg_params did not default min', scope)
+h.assert_equal(entry.dynamic.bg.params.max, 1.0, 'invalid dyn_bg_params did not default max', scope)
 h.assert_true(entry.dynamic.bg.palette == nil, 'non-table dyn_bg_palette was not ignored', scope)
 h.assert_true(entry.dyn_fg_mode == nil, 'flat dyn key was not removed during inflate', scope)
 h.assert_true(entry.dyn_fg_speed == nil, 'flat dyn speed key was not removed during inflate', scope)
@@ -82,7 +133,11 @@ local stale_flat = model.flatten_entry({
   },
 })
 h.assert_true(stale_flat.dyn_fg_params == nil, 'empty dynamic params did not clear stale flat key', scope)
-h.assert_true(stale_flat.dyn_fg_palette == nil, 'empty dynamic palette did not clear stale flat key', scope)
+h.assert_true(
+  type(stale_flat.dyn_fg_palette) == 'string',
+  'empty dynamic palette did not flatten default palette',
+  scope
+)
 
 h.assert_equal(effects.rgb(0, 3000), '#ff0000', 'rgb start color is wrong', scope)
 h.assert_equal(effects.rgb(1000, 3000), '#00ff00', 'rgb one-third color is wrong', scope)
