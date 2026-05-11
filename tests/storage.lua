@@ -30,6 +30,7 @@ h.assert_equal(decoded.entries['Line,WithComma'].italic, false, 'false boolean s
 h.write_file(persist_dir .. '/dynamic.toml', {
   '["dynamic.group"]',
   '"DynamicNormal" = { fg = "#101010", dyn_fg_mode = "rgb", dyn_fg_params = "{\\"phase\\":0.25}", dyn_fg_palette = "[\\"#000000\\",\\"#ffffff\\"]", dyn_fg_speed = 1500 }',
+  '"OldDynamic" = { fg = "#202020", dyn_fg_mode = "rgb", dyn_fg_speed = 1500 }',
 })
 
 local dynamic_decoded = storage.load(persist_dir)
@@ -42,9 +43,27 @@ h.assert_equal(
   scope
 )
 h.assert_equal(
+  dynamic_decoded.entries.DynamicNormal.dynamic.fg.palette[1],
+  '#000000',
+  'dynamic fg palette first color did not load',
+  scope
+)
+h.assert_equal(
   dynamic_decoded.entries.DynamicNormal.dynamic.fg.palette[2],
   '#ffffff',
-  'dynamic fg palette did not load',
+  'dynamic fg palette second color did not load',
+  scope
+)
+h.assert_equal(
+  dynamic_decoded.entries.OldDynamic.dynamic.fg.palette[1],
+  '#ff0000',
+  'old dynamic entry did not receive default palette',
+  scope
+)
+h.assert_equal(
+  dynamic_decoded.entries.OldDynamic.dynamic.fg.palette[3],
+  '#0000ff',
+  'old dynamic entry default palette third color is wrong',
   scope
 )
 h.assert_true(dynamic_decoded.entries.DynamicNormal.dyn_fg_mode == nil, 'flat dynamic key leaked after load', scope)
@@ -124,7 +143,7 @@ local save_ok, save_err = storage.save({
         params = { phase = 0.25 },
         palette = { '#000000', '#ffffff' },
       },
-      bg = { mode = 'breath', speed = 2500 },
+      bg = { mode = 'breath', speed = 2500, params = { min = 0.2, max = 0.8 } },
     },
   },
 }, {
@@ -154,6 +173,8 @@ h.assert_equal(next(saved.entries.Comment), nil, 'group-only save persisted fiel
 h.assert_equal(saved.groups.Comment, 'group-only', 'group-only save did not reload group', scope)
 h.assert_equal(saved.entries.DynamicNormal.dynamic.fg.mode, 'rgb', 'saved dynamic fg mode did not reload', scope)
 h.assert_equal(saved.entries.DynamicNormal.dynamic.bg.speed, 2500, 'saved dynamic bg speed did not reload', scope)
+h.assert_equal(saved.entries.DynamicNormal.dynamic.bg.params.min, 0.2, 'saved breath min did not reload', scope)
+h.assert_equal(saved.entries.DynamicNormal.dynamic.bg.params.max, 0.8, 'saved breath max did not reload', scope)
 h.assert_equal(
   saved.entries.DynamicNormal.dynamic.fg.params.phase,
   0.25,
