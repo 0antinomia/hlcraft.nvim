@@ -28,7 +28,19 @@ function M.file_path(path, group_name)
   return path .. '/' .. M.sanitize_filename(section_name) .. '.toml'
 end
 
-function M.toml_files_in_dir(path)
+local function is_toml_file(path, file_type, include_links)
+  if file_type == 'file' then
+    return true
+  end
+  if include_links and file_type == 'link' then
+    local stat = uv.fs_stat(path)
+    return stat and stat.type == 'file'
+  end
+  return false
+end
+
+function M.toml_files_in_dir(path, opts)
+  opts = opts or {}
   local files = {}
   local fd = uv.fs_scandir(path)
   if not fd then
@@ -41,8 +53,9 @@ function M.toml_files_in_dir(path)
       break
     end
 
-    if file_type == 'file' and name:sub(-5) == '.toml' then
-      files[#files + 1] = path .. '/' .. name
+    local file_path = path .. '/' .. name
+    if name:sub(-5) == '.toml' and is_toml_file(file_path, file_type, opts.include_links) then
+      files[#files + 1] = file_path
     end
   end
 

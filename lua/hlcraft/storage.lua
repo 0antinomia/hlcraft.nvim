@@ -58,7 +58,7 @@ function M.load(path)
   end
 
   local data = codec.empty_data()
-  for _, file in ipairs(files.toml_files_in_dir(target)) do
+  for _, file in ipairs(files.toml_files_in_dir(target, { include_links = true })) do
     codec.load_file(file, data)
   end
 
