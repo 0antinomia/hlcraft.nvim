@@ -27,6 +27,24 @@ h.assert_equal(decoded.entries['Normal Float'].note, 'quoted "value"', 'escaped 
 h.assert_equal(decoded.groups['Line,WithComma'], 'ui.group', 'quoted key with comma did not parse', scope)
 h.assert_equal(decoded.entries['Line,WithComma'].italic, false, 'false boolean scalar did not parse', scope)
 
+local symlink_target = persist_dir .. '-linked-target.toml'
+vim.fn.delete(symlink_target, 'rf')
+h.write_file(symlink_target, {
+  '["linked.group"]',
+  '"LinkedNormal" = { fg = "#123456" }',
+})
+local symlink_path = persist_dir .. '/linked.toml'
+local symlink_ok, symlink_err = vim.uv.fs_symlink(symlink_target, symlink_path)
+h.assert_true(symlink_ok, ('failed to create symlink TOML fixture: %s'):format(tostring(symlink_err)), scope)
+local symlink_decoded = storage.load(persist_dir)
+h.assert_equal(
+  symlink_decoded.groups.LinkedNormal,
+  'linked.group',
+  'symlinked TOML file was not assigned to section',
+  scope
+)
+h.assert_equal(symlink_decoded.entries.LinkedNormal.fg, '#123456', 'symlinked TOML file did not load', scope)
+
 h.write_file(persist_dir .. '/dynamic.toml', {
   '["dynamic.group"]',
   '"DynamicNormal" = { fg = "#101010", dyn_fg_mode = "rgb", dyn_fg_params = "{\\"phase\\":0.25}", dyn_fg_palette = "[\\"#000000\\",\\"#ffffff\\"]", dyn_fg_speed = 1500 }',
@@ -221,4 +239,5 @@ h.assert_true(
 )
 
 vim.fn.delete(persist_dir, 'rf')
+vim.fn.delete(symlink_target, 'rf')
 print('hlcraft storage: OK')
