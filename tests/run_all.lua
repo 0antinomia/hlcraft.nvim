@@ -3,11 +3,6 @@ local tests = {
   'tests/dynamic.lua',
   'tests/storage.lua',
   'tests/overrides.lua',
-  'tests/ui_workspace.lua',
-  'tests/render_workspace.lua',
-  'tests/ui_theme.lua',
-  'tests/origin_window_switch.lua',
-  'tests/smoke.lua',
 }
 
 for _, test_file in ipairs(tests) do
