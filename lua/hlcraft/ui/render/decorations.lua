@@ -1,7 +1,7 @@
 local ui_fields = require('hlcraft.ui.fields')
 local color = require('hlcraft.core.color')
 local ui_detail = require('hlcraft.ui.detail')
-local workspace = require('hlcraft.ui.workspace')
+local window = require('hlcraft.ui.workspace.window')
 local input_model = require('hlcraft.ui.input.model')
 local theme = require('hlcraft.ui.theme')
 
@@ -16,8 +16,8 @@ end
 --- @param result table Highlight group result from search
 --- @return table[] Virtual lines for extmark display
 function M.detail_info_virt_lines(instance, result)
-  local win = workspace.get_win(instance)
-  local width = workspace.is_valid_win(win) and math.max(50, vim.api.nvim_win_get_width(win) - 1) or 50
+  local win = window.get_win(instance)
+  local width = window.is_valid_win(win) and math.max(50, vim.api.nvim_win_get_width(win) - 1) or 50
   return ui_detail.build_virt_lines(result, function(bg, suffix)
     return M.detail_color_hl(instance, bg, suffix)
   end, width)
@@ -46,7 +46,7 @@ end
 --- @return nil
 function M.clear_overlay(instance, key)
   local mark_id = instance.state.placeholder_marks[key]
-  if not mark_id or not workspace.is_valid_buf(instance.state.buf) then
+  if not mark_id or not window.is_valid_buf(instance.state.buf) then
     return
   end
   pcall(vim.api.nvim_buf_del_extmark, instance.state.buf, instance.ns, mark_id)
@@ -225,7 +225,7 @@ end
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.refresh_input_placeholders(instance)
-  if not workspace.is_valid_buf(instance.state.buf) then
+  if not window.is_valid_buf(instance.state.buf) then
     return
   end
 

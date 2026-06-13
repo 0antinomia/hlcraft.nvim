@@ -6,7 +6,8 @@ local results_state = require('hlcraft.ui.state.results')
 local editor = require('hlcraft.ui.commands.editor')
 local detail_commands = require('hlcraft.ui.commands.detail')
 local ui_fields = require('hlcraft.ui.fields')
-local workspace = require('hlcraft.ui.workspace')
+local lifecycle = require('hlcraft.ui.workspace.lifecycle')
+local window = require('hlcraft.ui.workspace.window')
 
 local M = {}
 
@@ -32,8 +33,8 @@ local function setup_input_boundary_keys(instance, buf)
 
   for _, lhs in ipairs({ 'X', 'S', 'D', 'c', 'C' }) do
     vim.keymap.set('n', lhs, function()
-      local win = workspace.get_win(instance)
-      if not workspace.is_valid_win(win) then
+      local win = window.get_win(instance)
+      if not window.is_valid_win(win) then
         return
       end
       if results_state.is_on_row(instance) then
@@ -61,8 +62,8 @@ function M.setup_workspace_keymaps(instance, buf)
   local opts = { buffer = buf, silent = true, nowait = true }
 
   local function feed_normal_key(lhs)
-    local win = workspace.get_win(instance)
-    if not workspace.is_valid_win(win) then
+    local win = window.get_win(instance)
+    if not window.is_valid_win(win) then
       return
     end
     if results_state.is_on_row(instance) then
@@ -252,7 +253,7 @@ function M.setup_workspace_keymaps(instance, buf)
     detail_commands.close_or_quit(instance)
   end, opts)
   vim.keymap.set('n', '?', function()
-    workspace.toggle_help(instance)
+    lifecycle.toggle_help(instance)
   end, opts)
   vim.keymap.set('n', 'j', function()
     navigation.move_interactive(instance, 1)
@@ -391,8 +392,8 @@ function M.setup_workspace_keymaps(instance, buf)
     if input_current_editor_field() then
       return
     end
-    local win = workspace.get_win(instance)
-    if not workspace.is_valid_win(win) then
+    local win = window.get_win(instance)
+    if not window.is_valid_win(win) then
       return
     end
     local field = input_model.get_input_field_at_row(instance, vim.api.nvim_win_get_cursor(win)[1] - 1)
@@ -408,8 +409,8 @@ function M.setup_workspace_keymaps(instance, buf)
     feed_normal_key('x')
   end, opts)
   vim.keymap.set('n', 'a', function()
-    local win = workspace.get_win(instance)
-    if not workspace.is_valid_win(win) then
+    local win = window.get_win(instance)
+    if not window.is_valid_win(win) then
       return
     end
     local field = input_model.get_input_field_at_row(instance, vim.api.nvim_win_get_cursor(win)[1] - 1)
@@ -424,8 +425,8 @@ function M.setup_workspace_keymaps(instance, buf)
 
   vim.keymap.set({ 'n', 'i' }, '<CR>', function()
     vim.schedule(function()
-      local win = workspace.get_win(instance)
-      local row = workspace.is_valid_win(win) and vim.api.nvim_win_get_cursor(win)[1] or 0
+      local win = window.get_win(instance)
+      local row = window.is_valid_win(win) and vim.api.nvim_win_get_cursor(win)[1] or 0
       local area = input_model.current_area(instance, row)
       if instance.state.detail_index then
         editor.activate(instance)

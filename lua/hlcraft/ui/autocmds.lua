@@ -1,7 +1,7 @@
 local input_model = require('hlcraft.ui.input.model')
 local workspace_render = require('hlcraft.ui.render.workspace')
 local navigation = require('hlcraft.ui.navigation')
-local workspace = require('hlcraft.ui.workspace')
+local window = require('hlcraft.ui.workspace.window')
 local config = require('hlcraft.config')
 
 local M = {}
@@ -62,8 +62,8 @@ function M.setup(instance)
     group = instance.group,
     buffer = instance.state.buf,
     callback = function()
-      local win = workspace.get_win(instance)
-      if not workspace.is_valid_win(win) then
+      local win = window.get_win(instance)
+      if not window.is_valid_win(win) then
         return
       end
       navigation.clamp_cursor(instance)
@@ -86,7 +86,7 @@ function M.setup(instance)
   vim.api.nvim_create_autocmd('WinResized', {
     group = instance.group,
     callback = function()
-      if workspace.is_open(instance) then
+      if window.is_open(instance) then
         workspace_render.render(instance)
       end
     end,
@@ -97,8 +97,8 @@ function M.setup(instance)
     buffer = instance.state.buf,
     callback = function()
       local win = vim.api.nvim_get_current_win()
-      if workspace.is_valid_win(win) then
-        workspace.capture_workspace_window(instance, win)
+      if window.is_valid_win(win) then
+        window.capture_workspace_window(instance, win)
       end
     end,
   })
@@ -108,14 +108,14 @@ function M.setup(instance)
     buffer = instance.state.buf,
     callback = function()
       local current_win = vim.api.nvim_get_current_win()
-      if workspace.is_valid_win(current_win) then
-        workspace.release_workspace_window(instance, current_win)
+      if window.is_valid_win(current_win) then
+        window.release_workspace_window(instance, current_win)
       end
 
-      if workspace.is_valid_win(instance.state.origin_win) then
+      if window.is_valid_win(instance.state.origin_win) then
         local current_buf = vim.api.nvim_win_get_buf(instance.state.origin_win)
         if current_buf ~= instance.state.buf then
-          workspace.release_workspace_window(instance, instance.state.origin_win)
+          window.release_workspace_window(instance, instance.state.origin_win)
         end
       end
     end,

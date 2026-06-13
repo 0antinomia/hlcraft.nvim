@@ -5,6 +5,7 @@ local tests = {
   'tests/storage.lua',
   'tests/engine.lua',
   'tests/ui_session.lua',
+  'tests/workspace_split.lua',
   'tests/overrides.lua',
 }
 

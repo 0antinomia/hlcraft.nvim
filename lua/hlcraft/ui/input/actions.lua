@@ -1,11 +1,8 @@
 local input_model = require('hlcraft.ui.input.model')
 local navigation = require('hlcraft.ui.navigation')
+local window = require('hlcraft.ui.workspace.window')
 
 local M = {}
-
-local function get_workspace()
-  return require('hlcraft.ui.workspace')
-end
 
 local function get_results_state()
   return require('hlcraft.ui.state.results')
@@ -15,9 +12,8 @@ end
 --- @param instance table The Instance object holding UI state
 --- @return boolean True if at the start boundary of an input field
 function M.should_block_backward_delete(instance)
-  local workspace = get_workspace()
-  local win = workspace.get_win(instance)
-  if not workspace.is_valid_win(win) then
+  local win = window.get_win(instance)
+  if not window.is_valid_win(win) then
     return false
   end
   local cursor = vim.api.nvim_win_get_cursor(win)
@@ -33,9 +29,8 @@ end
 --- @param instance table The Instance object holding UI state
 --- @return boolean True if at the end boundary of an input field
 function M.should_block_forward_delete(instance)
-  local workspace = get_workspace()
-  local win = workspace.get_win(instance)
-  if not workspace.is_valid_win(win) then
+  local win = window.get_win(instance)
+  if not window.is_valid_win(win) then
     return false
   end
   local cursor = vim.api.nvim_win_get_cursor(win)
@@ -56,10 +51,9 @@ end
 --- @param is_visual boolean Whether triggered from visual mode
 --- @return nil
 function M.paste_below(instance, is_visual)
-  local workspace = get_workspace()
   local results_state = get_results_state()
-  local win = workspace.get_win(instance)
-  if not workspace.is_valid_win(win) then
+  local win = window.get_win(instance)
+  if not window.is_valid_win(win) then
     return
   end
 
@@ -105,10 +99,9 @@ end
 --- @param is_visual boolean Whether triggered from visual mode
 --- @return nil
 function M.paste_above(instance, is_visual)
-  local workspace = get_workspace()
   local results_state = get_results_state()
-  local win = workspace.get_win(instance)
-  if not workspace.is_valid_win(win) then
+  local win = window.get_win(instance)
+  if not window.is_valid_win(win) then
     return
   end
 
@@ -154,10 +147,9 @@ end
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.open_below(instance)
-  local workspace = get_workspace()
   local results_state = get_results_state()
-  local win = workspace.get_win(instance)
-  if not workspace.is_valid_win(win) then
+  local win = window.get_win(instance)
+  if not window.is_valid_win(win) then
     return
   end
 
@@ -202,9 +194,8 @@ end
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.goto_next_input(instance)
-  local workspace = get_workspace()
-  local win = workspace.get_win(instance)
-  if not workspace.is_valid_win(win) then
+  local win = window.get_win(instance)
+  if not window.is_valid_win(win) then
     return
   end
 
@@ -233,9 +224,8 @@ end
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.goto_prev_input(instance)
-  local workspace = get_workspace()
-  local win = workspace.get_win(instance)
-  if not workspace.is_valid_win(win) then
+  local win = window.get_win(instance)
+  if not window.is_valid_win(win) then
     return
   end
 
