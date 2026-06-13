@@ -1,10 +1,9 @@
 local M = {}
 
-local color = require('hlcraft.core.color')
 local dynamic_model = require('hlcraft.dynamic.model')
-local highlights = require('hlcraft.core.highlights')
 local storage = require('hlcraft.persistence.repository')
 local applier = require('hlcraft.engine.applier')
+local mutations = require('hlcraft.engine.mutations')
 local snapshot = require('hlcraft.engine.snapshot')
 local store = require('hlcraft.engine.store')
 
@@ -113,14 +112,7 @@ function M.set_group(name, group_name)
     return false, 'Group name is required'
   end
 
-  if not data.draft[name] then
-    data.draft[name] = {}
-  end
-
-  data.draft_groups[name] = normalized
-  snapshot.rebuild_active()
-  applier.apply_group(name)
-  return true, nil
+  return mutations.apply_patch(name, { group = normalized })
 end
 
 --- Set or clear one color override field and apply it immediately.
@@ -134,23 +126,7 @@ function M.set_color(name, key, value)
     return false, ('Unsupported override key: %s'):format(tostring(key))
   end
 
-  local normalized, err = color.normalize(value)
-  if err then
-    return false, err
-  end
-
-  snapshot.ensure_draft_group(name)
-  data.draft[name] = data.draft[name] or {}
-  data.draft[name][key] = normalized
-
-  if data.draft[name][key] == nil then
-    data.draft[name][key] = nil
-  end
-
-  snapshot.remove_empty_draft_entry(name)
-  snapshot.rebuild_active()
-  applier.apply_group(name)
-  return true, nil
+  return mutations.apply_patch(name, { [key] = value == nil and vim.NIL or value })
 end
 
 --- Set or clear one dynamic color channel and apply it immediately.
@@ -164,27 +140,7 @@ function M.set_dynamic(name, key, spec)
     return false, ('Unsupported dynamic key: %s'):format(tostring(key))
   end
 
-  local normalized
-  if spec ~= nil then
-    normalized = dynamic_model.normalize_channel(spec)
-    if not normalized then
-      return false, ('Invalid dynamic spec for %s'):format(key)
-    end
-  end
-
-  snapshot.ensure_draft_group(name)
-  data.draft[name] = data.draft[name] or {}
-  data.draft[name].dynamic = data.draft[name].dynamic or {}
-  data.draft[name].dynamic[key] = normalized
-  data.draft[name] = snapshot.compact_entry(data.draft[name])
-
-  if data.draft[name] == nil then
-    data.draft_groups[name] = nil
-  end
-
-  snapshot.rebuild_active()
-  applier.apply_group(name)
-  return true, nil
+  return mutations.apply_patch(name, { dynamic = { [key] = spec == nil and vim.NIL or spec } })
 end
 
 --- Set or clear one boolean style override and apply it immediately.
@@ -198,18 +154,7 @@ function M.set_style(name, key, value)
     return false, ('Unsupported style key: %s'):format(tostring(key))
   end
 
-  if value ~= nil and type(value) ~= 'boolean' then
-    return false, ('Style override %s must be boolean or nil'):format(key)
-  end
-
-  snapshot.ensure_draft_group(name)
-  data.draft[name] = data.draft[name] or {}
-  data.draft[name][key] = value
-
-  snapshot.remove_empty_draft_entry(name)
-  snapshot.rebuild_active()
-  applier.apply_group(name)
-  return true, nil
+  return mutations.apply_patch(name, { [key] = value == nil and vim.NIL or value })
 end
 
 --- Toggle one boolean style override against the current live highlight.
@@ -223,21 +168,7 @@ function M.toggle_style(name, key)
     return false, nil, ('Unsupported style key: %s'):format(tostring(key))
   end
 
-  local current = highlights.get_group(name)
-  if not current then
-    return false, nil, ('Unknown highlight group: %s'):format(name)
-  end
-
-  local active = data.active[name] and data.active[name][key]
-  local next_value = active
-  if next_value == nil then
-    next_value = not current[key]
-  else
-    next_value = not next_value
-  end
-
-  local ok, err = M.set_style(name, key, next_value)
-  return ok, ok and next_value or nil, err
+  return mutations.toggle_style(name, key)
 end
 
 --- Set or clear blend override and apply it immediately.
@@ -246,27 +177,16 @@ end
 --- @return boolean ok
 --- @return string|nil err
 function M.set_blend(name, value)
-  if value ~= nil then
-    local number_value = tonumber(value)
-    if number_value == nil then
-      return false, 'Blend override must be a number or empty'
-    end
+  return mutations.apply_patch(name, { blend = value == nil and vim.NIL or value })
+end
 
-    if number_value < 0 or number_value > 100 then
-      return false, 'Blend override must be between 0 and 100'
-    end
-
-    value = math.floor(number_value)
-  end
-
-  snapshot.ensure_draft_group(name)
-  data.draft[name] = data.draft[name] or {}
-  data.draft[name].blend = value
-
-  snapshot.remove_empty_draft_entry(name)
-  snapshot.rebuild_active()
-  applier.apply_group(name)
-  return true, nil
+--- Atomically apply a draft mutation patch.
+--- @param name string
+--- @param patch table
+--- @return boolean ok
+--- @return string|nil err
+function M.apply_patch(name, patch)
+  return mutations.apply_patch(name, patch)
 end
 
 --- Remove all draft overrides for one highlight group and restore its base highlight.
