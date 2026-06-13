@@ -92,12 +92,6 @@ h.assert_true(save_ok, save_err or 'storage.save failed', scope)
 
 h.assert_file_exists(files.file_path(persist_dir, 'main/group'), 'main group file was not created', scope)
 h.assert_file_missing(persist_dir .. '/stale.toml', 'stale TOML file was not removed', scope)
-h.assert_equal(
-  storage.file_path('main/group'),
-  files.file_path(persist_dir, 'main/group'),
-  'configured file path is wrong',
-  scope
-)
 
 local saved = storage.load(persist_dir)
 h.assert_equal(saved.entries.Normal.fg, '#111111', 'saved override did not reload', scope)

@@ -48,26 +48,4 @@ function M.read_file(path)
   return content
 end
 
-function M.find_result_line(instance, index)
-  for line, result_index in pairs(instance.state.geometry.result_lines or {}) do
-    if result_index == index then
-      return line
-    end
-  end
-  return nil
-end
-
-function M.press_normal(lhs)
-  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(lhs, true, false, true), 'mx', false)
-end
-
-function M.list_contains(list, value)
-  for _, item in ipairs(list or {}) do
-    if item == value then
-      return true
-    end
-  end
-  return false
-end
-
 return M

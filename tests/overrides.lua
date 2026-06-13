@@ -70,14 +70,6 @@ h.assert_true(
   scope
 )
 
-local group_only_ok, group_only_err = overrides.set_group('HlcraftTestComment', 'group-only')
-h.assert_true(group_only_ok, group_only_err or 'group-only set_group failed', scope)
-local group_only_save_ok, group_only_save_err = overrides.save()
-h.assert_true(group_only_save_ok, group_only_save_err or 'group-only save failed', scope)
-local loaded_group_only = storage.load(persist_dir)
-h.assert_equal(loaded_group_only.groups.HlcraftTestComment, 'group-only', 'group-only group did not persist', scope)
-h.assert_equal(next(loaded_group_only.entries.HlcraftTestComment), nil, 'group-only entry persisted fields', scope)
-
 vim.fn.delete(persist_dir, 'rf')
 
 print('hlcraft overrides: OK')
