@@ -193,6 +193,35 @@ h.assert_equal(
 local loaded = storage.load(persist_dir)
 h.assert_equal(loaded.entries.HlcraftEngineNormal.fg, '#abcdef', 'saved fg did not load', scope)
 
+local group_only_ok, group_only_err = engine.set_group('HlcraftEngineGroupOnly', 'engine-group-only')
+h.assert_true(group_only_ok, group_only_err or 'group-only set_group failed', scope)
+local group_only_save_ok, group_only_save_err = engine.save()
+h.assert_true(group_only_save_ok, group_only_save_err or 'group-only save failed', scope)
+h.assert_equal(
+  engine.get_persisted_group('HlcraftEngineGroupOnly'),
+  'engine-group-only',
+  'group-only entry did not save',
+  scope
+)
+
+local clear_group_only_ok, clear_group_only_err = engine.apply_patch('HlcraftEngineGroupOnly', { group = vim.NIL })
+h.assert_true(clear_group_only_ok, clear_group_only_err or 'group-only clear failed', scope)
+h.assert_equal(
+  engine.get_draft_group('HlcraftEngineGroupOnly'),
+  nil,
+  'cleared group-only draft still falls back to persisted group',
+  scope
+)
+local clear_group_only_save_ok, clear_group_only_save_err = engine.save()
+h.assert_true(clear_group_only_save_ok, clear_group_only_save_err or 'cleared group-only save failed', scope)
+local loaded_after_group_clear = storage.load(persist_dir)
+h.assert_equal(
+  loaded_after_group_clear.groups.HlcraftEngineGroupOnly,
+  nil,
+  'cleared group-only entry was still persisted',
+  scope
+)
+
 vim.fn.delete(persist_dir, 'rf')
 
 print('hlcraft engine: OK')
