@@ -1,4 +1,4 @@
-local color = require('hlcraft.color')
+local color = require('hlcraft.core.color')
 
 local M = {}
 

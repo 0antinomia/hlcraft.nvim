@@ -1,4 +1,4 @@
-local color = require('hlcraft.color')
+local color = require('hlcraft.core.color')
 local dynamic_model = require('hlcraft.dynamic.model')
 local detail_values = require('hlcraft.ui.state.detail_values')
 local ui_fields = require('hlcraft.ui.fields')

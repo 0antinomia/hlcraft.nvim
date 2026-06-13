@@ -1,8 +1,8 @@
 local M = {}
 
-local color = require('hlcraft.color')
+local color = require('hlcraft.core.color')
 local dynamic_model = require('hlcraft.dynamic.model')
-local highlights = require('hlcraft.highlights')
+local highlights = require('hlcraft.core.highlights')
 local storage = require('hlcraft.storage')
 local apply = require('hlcraft.overrides.apply')
 local override_state = require('hlcraft.overrides.state')
