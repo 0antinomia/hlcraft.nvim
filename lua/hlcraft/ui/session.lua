@@ -29,8 +29,6 @@ function M.draft_entry(name)
   return shallow_copy(engine.get(name))
 end
 
-M.runtime_entry = M.draft_entry
-
 function M.persisted_entry(name)
   return shallow_copy(engine.get_persisted(name))
 end
@@ -38,8 +36,6 @@ end
 function M.draft_group(name)
   return engine.get_draft_group(name)
 end
-
-M.runtime_group = M.draft_group
 
 function M.persisted_group(name)
   return engine.get_persisted_group(name)
@@ -55,6 +51,10 @@ function M.display_value(name, key, fallback)
     return entry[key]
   end
   return fallback
+end
+
+function M.field_value(name, key)
+  return M.draft_entry(name)[key]
 end
 
 function M.dynamic_value(name, key)
@@ -75,8 +75,8 @@ function M.is_dirty(name)
   return not same_entry(M.draft_entry(name), M.persisted_entry(name)) or M.draft_group(name) ~= M.persisted_group(name)
 end
 
-function M.apply_patch(instance, name, patch)
-  local ok, err = engine.apply_patch(name, patch)
+function M.set_color(instance, name, key, value)
+  local ok, err = engine.set_color(name, key, value)
   if not ok then
     return false, err
   end
@@ -85,7 +85,45 @@ function M.apply_patch(instance, name, patch)
   return true, nil
 end
 
-M.apply_runtime = M.apply_patch
+function M.set_dynamic(instance, name, key, dynamic)
+  local ok, err = engine.set_dynamic(name, key, dynamic)
+  if not ok then
+    return false, err
+  end
+
+  refresh(instance, name)
+  return true, nil
+end
+
+function M.set_style(instance, name, key, value)
+  local ok, err = engine.set_style(name, key, value)
+  if not ok then
+    return false, err
+  end
+
+  refresh(instance, name)
+  return true, nil
+end
+
+function M.set_group(instance, name, group_name)
+  local ok, err = engine.set_group(name, group_name)
+  if not ok then
+    return false, err
+  end
+
+  refresh(instance, name)
+  return true, nil
+end
+
+function M.set_blend(instance, name, value)
+  local ok, err = engine.set_blend(name, value)
+  if not ok then
+    return false, err
+  end
+
+  refresh(instance, name)
+  return true, nil
+end
 
 function M.save(instance, name)
   local ok, err = engine.save()
@@ -100,6 +138,14 @@ function M.discard(instance, name)
   engine.restore_persisted(name)
   refresh(instance, name)
   return true, nil
+end
+
+function M.known_groups()
+  return engine.known_groups()
+end
+
+function M.file_path(name)
+  return engine.file_path(name)
 end
 
 return M
