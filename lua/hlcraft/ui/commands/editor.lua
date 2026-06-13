@@ -3,7 +3,7 @@ local dynamic_model = require('hlcraft.dynamic.model')
 local session = require('hlcraft.ui.session')
 local ui_fields = require('hlcraft.ui.fields')
 local results_state = require('hlcraft.ui.state.results')
-local workspace = require('hlcraft.ui.workspace')
+local window = require('hlcraft.ui.workspace.window')
 
 local M = {}
 
@@ -57,8 +57,8 @@ local function next_mode(mode)
 end
 
 local function menu_row_at_cursor(instance)
-  local win = workspace.get_win(instance)
-  if not workspace.is_valid_win(win) then
+  local win = window.get_win(instance)
+  if not window.is_valid_win(win) then
     return nil
   end
 
@@ -72,8 +72,8 @@ local function menu_row_at_cursor(instance)
 end
 
 local function editor_row_at_cursor(instance)
-  local win = workspace.get_win(instance)
-  if not workspace.is_valid_win(win) then
+  local win = window.get_win(instance)
+  if not window.is_valid_win(win) then
     return nil
   end
 
@@ -136,8 +136,8 @@ end
 
 local function jump_to_palette_index(instance, index)
   local row = instance.state.geometry.editor_rows[('dynamic_palette:%d'):format(index)]
-  local win = workspace.get_win(instance)
-  if row and workspace.is_valid_win(win) then
+  local win = window.get_win(instance)
+  if row and window.is_valid_win(win) then
     pcall(vim.api.nvim_win_set_cursor, win, { row.line, 0 })
   end
 end

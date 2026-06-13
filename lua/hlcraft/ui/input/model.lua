@@ -1,4 +1,4 @@
-local workspace = require('hlcraft.ui.workspace')
+local window = require('hlcraft.ui.workspace.window')
 
 local M = {}
 
@@ -45,7 +45,7 @@ end
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.set_input_extmarks(instance)
-  if not workspace.is_valid_buf(instance.state.buf) then
+  if not window.is_valid_buf(instance.state.buf) then
     return
   end
 
@@ -178,7 +178,7 @@ end
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.sync_queries_from_buffer(instance)
-  if instance.state.rendering or not workspace.is_valid_buf(instance.state.buf) or instance.state.detail_index then
+  if instance.state.rendering or not window.is_valid_buf(instance.state.buf) or instance.state.detail_index then
     return
   end
   instance.state.name_query = M.get_input_value(instance, 'name')

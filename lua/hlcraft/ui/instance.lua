@@ -1,5 +1,5 @@
 local results_state = require('hlcraft.ui.state.results')
-local workspace = require('hlcraft.ui.workspace')
+local lifecycle = require('hlcraft.ui.workspace.lifecycle')
 local workspace_render = require('hlcraft.ui.render.workspace')
 local theme = require('hlcraft.ui.theme')
 
@@ -79,19 +79,19 @@ function Instance:quit_or_back()
     return
   end
 
-  workspace.close(self)
+  lifecycle.close(self)
 end
 
 --- Open the workspace in the current window
 --- @return nil
 function Instance:open()
-  return workspace.open(self)
+  return lifecycle.open(self)
 end
 
 --- Clean up all resources: windows, buffers, augroups, and reset state
 --- @return nil
 function Instance:cleanup()
-  return workspace.cleanup(self)
+  return lifecycle.cleanup(self)
 end
 
 return Instance

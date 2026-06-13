@@ -1,4 +1,4 @@
-local workspace = require('hlcraft.ui.workspace')
+local window = require('hlcraft.ui.workspace.window')
 
 local M = {}
 
@@ -83,8 +83,8 @@ function M.clamp_cursor(instance)
   if instance.state.clamping_cursor then
     return
   end
-  local win = workspace.get_win(instance)
-  if not workspace.is_valid_win(win) then
+  local win = window.get_win(instance)
+  if not window.is_valid_win(win) then
     return
   end
 
@@ -109,8 +109,8 @@ end
 --- @param insert boolean Whether to enter insert mode after jumping
 --- @return nil
 function M.jump_to_row(instance, row1, insert)
-  local win = workspace.get_win(instance)
-  if not workspace.is_valid_win(win) then
+  local win = window.get_win(instance)
+  if not window.is_valid_win(win) then
     return
   end
   vim.api.nvim_set_current_win(win)
@@ -125,8 +125,8 @@ end
 --- @param step integer Number of rows to move (+1 down, -1 up)
 --- @return nil
 function M.move_interactive(instance, step)
-  local win = workspace.get_win(instance)
-  if not workspace.is_valid_win(win) then
+  local win = window.get_win(instance)
+  if not window.is_valid_win(win) then
     return
   end
   local current = vim.api.nvim_win_get_cursor(win)

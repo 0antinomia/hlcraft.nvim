@@ -9,7 +9,7 @@ local field_editor = require('hlcraft.ui.render.field_editor')
 local list = require('hlcraft.ui.render.list')
 local results_state = require('hlcraft.ui.state.results')
 local theme = require('hlcraft.ui.theme')
-local workspace = require('hlcraft.ui.workspace')
+local window = require('hlcraft.ui.workspace.window')
 
 local M = {}
 
@@ -78,12 +78,12 @@ end
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.render(instance)
-  if not workspace.is_valid_buf(instance.state.buf) then
+  if not window.is_valid_buf(instance.state.buf) then
     return
   end
 
-  local win = workspace.get_win(instance)
-  if not workspace.is_valid_win(win) then
+  local win = window.get_win(instance)
+  if not window.is_valid_win(win) then
     return
   end
 

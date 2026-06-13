@@ -1,6 +1,6 @@
 local color = require('hlcraft.core.color')
 local search = require('hlcraft.core.search')
-local workspace = require('hlcraft.ui.workspace')
+local window = require('hlcraft.ui.workspace.window')
 local navigation = require('hlcraft.ui.navigation')
 local ui_fields = require('hlcraft.ui.fields')
 local session = require('hlcraft.ui.session')
@@ -119,8 +119,8 @@ end
 --- @param instance table The Instance object holding UI state
 --- @return table|nil Entry with row, index, and result keys, or nil
 function M.current_entry(instance)
-  local win = workspace.get_win(instance)
-  if not workspace.is_valid_win(win) then
+  local win = window.get_win(instance)
+  if not window.is_valid_win(win) then
     return nil
   end
   local row = vim.api.nvim_win_get_cursor(win)[1]
@@ -143,8 +143,8 @@ end
 --- @param step integer Number of entries to jump (+1 forward, -1 backward)
 --- @return nil
 function M.goto_offset(instance, step)
-  local win = workspace.get_win(instance)
-  if not workspace.is_valid_win(win) then
+  local win = window.get_win(instance)
+  if not window.is_valid_win(win) then
     return
   end
 
@@ -208,8 +208,8 @@ end
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.open_detail(instance)
-  local win = workspace.get_win(instance)
-  if not workspace.is_valid_win(win) then
+  local win = window.get_win(instance)
+  if not window.is_valid_win(win) then
     return
   end
   local row = vim.api.nvim_win_get_cursor(win)[1]
@@ -232,10 +232,10 @@ end
 --- @return nil
 function M.close_unsaved_prompt(instance)
   local prompt = instance.state.unsaved_prompt or {}
-  if workspace.is_valid_win(prompt.win) then
+  if window.is_valid_win(prompt.win) then
     pcall(vim.api.nvim_win_close, prompt.win, true)
   end
-  if workspace.is_valid_buf(prompt.buf) then
+  if window.is_valid_buf(prompt.buf) then
     pcall(vim.api.nvim_buf_delete, prompt.buf, { force = true })
   end
   instance.state.unsaved_prompt = { win = nil, buf = nil }
@@ -249,8 +249,8 @@ function M.force_close_detail(instance)
   instance.state.detail_index = nil
   instance.state.field_editor.field = nil
   instance:rerender()
-  local win = workspace.get_win(instance)
-  if not workspace.is_valid_win(win) then
+  local win = window.get_win(instance)
+  if not window.is_valid_win(win) then
     return
   end
   for line, index in pairs(instance.state.geometry.result_lines or {}) do
