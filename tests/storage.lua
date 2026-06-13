@@ -2,7 +2,7 @@ local h = require('tests.helpers')
 local scope = 'hlcraft storage'
 
 local config = require('hlcraft.config')
-local files = require('hlcraft.storage.files')
+local files = require('hlcraft.persistence.files')
 local storage = require('hlcraft.storage')
 
 local persist_dir = h.temp_dir('hlcraft-storage')
