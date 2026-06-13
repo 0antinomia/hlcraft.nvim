@@ -3,6 +3,7 @@ local tests = {
   'tests/dynamic.lua',
   'tests/persistence_schema.lua',
   'tests/storage.lua',
+  'tests/engine.lua',
   'tests/overrides.lua',
 }
 

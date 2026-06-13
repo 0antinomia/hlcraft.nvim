@@ -5,6 +5,7 @@ vim.cmd('runtime plugin/hlcraft.lua')
 
 local hlcraft = require('hlcraft')
 local overrides = require('hlcraft.overrides')
+local override_state = require('hlcraft.overrides.state')
 local storage = require('hlcraft.storage')
 
 local persist_dir = h.temp_dir('hlcraft-overrides')
@@ -67,6 +68,30 @@ h.assert_true(clear_dynamic_ok, clear_dynamic_err or 'clearing dynamic failed', 
 h.assert_true(
   overrides.get('HlcraftTestNormal').dynamic == nil,
   'clearing last dynamic channel left dynamic table',
+  scope
+)
+
+h.assert_equal(
+  override_state.data,
+  require('hlcraft.engine.store').data,
+  'state facade did not expose store data',
+  scope
+)
+h.assert_equal(type(override_state.deepcopy), 'function', 'state facade missing deepcopy', scope)
+h.assert_equal(type(override_state.rebuild_active), 'function', 'state facade missing rebuild_active', scope)
+h.assert_equal(type(override_state.refresh_base_specs), 'function', 'state facade missing refresh_base_specs', scope)
+h.assert_equal(type(override_state.compact_entry), 'function', 'state facade missing compact_entry', scope)
+h.assert_equal(type(override_state.known_groups), 'function', 'state facade missing known_groups', scope)
+h.assert_equal(
+  type(override_state.ensure_runtime_group),
+  'function',
+  'state facade missing ensure_runtime_group',
+  scope
+)
+h.assert_equal(
+  type(override_state.remove_empty_runtime_entry),
+  'function',
+  'state facade missing remove_empty_runtime_entry',
   scope
 )
 
