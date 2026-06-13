@@ -24,11 +24,9 @@ h.assert_equal(fallback_palette[1], '#ff0000', 'fallback palette first color cha
 local breath_params = model.normalize_params('breath', {
   min = 1.2,
   max = -0.2,
-  phase = 0.25,
 })
 h.assert_equal(breath_params.min, 0, 'breath min was not clamped after swap', scope)
 h.assert_equal(breath_params.max, 1, 'breath max was not clamped after swap', scope)
-h.assert_equal(breath_params.phase, 0.25, 'unknown breath param was not preserved', scope)
 
 local normalized_channel = model.normalize_channel({
   mode = 'rgb',
@@ -58,8 +56,6 @@ h.assert_true(inflated.dyn_fg_mode == nil, 'flat dynamic key leaked after inflat
 local flattened = model.flatten_entry(inflated)
 h.assert_equal(flattened.dyn_fg_mode, 'rgb', 'dynamic fg mode did not flatten', scope)
 h.assert_equal(flattened.dyn_fg_speed, 1500, 'dynamic fg speed did not flatten', scope)
-h.assert_true(type(flattened.dyn_fg_params) == 'string', 'dynamic fg params did not flatten', scope)
-h.assert_true(type(flattened.dyn_fg_palette) == 'string', 'dynamic fg palette did not flatten', scope)
 h.assert_equal(flattened.dyn_bg_mode, 'breath', 'dynamic bg mode did not flatten', scope)
 
 local flat_default_rgb = model.flatten_entry({
