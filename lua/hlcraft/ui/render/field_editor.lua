@@ -1,6 +1,6 @@
 local ui_fields = require('hlcraft.ui.fields')
 local render_util = require('hlcraft.render.util')
-local detail_values = require('hlcraft.ui.state.detail_values')
+local session = require('hlcraft.ui.session')
 local overrides = require('hlcraft.overrides')
 local detail_menu = require('hlcraft.ui.render.detail_menu')
 local dynamic_model = require('hlcraft.dynamic.model')
@@ -25,10 +25,10 @@ end
 local function build_color_editor_lines(instance, geometry, result, field, width, line_offset)
   local label = ui_fields.detail_labels[field] or field:upper()
   local fallback = detail_menu.fallback_value(result, field)
-  local value = detail_values.display_value(result.name, field, fallback)
+  local value = session.display_value(result.name, field, fallback)
   local display_value = detail_menu.display_text(value)
   local sample = 'The quick brown fox jumps over hlcraft.'
-  local dynamic = dynamic_model.channel_set[field] and detail_values.dynamic_value(result.name, field) or nil
+  local dynamic = dynamic_model.channel_set[field] and session.dynamic_value(result.name, field) or nil
 
   if dynamic then
     local swatch = '████████████'
@@ -152,7 +152,7 @@ end
 
 local function build_blend_editor_lines(geometry, result, width)
   local fallback = detail_menu.fallback_value(result, 'blend')
-  local value = detail_values.display_value(result.name, 'blend', fallback)
+  local value = session.display_value(result.name, 'blend', fallback)
   local lines = {
     'Blend editor',
     string.rep('─', math.max(20, math.min(width, 36))),

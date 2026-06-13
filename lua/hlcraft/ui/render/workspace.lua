@@ -3,7 +3,7 @@ local render_util = require('hlcraft.render.util')
 local input_model = require('hlcraft.ui.input.model')
 local decorations = require('hlcraft.ui.render.decorations')
 local detail_menu = require('hlcraft.ui.render.detail_menu')
-local detail_values = require('hlcraft.ui.state.detail_values')
+local session = require('hlcraft.ui.session')
 local dynamic_preview = require('hlcraft.ui.dynamic_preview')
 local field_editor = require('hlcraft.ui.render.field_editor')
 local list = require('hlcraft.ui.render.list')
@@ -185,7 +185,7 @@ function M.render(instance)
         geometry.color_swatch.field
       )
     end
-    if detail_values.is_dirty(detail_result.name) then
+    if session.is_dirty(detail_result.name) then
       for _, row in pairs(geometry.detail_menu or {}) do
         vim.api.nvim_buf_add_highlight(instance.state.buf, instance.ns, theme.groups.dirty, row.line - 1, 0, 1)
       end

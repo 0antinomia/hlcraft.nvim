@@ -1,7 +1,7 @@
 local input_actions = require('hlcraft.ui.input.actions')
 local input_model = require('hlcraft.ui.input.model')
 local navigation = require('hlcraft.ui.navigation')
-local detail_values = require('hlcraft.ui.state.detail_values')
+local session = require('hlcraft.ui.session')
 local results_state = require('hlcraft.ui.state.results')
 local field_editor = require('hlcraft.ui.state.field_editor')
 local ui_fields = require('hlcraft.ui.fields')
@@ -98,7 +98,7 @@ function M.setup_workspace_keymaps(instance, buf)
     if current_field_kind() ~= 'color' or not result then
       return nil
     end
-    return detail_values.dynamic_value(result.name, field)
+    return session.dynamic_value(result.name, field)
   end
 
   local function current_color_field_is_dynamic()
@@ -353,7 +353,7 @@ function M.setup_workspace_keymaps(instance, buf)
       feed_normal_key('s')
       return
     end
-    local ok, err = detail_values.save(instance, result.name)
+    local ok, err = session.save(instance, result.name)
     if not ok then
       notify_error(err or 'Failed to save highlight override')
     end
