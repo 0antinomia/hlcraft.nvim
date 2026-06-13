@@ -72,7 +72,7 @@ end
 --- @param name string
 --- @return string
 function M.get_draft_group(name)
-  return data.draft_groups[name] or data.persisted_groups[name]
+  return data.draft_groups[name]
 end
 
 M.get_runtime_group = M.get_draft_group
