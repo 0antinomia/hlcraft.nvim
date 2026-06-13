@@ -1,7 +1,7 @@
 local config = require('hlcraft.config')
 local effects = require('hlcraft.dynamic.effects')
 local model = require('hlcraft.dynamic.model')
-local override_state = require('hlcraft.overrides.state')
+local store = require('hlcraft.engine.store')
 
 local M = {}
 
@@ -22,7 +22,7 @@ local function restore_group(name, spec)
   if not spec then
     return
   end
-  pcall(override_state.data.original_set_hl, 0, name, vim.deepcopy(spec))
+  pcall(store.data.original_set_hl, 0, name, vim.deepcopy(spec))
 end
 
 local function close_timer()
@@ -59,7 +59,7 @@ function M.tick(now_ms)
       end
     end
 
-    pcall(override_state.data.original_set_hl, 0, name, spec)
+    pcall(store.data.original_set_hl, 0, name, spec)
   end
 end
 
