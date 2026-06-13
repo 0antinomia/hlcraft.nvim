@@ -1,7 +1,6 @@
 local ui_fields = require('hlcraft.ui.fields')
 local render_util = require('hlcraft.render.util')
 local session = require('hlcraft.ui.session')
-local overrides = require('hlcraft.overrides')
 local detail_menu = require('hlcraft.ui.render.detail_menu')
 local dynamic_model = require('hlcraft.dynamic.model')
 local dynamic_preview = require('hlcraft.ui.dynamic_preview')
@@ -139,7 +138,7 @@ local function build_group_editor_lines(geometry, result, width)
     string.rep('─', math.max(20, math.min(width, 36))),
   }
 
-  for _, group_name in ipairs(overrides.known_groups()) do
+  for _, group_name in ipairs(session.known_groups()) do
     append_editor_row(lines, geometry, 'group:' .. group_name, group_name)
   end
   append_editor_row(lines, geometry, 'new_group', '+ New group (i)')

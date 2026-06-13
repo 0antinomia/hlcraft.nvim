@@ -113,8 +113,7 @@ local function is_finite_number(value)
   return type(value) == 'number' and value == value and value ~= math.huge and value ~= -math.huge
 end
 
-local function apply_patch(instance, result, patch, preserve_field)
-  local ok, err = session.apply_patch(instance, result.name, patch)
+local function finish_edit(instance, ok, err, preserve_field)
   if not ok then
     notify_error(err or 'Failed to update highlight override')
     return false, err
@@ -127,11 +126,8 @@ local function apply_patch(instance, result, patch, preserve_field)
 end
 
 local function apply_dynamic(instance, result, key, dynamic)
-  return apply_patch(instance, result, {
-    dynamic = {
-      [key] = dynamic,
-    },
-  }, key)
+  local ok, err = session.set_dynamic(instance, result.name, key, dynamic)
+  return finish_edit(instance, ok, err, key)
 end
 
 local function jump_to_palette_index(instance, index)
@@ -199,15 +195,16 @@ function M.activate(instance)
     return
   end
 
-  local runtime_value = session.draft_entry(result.name)[row.key]
+  local runtime_value = session.field_value(result.name, row.key)
   local next_value = true
   if runtime_value == true then
     next_value = false
   elseif runtime_value == false then
-    next_value = vim.NIL
+    next_value = nil
   end
 
-  apply_patch(instance, result, { [row.key] = next_value })
+  local ok, err = session.set_style(instance, result.name, row.key, next_value)
+  finish_edit(instance, ok, err)
 end
 
 function M.set_color(instance, value)
@@ -226,7 +223,8 @@ function M.set_color(instance, value)
     return false, err
   end
 
-  return apply_patch(instance, result, { [key] = normalized == nil and vim.NIL or normalized }, key)
+  local ok, apply_err = session.set_color(instance, result.name, key, normalized)
+  return finish_edit(instance, ok, apply_err, key)
 end
 
 function M.adjust_color(instance, channel, delta)
@@ -244,7 +242,7 @@ function M.adjust_color(instance, channel, delta)
     return false, ('Unsupported color channel: %s'):format(tostring(channel))
   end
 
-  local current = session.draft_entry(result.name)[key]
+  local current = session.field_value(result.name, key)
   if current == nil then
     current = fallback_color(result, key)
   end
@@ -272,8 +270,8 @@ function M.toggle_dynamic(instance)
     return false, 'No color field is active'
   end
 
-  local next_value = current_dynamic(result, key) and vim.NIL or dynamic_model.default_spec()
-  return apply_patch(instance, result, { dynamic = { [key] = next_value } }, key)
+  local next_value = current_dynamic(result, key) and nil or dynamic_model.default_spec()
+  return apply_dynamic(instance, result, key, next_value)
 end
 
 function M.cycle_dynamic_mode(instance)
@@ -291,11 +289,7 @@ function M.cycle_dynamic_mode(instance)
   local next_dynamic = vim.deepcopy(dynamic)
   next_dynamic.mode = next_mode(dynamic.mode)
 
-  return apply_patch(instance, result, {
-    dynamic = {
-      [key] = next_dynamic,
-    },
-  }, key)
+  return apply_dynamic(instance, result, key, next_dynamic)
 end
 
 function M.adjust_dynamic_speed(instance, delta)
@@ -313,11 +307,7 @@ function M.adjust_dynamic_speed(instance, delta)
   local next_dynamic = vim.deepcopy(dynamic)
   next_dynamic.speed = dynamic_model.normalize_speed(dynamic.speed + (tonumber(delta) or 0))
 
-  return apply_patch(instance, result, {
-    dynamic = {
-      [key] = next_dynamic,
-    },
-  }, key)
+  return apply_dynamic(instance, result, key, next_dynamic)
 end
 
 function M.set_dynamic_param(instance, name, value)
@@ -468,7 +458,8 @@ function M.set_group(instance, group_name)
     return false, 'No detail result is active'
   end
 
-  return apply_patch(instance, result, { group = group_name }, current_field(instance))
+  local ok, err = session.set_group(instance, result.name, group_name)
+  return finish_edit(instance, ok, err, current_field(instance))
 end
 
 function M.set_blend(instance, value)
@@ -488,7 +479,8 @@ function M.set_blend(instance, value)
     normalized = math.floor(number_value)
   end
 
-  return apply_patch(instance, result, { blend = normalized == nil and vim.NIL or normalized }, current_field(instance))
+  local ok, err = session.set_blend(instance, result.name, normalized)
+  return finish_edit(instance, ok, err, current_field(instance))
 end
 
 function M.adjust_blend(instance, delta)
@@ -497,7 +489,7 @@ function M.adjust_blend(instance, delta)
     return false, 'No detail result is active'
   end
 
-  local runtime_value = session.draft_entry(result.name).blend
+  local runtime_value = session.field_value(result.name, 'blend')
   local current = tonumber(runtime_value ~= nil and runtime_value or result.blend) or 0
   return M.set_blend(instance, clamp(current + (tonumber(delta) or 0), 0, 100))
 end
