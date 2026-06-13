@@ -1,6 +1,6 @@
 local color = require('hlcraft.core.color')
 local dynamic_model = require('hlcraft.dynamic.model')
-local detail_values = require('hlcraft.ui.state.detail_values')
+local session = require('hlcraft.ui.session')
 local ui_fields = require('hlcraft.ui.fields')
 local results_state = require('hlcraft.ui.state.results')
 local workspace = require('hlcraft.ui.workspace')
@@ -35,7 +35,7 @@ local function current_field(instance)
 end
 
 local function current_dynamic(result, key)
-  return detail_values.dynamic_value(result.name, key)
+  return session.dynamic_value(result.name, key)
 end
 
 local function current_dynamic_copy(result, key)
@@ -114,7 +114,7 @@ local function is_finite_number(value)
 end
 
 local function apply_patch(instance, result, patch, preserve_field)
-  local ok, err = detail_values.apply_runtime(instance, result.name, patch)
+  local ok, err = session.apply_runtime(instance, result.name, patch)
   if not ok then
     notify_error(err or 'Failed to update highlight override')
     return false, err
@@ -199,7 +199,7 @@ function M.activate(instance)
     return
   end
 
-  local runtime_value = detail_values.runtime_entry(result.name)[row.key]
+  local runtime_value = session.runtime_entry(result.name)[row.key]
   local next_value = true
   if runtime_value == true then
     next_value = false
@@ -244,7 +244,7 @@ function M.adjust_color(instance, channel, delta)
     return false, ('Unsupported color channel: %s'):format(tostring(channel))
   end
 
-  local current = detail_values.runtime_entry(result.name)[key]
+  local current = session.runtime_entry(result.name)[key]
   if current == nil then
     current = fallback_color(result, key)
   end
@@ -497,7 +497,7 @@ function M.adjust_blend(instance, delta)
     return false, 'No detail result is active'
   end
 
-  local runtime_value = detail_values.runtime_entry(result.name).blend
+  local runtime_value = session.runtime_entry(result.name).blend
   local current = tonumber(runtime_value ~= nil and runtime_value or result.blend) or 0
   return M.set_blend(instance, clamp(current + (tonumber(delta) or 0), 0, 100))
 end

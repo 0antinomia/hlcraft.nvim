@@ -1,6 +1,6 @@
 local ui_fields = require('hlcraft.ui.fields')
 local render_util = require('hlcraft.render.util')
-local detail_values = require('hlcraft.ui.state.detail_values')
+local session = require('hlcraft.ui.session')
 local dynamic_model = require('hlcraft.dynamic.model')
 local dynamic_preview = require('hlcraft.ui.dynamic_preview')
 
@@ -41,12 +41,12 @@ local function swatch_end_col(col_start, swatch)
 end
 
 local function color_display_value(result, key)
-  local dynamic = detail_values.dynamic_value(result.name, key)
+  local dynamic = session.dynamic_value(result.name, key)
   if dynamic_model.channel_set[key] and dynamic then
     return ('████████ %s'):format(dynamic_metadata(dynamic))
   end
   local fallback = M.fallback_value(result, key)
-  return detail_values.display_value(result.name, key, fallback)
+  return session.display_value(result.name, key, fallback)
 end
 
 local function normalize_build_args(instance, geometry, result, width, line_offset)
@@ -67,13 +67,13 @@ function M.build(instance, geometry, result, width, line_offset)
     label_width = math.max(label_width, vim.fn.strdisplaywidth(ui_fields.detail_labels[key] or key))
   end
 
-  local dirty_mark = detail_values.is_dirty(result.name) and '*' or ' '
+  local dirty_mark = session.is_dirty(result.name) and '*' or ' '
   for _, key in ipairs(ui_fields.detail_order) do
     local fallback = M.fallback_value(result, key)
-    local dynamic = dynamic_model.channel_set[key] and detail_values.dynamic_value(result.name, key) or nil
-    local value = key == 'group' and detail_values.display_group(result.name)
+    local dynamic = dynamic_model.channel_set[key] and session.dynamic_value(result.name, key) or nil
+    local value = key == 'group' and session.display_group(result.name)
       or ui_fields.detail_kinds[key] == 'color' and color_display_value(result, key)
-      or detail_values.display_value(result.name, key, fallback)
+      or session.display_value(result.name, key, fallback)
     local prefix = ('%s %s  '):format(dirty_mark, render_util.pad(ui_fields.detail_labels[key] or key, label_width))
     local value_col = #prefix
     local line = prefix .. M.display_text(value)

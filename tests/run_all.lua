@@ -4,6 +4,7 @@ local tests = {
   'tests/persistence_schema.lua',
   'tests/storage.lua',
   'tests/engine.lua',
+  'tests/ui_session.lua',
   'tests/overrides.lua',
 }
 

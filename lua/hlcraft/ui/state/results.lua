@@ -3,7 +3,7 @@ local search = require('hlcraft.core.search')
 local workspace = require('hlcraft.ui.workspace')
 local navigation = require('hlcraft.ui.navigation')
 local ui_fields = require('hlcraft.ui.fields')
-local detail_values = require('hlcraft.ui.state.detail_values')
+local session = require('hlcraft.ui.session')
 
 local M = {}
 
@@ -301,7 +301,7 @@ function M.open_unsaved_prompt(instance, name)
 
   local opts = { buffer = buf, silent = true, nowait = true }
   vim.keymap.set('n', 's', function()
-    local ok, err = detail_values.save(instance, name)
+    local ok, err = session.save(instance, name)
     if ok then
       M.force_close_detail(instance)
     elseif err then
@@ -309,7 +309,7 @@ function M.open_unsaved_prompt(instance, name)
     end
   end, opts)
   vim.keymap.set('n', 'd', function()
-    detail_values.discard(instance, name)
+    session.discard(instance, name)
     M.force_close_detail(instance)
   end, opts)
   for _, key in ipairs({ 'c', 'q', '<Esc>' }) do
@@ -327,7 +327,7 @@ function M.close_detail(instance)
     return
   end
   local result = M.current_detail_result(instance)
-  if result and detail_values.is_dirty(result.name) then
+  if result and session.is_dirty(result.name) then
     M.open_unsaved_prompt(instance, result.name)
     return
   end
