@@ -1,5 +1,5 @@
 local ui_fields = require('hlcraft.ui.fields')
-local color = require('hlcraft.color')
+local color = require('hlcraft.core.color')
 local ui_detail = require('hlcraft.ui.detail')
 local workspace = require('hlcraft.ui.workspace')
 local input_model = require('hlcraft.ui.input.model')

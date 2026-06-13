@@ -1,5 +1,5 @@
-local color = require('hlcraft.color')
-local search = require('hlcraft.search')
+local color = require('hlcraft.core.color')
+local search = require('hlcraft.core.search')
 local workspace = require('hlcraft.ui.workspace')
 local navigation = require('hlcraft.ui.navigation')
 local ui_fields = require('hlcraft.ui.fields')

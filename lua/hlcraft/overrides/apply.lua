@@ -1,7 +1,7 @@
 local config = require('hlcraft.config')
 local dynamic_runtime = require('hlcraft.dynamic.runtime')
-local highlights = require('hlcraft.highlights')
-local presets = require('hlcraft.presets')
+local highlights = require('hlcraft.core.highlights')
+local presets = require('hlcraft.core.presets')
 local override_state = require('hlcraft.overrides.state')
 
 local M = {}

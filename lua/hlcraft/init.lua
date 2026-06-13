@@ -2,9 +2,9 @@
 local M = {}
 
 local config = require('hlcraft.config')
-local highlights = require('hlcraft.highlights')
-local source = require('hlcraft.source')
-local search = require('hlcraft.search')
+local highlights = require('hlcraft.core.highlights')
+local source = require('hlcraft.core.source')
+local search = require('hlcraft.core.search')
 local ui = require('hlcraft.ui')
 local overrides = require('hlcraft.overrides')
 local initialized = false

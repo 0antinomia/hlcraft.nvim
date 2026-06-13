@@ -1,7 +1,7 @@
-local source = require('hlcraft.source')
+local source = require('hlcraft.core.source')
 local overrides = require('hlcraft.overrides')
 local render_util = require('hlcraft.render.util')
-local highlights = require('hlcraft.highlights')
+local highlights = require('hlcraft.core.highlights')
 local theme = require('hlcraft.ui.theme')
 
 local M = {}
