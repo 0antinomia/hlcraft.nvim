@@ -57,7 +57,7 @@ require('hlcraft').setup({
   },
   threshold = 100,
   include_sp_in_color_search = false,
-  persist_dir = vim.fn.stdpath('config') .. '/.hlcraft',
+  persist_dir = vim.fn.stdpath('config') .. '/hlcraft',
   reapply_events = {
     enabled = true,
     events = {
@@ -119,10 +119,10 @@ When enabled, highlight groups whose special color matches the query can also ap
 Directory used to store persisted override files.
 
 ```lua
-persist_dir = vim.fn.stdpath('config') .. '/.hlcraft'
+persist_dir = vim.fn.stdpath('config') .. '/hlcraft'
 ```
 
-By default, hlcraft stores persistence data in a hidden directory under your Neovim config directory. It may create multiple TOML files there.
+By default, hlcraft stores persistence data in a visible `hlcraft` directory under your Neovim config directory. It may create multiple TOML files there. Set `persist_dir` explicitly if you want to keep using a different location.
 
 #### `reapply_events`
 
@@ -236,7 +236,7 @@ Color queries accept:
 Persisted overrides are written under:
 
 ```lua
-vim.fn.stdpath('config') .. '/.hlcraft'
+vim.fn.stdpath('config') .. '/hlcraft'
 ```
 
 Each file stores one top-level TOML section. Section names come from groups you explicitly select or create in the detail view. If an override has no group, hlcraft asks you to choose or create one before saving.
