@@ -57,7 +57,7 @@ require('hlcraft').setup({
   },
   threshold = 100,
   include_sp_in_color_search = false,
-  persist_dir = vim.fn.stdpath('config') .. '/.hlcraft',
+  persist_dir = vim.fn.stdpath('config') .. '/hlcraft',
   reapply_events = {
     enabled = true,
     events = {
@@ -119,10 +119,10 @@ include_sp_in_color_search = false
 持久化 override 所使用的目录。
 
 ```lua
-persist_dir = vim.fn.stdpath('config') .. '/.hlcraft'
+persist_dir = vim.fn.stdpath('config') .. '/hlcraft'
 ```
 
-默认是 Neovim 配置目录下的一个隐藏目录。hlcraft 可能会在其中创建多个 TOML 文件。
+默认是 Neovim 配置目录下的一个可见 `hlcraft` 目录。hlcraft 可能会在其中创建多个 TOML 文件。如果你想继续使用其他位置，可以显式设置 `persist_dir`。
 
 #### `reapply_events`
 
@@ -236,7 +236,7 @@ preview_key = 'z'
 持久化 override 会写入：
 
 ```lua
-vim.fn.stdpath('config') .. '/.hlcraft'
+vim.fn.stdpath('config') .. '/hlcraft'
 ```
 
 每个文件保存一个顶层 TOML section。section 名称来自你在详情页里明确选择或新建的 group。如果某个 override 没有 group，hlcraft 会要求你先选择或新建一个 group，再进行保存。
