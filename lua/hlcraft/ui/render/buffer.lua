@@ -1,5 +1,5 @@
 local render_util = require('hlcraft.render.util')
-local input_model = require('hlcraft.ui.input.model')
+local buffer_fields = require('hlcraft.ui.input.buffer_fields')
 local theme = require('hlcraft.ui.theme')
 local window = require('hlcraft.ui.workspace.window')
 
@@ -45,7 +45,7 @@ function M.finish(instance, geometry)
   instance.state.placeholder_marks = {}
   theme.apply(instance.ns)
   instance.state.geometry = geometry
-  input_model.set_input_extmarks(instance)
+  buffer_fields.set_extmarks(instance)
 end
 
 --- Create a new input field descriptor table.
@@ -74,7 +74,8 @@ function M.append_input(lines, geometry, name, kind, value, extra)
   local field = M.new_input_field(name, kind, #lines + 1, extra)
   geometry[name] = field
   geometry.inputs[#geometry.inputs + 1] = field
-  lines[#lines + 1] = render_util.truncate(input_model.normalize_single_line(value), extra and extra.width or math.huge)
+  lines[#lines + 1] =
+    render_util.truncate(buffer_fields.normalize_single_line(value), extra and extra.width or math.huge)
   return field
 end
 

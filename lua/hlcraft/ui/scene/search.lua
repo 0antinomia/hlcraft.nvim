@@ -1,5 +1,5 @@
 local color = require('hlcraft.core.color')
-local input_model = require('hlcraft.ui.input.model')
+local buffer_fields = require('hlcraft.ui.input.buffer_fields')
 local navigation = require('hlcraft.ui.navigation')
 local search = require('hlcraft.core.search')
 local ui_fields = require('hlcraft.ui.fields')
@@ -203,7 +203,7 @@ function M.handle(instance, action)
   if action == 'activate' then
     local win = window.get_win(instance)
     local row = window.is_valid_win(win) and vim.api.nvim_win_get_cursor(win)[1] or 0
-    local area = input_model.current_area(instance, row)
+    local area = buffer_fields.current_area(instance, row)
     if area == 'results' then
       M.open_detail(instance)
       return true, nil
@@ -211,7 +211,7 @@ function M.handle(instance, action)
     if vim.fn.mode():lower():find('i') then
       vim.cmd('stopinsert')
     end
-    input_model.sync_queries_from_buffer(instance)
+    buffer_fields.sync_queries(instance)
     instance:rerender()
     if #instance.state.results > 0 then
       local target_line = nil
