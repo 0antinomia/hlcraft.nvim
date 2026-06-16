@@ -66,23 +66,24 @@ function M.build(instance, geometry, result, field, width, line_offset, dynamic)
         },
       })
     end
-    append_editor_row(
-      lines,
-      geometry,
-      'dynamic_keys',
-      'Keys: m mode, -/+ speed, [/] palette, a add, x delete, i input, d static, s save, q back'
-    )
   elseif dynamic.mode == 'breath' then
     local params = dynamic_model.normalize_params('breath', dynamic.params)
     append_editor_row(lines, geometry, 'dynamic_param:min', ('Min: %.2f'):format(params.min))
     append_editor_row(lines, geometry, 'dynamic_param:max', ('Max: %.2f'):format(params.max))
-    append_editor_row(lines, geometry, 'dynamic_param_keys', 'Keys: m mode, -/+ speed/param, i input, d/s/q')
-  else
-    append_editor_row(lines, geometry, 'dynamic_keys', 'Keys: m mode, -/+ speed, d static, s save, q back')
   end
+  append_editor_row(
+    lines,
+    geometry,
+    'dynamic_keys',
+    'Keys: m mode, -/+ speed/param, [/] palette, a add, x delete, i input, d static, s save, q back'
+  )
 
   for index, line in ipairs(lines) do
-    lines[index] = render_util.truncate(line, width)
+    if geometry.editor_rows.dynamic_keys and geometry.editor_rows.dynamic_keys.line == index then
+      lines[index] = line
+    else
+      lines[index] = render_util.truncate(line, width)
+    end
   end
   return lines
 end
