@@ -7,8 +7,8 @@ local theme = require('hlcraft.ui.theme')
 
 local M = {}
 
-local function get_results_state()
-  return require('hlcraft.ui.state.results')
+local function get_detail_scene()
+  return require('hlcraft.ui.scene.detail')
 end
 
 --- Build virtual lines with detail info (name, colors, source, links, file) for a highlight group
@@ -214,7 +214,7 @@ local function placeholder_text_for_field(instance, field)
   if not instance.state.detail_index then
     return nil
   end
-  local result = get_results_state().current_detail_result(instance)
+  local result = get_detail_scene().current_result(instance)
   if not result then
     return nil
   end

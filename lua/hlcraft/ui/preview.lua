@@ -1,4 +1,5 @@
-local results_state = require('hlcraft.ui.state.results')
+local detail_scene = require('hlcraft.ui.scene.detail')
+local search_scene = require('hlcraft.ui.scene.search')
 local config = require('hlcraft.config')
 
 local M = {}
@@ -74,7 +75,7 @@ end
 
 local function current_result(instance)
   if instance.state.detail_index then
-    return results_state.current_detail_result(instance)
+    return detail_scene.current_result(instance)
   end
 
   local list_index = instance.state.list_cursor
@@ -82,7 +83,7 @@ local function current_result(instance)
     return instance.state.results[list_index]
   end
 
-  local entry = results_state.current_entry(instance)
+  local entry = search_scene.current_entry(instance)
   return entry and entry.result or nil
 end
 

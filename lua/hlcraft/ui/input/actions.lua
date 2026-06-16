@@ -4,8 +4,8 @@ local window = require('hlcraft.ui.workspace.window')
 
 local M = {}
 
-local function get_results_state()
-  return require('hlcraft.ui.state.results')
+local function get_search_scene()
+  return require('hlcraft.ui.scene.search')
 end
 
 --- Check if backward deletion (BS, C-h, C-w, C-u) should be blocked at current position
@@ -51,7 +51,6 @@ end
 --- @param is_visual boolean Whether triggered from visual mode
 --- @return nil
 function M.paste_below(instance, is_visual)
-  local results_state = get_results_state()
   local win = window.get_win(instance)
   if not window.is_valid_win(win) then
     return
@@ -60,7 +59,7 @@ function M.paste_below(instance, is_visual)
   local cursor = vim.api.nvim_win_get_cursor(win)
   local cursor_row, cursor_col = cursor[1], cursor[2]
   local input = input_model.get_input_at_row(instance, cursor_row - 1)
-  if results_state.is_on_row(instance) then
+  if get_search_scene().is_on_row(instance) then
     return
   end
   if not input then
@@ -99,7 +98,6 @@ end
 --- @param is_visual boolean Whether triggered from visual mode
 --- @return nil
 function M.paste_above(instance, is_visual)
-  local results_state = get_results_state()
   local win = window.get_win(instance)
   if not window.is_valid_win(win) then
     return
@@ -108,7 +106,7 @@ function M.paste_above(instance, is_visual)
   local cursor = vim.api.nvim_win_get_cursor(win)
   local cursor_row, cursor_col = cursor[1], cursor[2]
   local input = input_model.get_input_at_row(instance, cursor_row - 1)
-  if results_state.is_on_row(instance) then
+  if get_search_scene().is_on_row(instance) then
     return
   end
   if not input then
@@ -147,7 +145,6 @@ end
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.open_below(instance)
-  local results_state = get_results_state()
   local win = window.get_win(instance)
   if not window.is_valid_win(win) then
     return
@@ -155,7 +152,7 @@ function M.open_below(instance)
 
   local cursor_row = vim.api.nvim_win_get_cursor(win)[1]
   local input = input_model.get_input_at_row(instance, cursor_row - 1)
-  if results_state.is_on_row(instance) then
+  if get_search_scene().is_on_row(instance) then
     return
   end
   if not input then

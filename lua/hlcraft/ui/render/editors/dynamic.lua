@@ -2,7 +2,7 @@ local ui_fields = require('hlcraft.ui.fields')
 local render_util = require('hlcraft.render.util')
 local dynamic_model = require('hlcraft.dynamic.model')
 local dynamic_preview = require('hlcraft.ui.dynamic_preview')
-local detail_menu = require('hlcraft.ui.render.detail_menu')
+local detail_render = require('hlcraft.ui.render.detail')
 
 local M = {}
 
@@ -22,7 +22,7 @@ end
 
 function M.build(instance, geometry, result, field, width, line_offset, dynamic)
   local label = ui_fields.detail_labels[field] or field:upper()
-  local fallback = detail_menu.fallback_value(result, field)
+  local fallback = detail_render.fallback_value(result, field)
   local swatch = '████████████'
   local lines = {
     ('Color editor: %s'):format(label),

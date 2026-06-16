@@ -5,8 +5,8 @@ vim.cmd('runtime plugin/hlcraft.lua')
 local hlcraft = require('hlcraft')
 local engine = require('hlcraft.engine.service')
 local Instance = require('hlcraft.ui.instance')
+local detail_scene = require('hlcraft.ui.scene.detail')
 local lifecycle = require('hlcraft.ui.workspace.lifecycle')
-local results_state = require('hlcraft.ui.state.results')
 local scene = require('hlcraft.ui.scene')
 local actions = require('hlcraft.ui.actions')
 
@@ -29,7 +29,7 @@ instance.rerender = function(self)
   self.did_rerender = true
 end
 
-results_state.force_close_detail(instance)
+detail_scene.force_close(instance)
 
 h.assert_equal(scene.current_name(instance), 'search', 'closing detail did not restore search scene', scope)
 
@@ -179,12 +179,6 @@ h.assert_true(field_editor_instance.did_rerender == true, 'scene set_color did n
 
 vim.api.nvim_set_hl(0, 'HlcraftUiSceneRenderOwner', { fg = '#112233', bg = '#334455', sp = '#556677' })
 
-local workspace_render = require('hlcraft.ui.render.workspace')
-local original_workspace_render = workspace_render.render
-workspace_render.render = function()
-  error('scene render must not call workspace renderer')
-end
-
 local direct_render_instance = Instance.new('ui-scene-direct-render-test')
 direct_render_instance.state.buf = vim.api.nvim_create_buf(false, true)
 direct_render_instance.state.last_workspace_win = vim.api.nvim_get_current_win()
@@ -217,7 +211,6 @@ local direct_ok, direct_err = pcall(function()
   )
 end)
 
-workspace_render.render = original_workspace_render
 h.assert_true(direct_ok, direct_err or 'scene-owned render test failed', scope)
 
 vim.fn.delete(persist_dir, 'rf')

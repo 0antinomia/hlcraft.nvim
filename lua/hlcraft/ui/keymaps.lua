@@ -3,7 +3,8 @@ local buffer_fields = require('hlcraft.ui.input.buffer_fields')
 local navigation = require('hlcraft.ui.navigation')
 local session = require('hlcraft.ui.session')
 local scene = require('hlcraft.ui.scene')
-local results_state = require('hlcraft.ui.state.results')
+local detail_scene = require('hlcraft.ui.scene.detail')
+local search_scene = require('hlcraft.ui.scene.search')
 local ui_fields = require('hlcraft.ui.fields')
 local lifecycle = require('hlcraft.ui.workspace.lifecycle')
 local window = require('hlcraft.ui.workspace.window')
@@ -36,7 +37,7 @@ local function setup_input_boundary_keys(instance, buf)
       if not window.is_valid_win(win) then
         return
       end
-      if results_state.is_on_row(instance) then
+      if search_scene.is_on_row(instance) then
         return
       end
       vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(lhs, true, false, true), 'n', false)
@@ -45,7 +46,7 @@ local function setup_input_boundary_keys(instance, buf)
 
   for _, lhs in ipairs({ 'I', 'A', 'O' }) do
     vim.keymap.set('n', lhs, function()
-      if results_state.is_on_row(instance) then
+      if search_scene.is_on_row(instance) then
         return
       end
       vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(lhs, true, false, true), 'n', false)
@@ -65,7 +66,7 @@ function M.setup_workspace_keymaps(instance, buf)
     if not window.is_valid_win(win) then
       return
     end
-    if results_state.is_on_row(instance) then
+    if search_scene.is_on_row(instance) then
       return
     end
     vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(lhs, true, false, true), 'n', false)
@@ -100,7 +101,7 @@ function M.setup_workspace_keymaps(instance, buf)
 
   local function current_color_dynamic()
     local field = instance.state.field_editor and instance.state.field_editor.field
-    local result = results_state.current_detail_result(instance)
+    local result = detail_scene.current_result(instance)
     if current_field_kind() ~= 'color' or not result then
       return nil
     end

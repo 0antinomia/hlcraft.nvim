@@ -1,5 +1,4 @@
 local buffer_fields = require('hlcraft.ui.input.buffer_fields')
-local workspace_render = require('hlcraft.ui.render.workspace')
 local navigation = require('hlcraft.ui.navigation')
 local window = require('hlcraft.ui.workspace.window')
 local config = require('hlcraft.config')
@@ -87,7 +86,7 @@ function M.setup(instance)
     group = instance.group,
     callback = function()
       if window.is_open(instance) then
-        workspace_render.render(instance)
+        instance:rerender()
       end
     end,
   })

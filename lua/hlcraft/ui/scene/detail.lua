@@ -48,7 +48,7 @@ function M.refresh(instance, name, reopen_detail)
       if reopen_detail then
         instance.state.detail_index = index
         instance.state.field_editor.field = active_field
-        require('hlcraft.ui.render.workspace').render(instance)
+        instance:rerender()
       end
       return
     end
@@ -59,7 +59,7 @@ function M.refresh(instance, name, reopen_detail)
     instance.state.field_editor.field = nil
     instance.state.list_cursor = math.min(math.max(instance.state.list_cursor, 1), math.max(#instance.state.results, 1))
     restore_search_scene(instance)
-    require('hlcraft.ui.render.workspace').render(instance)
+    instance:rerender()
   end
 end
 
