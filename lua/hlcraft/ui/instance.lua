@@ -3,6 +3,7 @@ local lifecycle = require('hlcraft.ui.workspace.lifecycle')
 local theme = require('hlcraft.ui.theme')
 
 scene.register('detail', require('hlcraft.ui.scene.detail'))
+scene.register('field_editor', require('hlcraft.ui.scene.field_editor'))
 scene.register('search', require('hlcraft.ui.scene.search'))
 
 local ns = vim.api.nvim_create_namespace('hlcraft-ui')
