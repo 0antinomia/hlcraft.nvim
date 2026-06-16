@@ -64,6 +64,10 @@ local function reset_view_state(instance)
     detail_menu = {},
     editor_rows = {},
   }
+  instance.state.field_editor = {
+    field = nil,
+    palette_index = nil,
+  }
   instance.state.rendering = false
   instance.state.input_marks = {}
   instance.state.placeholder_marks = {}

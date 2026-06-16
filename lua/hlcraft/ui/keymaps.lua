@@ -2,10 +2,11 @@ local input_actions = require('hlcraft.ui.input.actions')
 local input_model = require('hlcraft.ui.input.model')
 local navigation = require('hlcraft.ui.navigation')
 local session = require('hlcraft.ui.session')
+local scene = require('hlcraft.ui.scene')
 local search_scene = require('hlcraft.ui.scene.search')
 local results_state = require('hlcraft.ui.state.results')
-local editor = require('hlcraft.ui.commands.editor')
 local detail_commands = require('hlcraft.ui.commands.detail')
+local editor = require('hlcraft.ui.commands.editor')
 local ui_fields = require('hlcraft.ui.fields')
 local lifecycle = require('hlcraft.ui.workspace.lifecycle')
 local window = require('hlcraft.ui.workspace.window')
@@ -87,7 +88,15 @@ function M.setup_workspace_keymaps(instance, buf)
     return ok
   end
 
+  local function editor_scene_is_active()
+    local current_scene = scene.current_name(instance)
+    return instance.state.detail_index ~= nil and (current_scene == 'detail' or current_scene == 'field_editor')
+  end
+
   local function current_field_kind()
+    if not editor_scene_is_active() then
+      return nil
+    end
     local field = instance.state.field_editor and instance.state.field_editor.field
     if not field then
       return nil
@@ -189,12 +198,12 @@ function M.setup_workspace_keymaps(instance, buf)
   end
 
   local function input_current_editor_field()
-    local field = instance.state.field_editor and instance.state.field_editor.field
-    if not field then
+    local kind = current_field_kind()
+    if not kind then
       return false
     end
+    local field = instance.state.field_editor and instance.state.field_editor.field
 
-    local kind = ui_fields.detail_kinds[field]
     if kind == 'color' then
       if current_color_field_is_rgb_dynamic() then
         vim.ui.input({ prompt = 'Palette color: ' }, function(value)
@@ -248,10 +257,10 @@ function M.setup_workspace_keymaps(instance, buf)
   end
 
   vim.keymap.set('n', '<Esc>', function()
-    detail_commands.close_or_quit(instance)
+    scene.back(instance)
   end, opts)
   vim.keymap.set('n', 'q', function()
-    detail_commands.close_or_quit(instance)
+    scene.back(instance)
   end, opts)
   vim.keymap.set('n', '?', function()
     lifecycle.toggle_help(instance)
@@ -430,7 +439,10 @@ function M.setup_workspace_keymaps(instance, buf)
       local row = window.is_valid_win(win) and vim.api.nvim_win_get_cursor(win)[1] or 0
       local area = input_model.current_area(instance, row)
       if instance.state.detail_index then
-        editor.activate(instance)
+        local ok, err = scene.handle(instance, 'activate')
+        if not ok then
+          notify_error(err)
+        end
       elseif area == 'results' then
         search_scene.open_detail(instance)
       else
