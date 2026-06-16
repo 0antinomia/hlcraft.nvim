@@ -1,12 +1,10 @@
+local actions = require('hlcraft.ui.actions')
 local input_actions = require('hlcraft.ui.input.actions')
 local input_model = require('hlcraft.ui.input.model')
 local navigation = require('hlcraft.ui.navigation')
 local session = require('hlcraft.ui.session')
 local scene = require('hlcraft.ui.scene')
-local search_scene = require('hlcraft.ui.scene.search')
 local results_state = require('hlcraft.ui.state.results')
-local detail_commands = require('hlcraft.ui.commands.detail')
-local editor = require('hlcraft.ui.commands.editor')
 local ui_fields = require('hlcraft.ui.fields')
 local lifecycle = require('hlcraft.ui.workspace.lifecycle')
 local window = require('hlcraft.ui.workspace.window')
@@ -74,18 +72,15 @@ function M.setup_workspace_keymaps(instance, buf)
     vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(lhs, true, false, true), 'n', false)
   end
 
-  local function notify_error(err)
-    if err then
-      vim.notify(('hlcraft: %s'):format(err), vim.log.levels.ERROR)
-    end
+  local function run_action(action, ...)
+    local ok = actions.dispatch(instance, action, ...)
+    return ok
   end
 
-  local function run_editor(command, ...)
-    local ok, err = command(instance, ...)
-    if not ok then
-      notify_error(err)
+  local function run_search_action(action)
+    if scene.current_name(instance) == 'search' then
+      actions.dispatch(instance, action)
     end
-    return ok
   end
 
   local function editor_scene_is_active()
@@ -127,11 +122,19 @@ function M.setup_workspace_keymaps(instance, buf)
     return dynamic ~= nil and dynamic.mode == 'breath'
   end
 
+  local function selected_param_name()
+    local ok, value = actions.dispatch(instance, 'selected_param_name')
+    if ok then
+      return value
+    end
+    return nil
+  end
+
   local function toggle_dynamic_color()
     if current_field_kind() ~= 'color' then
       return
     end
-    run_editor(editor.toggle_dynamic)
+    run_action('toggle_dynamic')
   end
 
   local function cycle_dynamic_mode(fallback_key)
@@ -141,7 +144,7 @@ function M.setup_workspace_keymaps(instance, buf)
       end
       return
     end
-    run_editor(editor.cycle_dynamic_mode)
+    run_action('cycle_dynamic_mode')
   end
 
   local function adjust_color(channel, delta, fallback_key)
@@ -149,7 +152,7 @@ function M.setup_workspace_keymaps(instance, buf)
       return
     end
     if current_field_kind() == 'color' then
-      run_editor(editor.adjust_color, channel, delta)
+      run_action('adjust_color', channel, delta)
       return
     end
     if fallback_key then
@@ -164,7 +167,7 @@ function M.setup_workspace_keymaps(instance, buf)
       end
       return
     end
-    run_editor(editor.set_color, value)
+    run_action('set_color', value)
   end
 
   local function adjust_blend(delta, fallback_key)
@@ -174,7 +177,7 @@ function M.setup_workspace_keymaps(instance, buf)
       end
       return
     end
-    run_editor(editor.adjust_blend, delta)
+    run_action('adjust_blend', delta)
   end
 
   local function unset_blend(fallback_key)
@@ -184,17 +187,17 @@ function M.setup_workspace_keymaps(instance, buf)
       end
       return
     end
-    run_editor(editor.set_blend, nil)
+    run_action('set_blend', nil)
   end
 
   local function adjust_dynamic_param_or_speed(param_delta, speed_delta)
-    local param_name = editor.selected_param_name(instance)
+    local param_name = selected_param_name()
     if param_name then
-      run_editor(editor.adjust_dynamic_param, param_name, param_delta)
+      run_action('adjust_dynamic_param', param_name, param_delta)
       return
     end
 
-    run_editor(editor.adjust_dynamic_speed, speed_delta)
+    run_action('adjust_dynamic_speed', speed_delta)
   end
 
   local function input_current_editor_field()
@@ -210,17 +213,17 @@ function M.setup_workspace_keymaps(instance, buf)
           if value == nil then
             return
           end
-          run_editor(editor.set_dynamic_palette_color, value)
+          run_action('set_dynamic_palette_color', value)
         end)
         return true
       end
       if current_color_field_is_breath_dynamic() then
-        local param_name = editor.selected_param_name(instance) or 'min'
+        local param_name = selected_param_name() or 'min'
         vim.ui.input({ prompt = ('Breath %s: '):format(param_name) }, function(value)
           if value == nil then
             return
           end
-          run_editor(editor.set_dynamic_param, param_name, value)
+          run_action('set_dynamic_param', param_name, value)
         end)
         return true
       end
@@ -238,7 +241,7 @@ function M.setup_workspace_keymaps(instance, buf)
         if value == nil then
           return
         end
-        run_editor(editor.set_group, value)
+        run_action('set_group', value)
       end)
       return true
     end
@@ -248,7 +251,7 @@ function M.setup_workspace_keymaps(instance, buf)
         if value == nil then
           return
         end
-        run_editor(editor.set_blend, value)
+        run_action('set_blend', value)
       end)
       return true
     end
@@ -257,10 +260,10 @@ function M.setup_workspace_keymaps(instance, buf)
   end
 
   vim.keymap.set('n', '<Esc>', function()
-    scene.back(instance)
+    actions.back(instance)
   end, opts)
   vim.keymap.set('n', 'q', function()
-    scene.back(instance)
+    actions.back(instance)
   end, opts)
   vim.keymap.set('n', '?', function()
     lifecycle.toggle_help(instance)
@@ -300,13 +303,13 @@ function M.setup_workspace_keymaps(instance, buf)
     input_actions.goto_prev_input(instance)
   end, opts)
   vim.keymap.set('n', 'J', function()
-    search_scene.goto_offset(instance, 1)
+    run_search_action('next_result')
   end, opts)
   vim.keymap.set('n', 'K', function()
-    search_scene.goto_offset(instance, -1)
+    run_search_action('prev_result')
   end, opts)
   vim.keymap.set('n', 'gr', function()
-    search_scene.goto_first(instance)
+    run_search_action('first_result')
   end, opts)
   vim.keymap.set('n', 'p', function()
     input_actions.paste_below(instance, false)
@@ -324,14 +327,11 @@ function M.setup_workspace_keymaps(instance, buf)
     input_actions.open_below(instance)
   end, opts)
   vim.keymap.set('n', 's', function()
-    local ok, err = detail_commands.save_current(instance)
-    if ok == false and err == nil then
+    if not instance.state.detail_index then
       feed_normal_key('s')
       return
     end
-    if not ok then
-      notify_error(err or 'Failed to save highlight override')
-    end
+    actions.dispatch(instance, 'save')
   end, opts)
   vim.keymap.set('n', 'r', function()
     adjust_color('r', -ui_fields.color_step, 'r')
@@ -366,14 +366,14 @@ function M.setup_workspace_keymaps(instance, buf)
       feed_normal_key('[')
       return
     end
-    run_editor(editor.select_dynamic_palette, -1)
+    run_action('select_dynamic_palette', -1)
   end, opts)
   vim.keymap.set('n', ']', function()
     if not current_color_field_is_rgb_dynamic() then
       feed_normal_key(']')
       return
     end
-    run_editor(editor.select_dynamic_palette, 1)
+    run_action('select_dynamic_palette', 1)
   end, opts)
   vim.keymap.set('n', '+', function()
     if current_color_field_is_dynamic() then
@@ -413,7 +413,7 @@ function M.setup_workspace_keymaps(instance, buf)
   end, opts)
   vim.keymap.set('n', 'x', function()
     if current_color_field_is_rgb_dynamic() then
-      run_editor(editor.delete_dynamic_palette_color)
+      run_action('delete_dynamic_palette_color')
       return
     end
     feed_normal_key('x')
@@ -429,43 +429,13 @@ function M.setup_workspace_keymaps(instance, buf)
       return
     end
     if current_color_field_is_rgb_dynamic() then
-      run_editor(editor.add_dynamic_palette_color)
+      run_action('add_dynamic_palette_color')
     end
   end, opts)
 
   vim.keymap.set({ 'n', 'i' }, '<CR>', function()
     vim.schedule(function()
-      local win = window.get_win(instance)
-      local row = window.is_valid_win(win) and vim.api.nvim_win_get_cursor(win)[1] or 0
-      local area = input_model.current_area(instance, row)
-      if instance.state.detail_index then
-        local ok, err = scene.handle(instance, 'activate')
-        if not ok then
-          notify_error(err)
-        end
-      elseif area == 'results' then
-        search_scene.open_detail(instance)
-      else
-        if vim.fn.mode():lower():find('i') then
-          vim.cmd('stopinsert')
-        end
-        input_model.sync_queries_from_buffer(instance)
-        instance:rerender()
-        if #instance.state.results > 0 then
-          local target_line = nil
-          for _, entry in ipairs(results_state.rows(instance)) do
-            if entry.index == instance.state.list_cursor then
-              target_line = entry.line
-              break
-            end
-          end
-          if target_line then
-            navigation.jump_to_row(instance, target_line, false)
-          else
-            search_scene.goto_first(instance)
-          end
-        end
-      end
+      actions.dispatch(instance, 'activate')
     end)
     return ''
   end, vim.tbl_extend('force', opts, { expr = true }))

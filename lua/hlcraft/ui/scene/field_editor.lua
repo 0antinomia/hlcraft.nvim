@@ -17,7 +17,9 @@ local color_fields = {
 }
 
 local function notify_error(message)
-  vim.notify(message, vim.log.levels.ERROR)
+  if message then
+    vim.notify(('hlcraft: %s'):format(message), vim.log.levels.ERROR)
+  end
 end
 
 function M.current_result(instance)
@@ -131,6 +133,7 @@ function M.back(instance)
 end
 
 function M.activate(instance)
+  local result = M.current_result(instance)
   if M.current_field(instance) == 'group' then
     local editor_row = M.editor_row_at_cursor(instance)
     local row_key = editor_row and editor_row.key or nil
@@ -143,8 +146,8 @@ function M.activate(instance)
           return
         end
         local ok, err = M.handle(instance, 'set_group', value)
-        if not ok then
-          notify_error(err or 'Failed to update group')
+        if not ok and err then
+          notify_error(err)
         end
       end)
       return true, nil
@@ -152,7 +155,6 @@ function M.activate(instance)
   end
 
   local row = menu_row_at_cursor(instance)
-  local result = M.current_result(instance)
   if not row or not result then
     return false, nil
   end
