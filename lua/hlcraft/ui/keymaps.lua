@@ -2,6 +2,7 @@ local input_actions = require('hlcraft.ui.input.actions')
 local input_model = require('hlcraft.ui.input.model')
 local navigation = require('hlcraft.ui.navigation')
 local session = require('hlcraft.ui.session')
+local search_scene = require('hlcraft.ui.scene.search')
 local results_state = require('hlcraft.ui.state.results')
 local editor = require('hlcraft.ui.commands.editor')
 local detail_commands = require('hlcraft.ui.commands.detail')
@@ -290,13 +291,13 @@ function M.setup_workspace_keymaps(instance, buf)
     input_actions.goto_prev_input(instance)
   end, opts)
   vim.keymap.set('n', 'J', function()
-    results_state.goto_offset(instance, 1)
+    search_scene.goto_offset(instance, 1)
   end, opts)
   vim.keymap.set('n', 'K', function()
-    results_state.goto_offset(instance, -1)
+    search_scene.goto_offset(instance, -1)
   end, opts)
   vim.keymap.set('n', 'gr', function()
-    results_state.goto_first(instance)
+    search_scene.goto_first(instance)
   end, opts)
   vim.keymap.set('n', 'p', function()
     input_actions.paste_below(instance, false)
@@ -431,7 +432,7 @@ function M.setup_workspace_keymaps(instance, buf)
       if instance.state.detail_index then
         editor.activate(instance)
       elseif area == 'results' then
-        results_state.open_detail(instance)
+        search_scene.open_detail(instance)
       else
         if vim.fn.mode():lower():find('i') then
           vim.cmd('stopinsert')
@@ -449,7 +450,7 @@ function M.setup_workspace_keymaps(instance, buf)
           if target_line then
             navigation.jump_to_row(instance, target_line, false)
           else
-            results_state.goto_first(instance)
+            search_scene.goto_first(instance)
           end
         end
       end
