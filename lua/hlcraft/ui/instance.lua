@@ -1,7 +1,8 @@
-local results_state = require('hlcraft.ui.state.results')
+local scene = require('hlcraft.ui.scene')
 local lifecycle = require('hlcraft.ui.workspace.lifecycle')
-local workspace_render = require('hlcraft.ui.render.workspace')
 local theme = require('hlcraft.ui.theme')
+
+scene.register('search', require('hlcraft.ui.scene.search'))
 
 local ns = vim.api.nvim_create_namespace('hlcraft-ui')
 
@@ -58,6 +59,9 @@ function Instance.new(id)
       timer = nil,
       keymap = nil,
     },
+    scene = {
+      name = 'search',
+    },
   }
   self.ns = ns
   self.input_label_hl = input_label_hl
@@ -67,19 +71,13 @@ end
 --- Update search results and re-render the workspace buffer
 --- @return nil
 function Instance:rerender()
-  results_state.update_results(self)
-  workspace_render.render(self)
+  scene.render(self)
 end
 
 --- Close detail view if open, otherwise close the entire workspace
 --- @return nil
 function Instance:quit_or_back()
-  if self.state.detail_index then
-    results_state.close_detail(self)
-    return
-  end
-
-  lifecycle.close(self)
+  scene.back(self)
 end
 
 --- Open the workspace in the current window
