@@ -15,7 +15,7 @@ end
 
 function M.render(instance)
   search_scene.update_results(instance)
-  require('hlcraft.ui.render.workspace').render(instance)
+  require('hlcraft.ui.render.detail').render(instance)
 end
 
 function M.back(instance)

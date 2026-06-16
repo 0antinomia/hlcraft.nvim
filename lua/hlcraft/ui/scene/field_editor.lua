@@ -6,7 +6,6 @@ local results_state = require('hlcraft.ui.state.results')
 local session = require('hlcraft.ui.session')
 local ui_fields = require('hlcraft.ui.fields')
 local window = require('hlcraft.ui.workspace.window')
-local workspace_render = require('hlcraft.ui.render.workspace')
 
 local M = {}
 
@@ -122,7 +121,7 @@ end
 
 function M.render(instance)
   require('hlcraft.ui.scene.search').update_results(instance)
-  workspace_render.render(instance)
+  require('hlcraft.ui.render.field_editor').render(instance)
 end
 
 function M.back(instance)

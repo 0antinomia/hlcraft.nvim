@@ -177,5 +177,48 @@ h.assert_equal(
 )
 h.assert_true(field_editor_instance.did_rerender == true, 'scene set_color did not refresh the instance', scope)
 
+vim.api.nvim_set_hl(0, 'HlcraftUiSceneRenderOwner', { fg = '#112233', bg = '#334455', sp = '#556677' })
+
+local workspace_render = require('hlcraft.ui.render.workspace')
+local original_workspace_render = workspace_render.render
+workspace_render.render = function()
+  error('scene render must not call workspace renderer')
+end
+
+local direct_render_instance = Instance.new('ui-scene-direct-render-test')
+direct_render_instance.state.buf = vim.api.nvim_create_buf(false, true)
+direct_render_instance.state.last_workspace_win = vim.api.nvim_get_current_win()
+vim.api.nvim_win_set_buf(direct_render_instance.state.last_workspace_win, direct_render_instance.state.buf)
+direct_render_instance.state.name_query = 'HlcraftUiSceneRenderOwner'
+
+local direct_ok, direct_err = pcall(function()
+  scene.set(direct_render_instance, 'search')
+  scene.render(direct_render_instance)
+  h.assert_true(
+    next(direct_render_instance.state.geometry.result_lines or {}) ~= nil,
+    'search scene render did not map result rows',
+    scope
+  )
+
+  scene.set(direct_render_instance, 'detail', { index = 1 })
+  scene.render(direct_render_instance)
+  h.assert_true(
+    direct_render_instance.state.geometry.detail_menu.fg ~= nil,
+    'detail scene render did not map detail rows',
+    scope
+  )
+
+  scene.set(direct_render_instance, 'field_editor', { field = 'fg' })
+  scene.render(direct_render_instance)
+  h.assert_true(
+    next(direct_render_instance.state.geometry.editor_rows or {}) ~= nil,
+    'field editor scene render did not map editor rows',
+    scope
+  )
+end)
+
+workspace_render.render = original_workspace_render
+h.assert_true(direct_ok, direct_err or 'scene-owned render test failed', scope)
+
 vim.fn.delete(persist_dir, 'rf')
 print('hlcraft ui scene: OK')
