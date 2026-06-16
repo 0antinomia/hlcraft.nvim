@@ -47,11 +47,7 @@ function M.build(instance, geometry, result, field, width, line_offset)
     lines,
     geometry,
     'color_keys',
-    ('Keys: r/R red -/+%d, g/G green -/+%d, b/B blue -/+%d, n NONE, i input, d dynamic, s save, q back'):format(
-      ui_fields.color_step,
-      ui_fields.color_step,
-      ui_fields.color_step
-    )
+    'Keys: r/R g/G b/B adjust, n NONE, i input, d dynamic, s save, q back'
   )
 
   for index, line in ipairs(lines) do

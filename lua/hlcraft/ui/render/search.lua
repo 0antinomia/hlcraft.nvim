@@ -22,6 +22,7 @@ function M.render(instance)
   for _, line in ipairs(result_lines) do
     lines[#lines + 1] = line
   end
+  lines[#lines + 1] = 'Keys: Enter open/apply, Tab input, j/k move, ? help, q close'
   for index, result_index in pairs(selectable) do
     geometry.result_lines[results_top + index - 1] = result_index
   end
