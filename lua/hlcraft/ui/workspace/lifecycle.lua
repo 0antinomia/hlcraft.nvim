@@ -75,6 +75,9 @@ local function reset_view_state(instance)
     timer = nil,
     keymap = nil,
   }
+  instance.state.scene = {
+    name = 'search',
+  }
 end
 
 --- Toggle the help floating window open or closed
