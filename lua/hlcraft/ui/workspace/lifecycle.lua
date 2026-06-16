@@ -40,7 +40,7 @@ local function uninstall_preview_keymap(instance)
 end
 
 local function close_unsaved_prompt(instance)
-  require('hlcraft.ui.state.results').close_unsaved_prompt(instance)
+  require('hlcraft.ui.scene.detail').close_unsaved_prompt(instance)
 end
 
 local function is_wiping_buffer(buf)

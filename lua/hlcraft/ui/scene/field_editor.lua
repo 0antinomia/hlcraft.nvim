@@ -1,8 +1,8 @@
 local blend_editor = require('hlcraft.ui.editor.blend')
 local color_editor = require('hlcraft.ui.editor.color')
+local detail_scene = require('hlcraft.ui.scene.detail')
 local dynamic_editor = require('hlcraft.ui.editor.dynamic')
 local group_editor = require('hlcraft.ui.editor.group')
-local results_state = require('hlcraft.ui.state.results')
 local session = require('hlcraft.ui.session')
 local ui_fields = require('hlcraft.ui.fields')
 local window = require('hlcraft.ui.workspace.window')
@@ -22,7 +22,7 @@ local function notify_error(message)
 end
 
 function M.current_result(instance)
-  return results_state.current_detail_result(instance)
+  return detail_scene.current_result(instance)
 end
 
 function M.current_field(instance)

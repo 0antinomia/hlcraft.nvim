@@ -8,7 +8,7 @@ local color_renderer = require('hlcraft.ui.render.editors.color')
 local dynamic_renderer = require('hlcraft.ui.render.editors.dynamic')
 local group_renderer = require('hlcraft.ui.render.editors.group')
 local blend_renderer = require('hlcraft.ui.render.editors.blend')
-local results_state = require('hlcraft.ui.state.results')
+local detail_scene = require('hlcraft.ui.scene.detail')
 local theme = require('hlcraft.ui.theme')
 
 local M = {}
@@ -66,7 +66,7 @@ function M.render(instance)
   local lines = {}
   local geometry = buffer.new_geometry()
   local results_top = buffer.append_search_inputs(instance, lines, geometry, width)
-  local detail_result = results_state.current_detail_result(instance)
+  local detail_result = detail_scene.current_result(instance)
   local field = instance.state.field_editor and instance.state.field_editor.field or nil
 
   if detail_result and field then

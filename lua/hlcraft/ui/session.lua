@@ -3,10 +3,6 @@ local engine = require('hlcraft.engine.service')
 
 local M = {}
 
-local function get_results_state()
-  return require('hlcraft.ui.state.results')
-end
-
 local function shallow_copy(value)
   local copy = {}
   for key, item in pairs(value or {}) do
@@ -21,7 +17,7 @@ end
 
 local function refresh(instance, name)
   if instance then
-    get_results_state().refresh(instance, name, true)
+    require('hlcraft.ui.scene.detail').refresh(instance, name, true)
   end
 end
 

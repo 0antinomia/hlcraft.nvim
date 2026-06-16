@@ -1,5 +1,5 @@
 local render_util = require('hlcraft.render.util')
-local results_state = require('hlcraft.ui.state.results')
+local search_scene = require('hlcraft.ui.scene.search')
 
 local M = {}
 
@@ -24,7 +24,7 @@ function M.build(instance, width)
   lines[#lines + 1] = string.rep('─', vim.fn.strdisplaywidth(header))
 
   if #instance.state.results == 0 then
-    lines[#lines + 1] = results_state.empty_message(instance)
+    lines[#lines + 1] = search_scene.empty_message(instance)
   else
     for index, result in ipairs(instance.state.results) do
       lines[#lines + 1] = table.concat({

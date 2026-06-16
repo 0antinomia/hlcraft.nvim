@@ -5,7 +5,7 @@ local dynamic_model = require('hlcraft.dynamic.model')
 local dynamic_preview = require('hlcraft.ui.dynamic_preview')
 local buffer = require('hlcraft.ui.render.buffer')
 local decorations = require('hlcraft.ui.render.decorations')
-local results_state = require('hlcraft.ui.state.results')
+local detail_scene = require('hlcraft.ui.scene.detail')
 local theme = require('hlcraft.ui.theme')
 
 local M = {}
@@ -116,7 +116,7 @@ function M.render(instance)
   local lines = {}
   local geometry = buffer.new_geometry()
   local results_top = buffer.append_search_inputs(instance, lines, geometry, width)
-  local detail_result = results_state.current_detail_result(instance)
+  local detail_result = detail_scene.current_result(instance)
 
   if detail_result then
     local detail_lines = M.build(instance, geometry, detail_result, width, results_top - 1)
