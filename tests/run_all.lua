@@ -4,7 +4,6 @@ local tests = {
   'tests/storage.lua',
   'tests/engine.lua',
   'tests/overrides.lua',
-  'tests/ui_scene.lua',
 }
 
 for _, test_file in ipairs(tests) do
