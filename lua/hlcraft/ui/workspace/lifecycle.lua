@@ -199,7 +199,7 @@ function M.open(instance)
 
   instance:rerender()
   install_preview_keymap(instance)
-  require('hlcraft.ui.input.actions').goto_first_input(instance)
+  require('hlcraft.ui.input.buffer_fields').goto_first(instance)
   require('hlcraft.ui.navigation').clamp_cursor(instance)
 end
 

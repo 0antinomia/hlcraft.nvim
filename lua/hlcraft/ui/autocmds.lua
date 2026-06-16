@@ -1,4 +1,4 @@
-local input_model = require('hlcraft.ui.input.model')
+local buffer_fields = require('hlcraft.ui.input.buffer_fields')
 local workspace_render = require('hlcraft.ui.render.workspace')
 local navigation = require('hlcraft.ui.navigation')
 local window = require('hlcraft.ui.workspace.window')
@@ -45,14 +45,14 @@ function M.setup(instance)
       end
       local debounce_ms = config.config.debounce_ms or 100
       if debounce_ms <= 0 then
-        input_model.sync_queries_from_buffer(instance)
+        buffer_fields.sync_queries(instance)
         instance:rerender()
         return
       end
       stop_debounce_timer(instance)
       instance.state.debounce_timer = vim.defer_fn(function()
         instance.state.debounce_timer = nil
-        input_model.sync_queries_from_buffer(instance)
+        buffer_fields.sync_queries(instance)
         instance:rerender()
       end, debounce_ms)
     end,
@@ -68,7 +68,7 @@ function M.setup(instance)
       end
       navigation.clamp_cursor(instance)
       local row = vim.api.nvim_win_get_cursor(win)[1]
-      local area, extra = input_model.current_area(instance, row)
+      local area, extra = buffer_fields.current_area(instance, row)
       if area == 'results' then
         instance.state.list_cursor = extra
       end

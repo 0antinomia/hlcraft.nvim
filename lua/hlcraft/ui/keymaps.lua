@@ -1,6 +1,5 @@
 local actions = require('hlcraft.ui.actions')
-local input_actions = require('hlcraft.ui.input.actions')
-local input_model = require('hlcraft.ui.input.model')
+local buffer_fields = require('hlcraft.ui.input.buffer_fields')
 local navigation = require('hlcraft.ui.navigation')
 local session = require('hlcraft.ui.session')
 local scene = require('hlcraft.ui.scene')
@@ -25,11 +24,11 @@ local function setup_input_boundary_keys(instance, buf)
     end, { buffer = buf, silent = true })
   end
 
-  setup_deletion('<BS>', input_actions.should_block_backward_delete)
-  setup_deletion('<C-h>', input_actions.should_block_backward_delete)
-  setup_deletion('<C-w>', input_actions.should_block_backward_delete)
-  setup_deletion('<C-u>', input_actions.should_block_backward_delete)
-  setup_deletion('<Del>', input_actions.should_block_forward_delete)
+  setup_deletion('<BS>', buffer_fields.should_block_backward_delete)
+  setup_deletion('<C-h>', buffer_fields.should_block_backward_delete)
+  setup_deletion('<C-w>', buffer_fields.should_block_backward_delete)
+  setup_deletion('<C-u>', buffer_fields.should_block_backward_delete)
+  setup_deletion('<Del>', buffer_fields.should_block_forward_delete)
 
   for _, lhs in ipairs({ 'X', 'S', 'D', 'c', 'C' }) do
     vim.keymap.set('n', lhs, function()
@@ -297,10 +296,10 @@ function M.setup_workspace_keymaps(instance, buf)
     end
   end, opts)
   vim.keymap.set('n', '<Tab>', function()
-    input_actions.goto_next_input(instance)
+    buffer_fields.goto_next(instance)
   end, opts)
   vim.keymap.set('n', '<S-Tab>', function()
-    input_actions.goto_prev_input(instance)
+    buffer_fields.goto_prev(instance)
   end, opts)
   vim.keymap.set('n', 'J', function()
     run_search_action('next_result')
@@ -312,19 +311,19 @@ function M.setup_workspace_keymaps(instance, buf)
     run_search_action('first_result')
   end, opts)
   vim.keymap.set('n', 'p', function()
-    input_actions.paste_below(instance, false)
+    buffer_fields.paste_below(instance, false)
   end, opts)
   vim.keymap.set('x', 'p', function()
-    input_actions.paste_below(instance, true)
+    buffer_fields.paste_below(instance, true)
   end, opts)
   vim.keymap.set('n', 'P', function()
-    input_actions.paste_above(instance, false)
+    buffer_fields.paste_above(instance, false)
   end, opts)
   vim.keymap.set('x', 'P', function()
-    input_actions.paste_above(instance, true)
+    buffer_fields.paste_above(instance, true)
   end, opts)
   vim.keymap.set('n', 'o', function()
-    input_actions.open_below(instance)
+    buffer_fields.open_below(instance)
   end, opts)
   vim.keymap.set('n', 's', function()
     if not instance.state.detail_index then
@@ -406,7 +405,7 @@ function M.setup_workspace_keymaps(instance, buf)
     if not window.is_valid_win(win) then
       return
     end
-    local field = input_model.get_input_field_at_row(instance, vim.api.nvim_win_get_cursor(win)[1] - 1)
+    local field = buffer_fields.get_field_at_row(instance, vim.api.nvim_win_get_cursor(win)[1] - 1)
     if field then
       navigation.jump_to_row(instance, field.line, true)
     end
@@ -423,7 +422,7 @@ function M.setup_workspace_keymaps(instance, buf)
     if not window.is_valid_win(win) then
       return
     end
-    local field = input_model.get_input_field_at_row(instance, vim.api.nvim_win_get_cursor(win)[1] - 1)
+    local field = buffer_fields.get_field_at_row(instance, vim.api.nvim_win_get_cursor(win)[1] - 1)
     if field then
       navigation.jump_to_row(instance, field.line, true)
       return

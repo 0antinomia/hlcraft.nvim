@@ -2,7 +2,7 @@ local ui_fields = require('hlcraft.ui.fields')
 local color = require('hlcraft.core.color')
 local ui_detail = require('hlcraft.ui.detail')
 local window = require('hlcraft.ui.workspace.window')
-local input_model = require('hlcraft.ui.input.model')
+local buffer_fields = require('hlcraft.ui.input.buffer_fields')
 local theme = require('hlcraft.ui.theme')
 
 local M = {}
@@ -232,7 +232,7 @@ function M.refresh_input_placeholders(instance)
   for _, field in ipairs(instance.state.geometry.inputs or {}) do
     local key = field.key or field.name
     local text = placeholder_text_for_field(instance, field)
-    local value = input_model.field_line_text(instance, field)
+    local value = buffer_fields.field_line_text(instance, field)
     if value == '' and text and text ~= '' then
       M.set_overlay(instance, instance.state.buf, key, field.line - 1, tostring(text), theme.groups.muted)
     else
