@@ -77,7 +77,7 @@ local function clear_preview_marks(instance)
 end
 
 local function set_preview_hl(instance, item, now_ms)
-  local value = effects.compute(item.dynamic, item.base, now_ms)
+  local value = effects.compute(item.dynamic, item.base, item.now_ms or now_ms)
   if not value then
     return nil
   end

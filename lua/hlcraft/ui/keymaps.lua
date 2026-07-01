@@ -4,6 +4,7 @@ local navigation = require('hlcraft.ui.navigation')
 local session = require('hlcraft.ui.session')
 local scene = require('hlcraft.ui.scene')
 local detail_scene = require('hlcraft.ui.scene.detail')
+local field_editor_scene = require('hlcraft.ui.scene.field_editor')
 local search_scene = require('hlcraft.ui.scene.search')
 local ui_fields = require('hlcraft.ui.fields')
 local lifecycle = require('hlcraft.ui.workspace.lifecycle')
@@ -112,6 +113,14 @@ function M.setup_workspace_keymaps(instance, buf)
     return current_color_dynamic() ~= nil
   end
 
+  local function current_dynamic_editor_row_key()
+    if not current_color_field_is_dynamic() then
+      return nil
+    end
+    local row = field_editor_scene.editor_row_at_cursor(instance)
+    return row and row.key or nil
+  end
+
   local function toggle_dynamic_color()
     if current_field_kind() ~= 'color' then
       return
@@ -180,6 +189,10 @@ function M.setup_workspace_keymaps(instance, buf)
     local field = instance.state.field_editor and instance.state.field_editor.field
 
     if kind == 'color' then
+      if current_color_field_is_dynamic() then
+        run_action('input_dynamic_row', { default_raw = true })
+        return true
+      end
       vim.ui.input({ prompt = field .. ': ' }, function(value)
         if value == nil then
           return
@@ -322,14 +335,24 @@ function M.setup_workspace_keymaps(instance, buf)
   end, opts)
   vim.keymap.set('n', '+', function()
     if current_color_field_is_dynamic() then
-      run_action('adjust_dynamic_duration', ui_fields.dynamic_duration_step)
+      if current_dynamic_editor_row_key() == 'dynamic_phase' then
+        local dynamic = current_color_dynamic()
+        run_action('set_dynamic_phase', (tonumber(dynamic.phase) or 0) + ui_fields.dynamic_phase_step)
+      else
+        run_action('adjust_dynamic_duration', ui_fields.dynamic_duration_step)
+      end
       return
     end
     adjust_blend(ui_fields.blend_small_step, '+')
   end, opts)
   vim.keymap.set('n', '-', function()
     if current_color_field_is_dynamic() then
-      run_action('adjust_dynamic_duration', -ui_fields.dynamic_duration_step)
+      if current_dynamic_editor_row_key() == 'dynamic_phase' then
+        local dynamic = current_color_dynamic()
+        run_action('set_dynamic_phase', (tonumber(dynamic.phase) or 0) - ui_fields.dynamic_phase_step)
+      else
+        run_action('adjust_dynamic_duration', -ui_fields.dynamic_duration_step)
+      end
       return
     end
     adjust_blend(-ui_fields.blend_small_step, '-')
