@@ -54,11 +54,7 @@ local function interpolate_hex(left_hex, right_hex, amount)
 
   local lr, lg, lb = color.int_to_rgb(left)
   local rr, rg, rb = color.int_to_rgb(right)
-  return rgb_to_hex(
-    lr + ((rr - lr) * amount),
-    lg + ((rg - lg) * amount),
-    lb + ((rb - lb) * amount)
-  )
+  return rgb_to_hex(lr + ((rr - lr) * amount), lg + ((rg - lg) * amount), lb + ((rb - lb) * amount))
 end
 
 function M.compute(spec, base_hex, now_ms, context)

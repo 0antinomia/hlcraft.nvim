@@ -59,7 +59,11 @@ local function pretty_value(value, indent)
   local keys = sorted_keys(value)
   for index, key in ipairs(keys) do
     local comma = index < #keys and ',' or ''
-    lines[#lines + 1] = child_pad .. vim.json.encode(tostring(key)) .. ': ' .. pretty_value(value[key], indent + 1) .. comma
+    lines[#lines + 1] = child_pad
+      .. vim.json.encode(tostring(key))
+      .. ': '
+      .. pretty_value(value[key], indent + 1)
+      .. comma
   end
   lines[#lines + 1] = pad .. '}'
   return table.concat(lines, '\n')

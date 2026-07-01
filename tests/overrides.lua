@@ -40,7 +40,12 @@ local dynamic_ok, dynamic_err = overrides.set_dynamic('HlcraftTestNormal', 'fg',
   },
 })
 h.assert_true(dynamic_ok, dynamic_err or 'set_dynamic failed', scope)
-h.assert_equal(overrides.get('HlcraftTestNormal').dynamic.fg.preset, 'pulse', 'runtime dynamic preset was not set', scope)
+h.assert_equal(
+  overrides.get('HlcraftTestNormal').dynamic.fg.preset,
+  'pulse',
+  'runtime dynamic preset was not set',
+  scope
+)
 
 local before_legacy_dynamic = vim.deepcopy(overrides.get('HlcraftTestNormal').dynamic)
 local legacy_ok = overrides.set_dynamic('HlcraftTestNormal', 'fg', {

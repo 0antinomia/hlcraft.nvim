@@ -66,7 +66,8 @@ function M.adjust_duration(instance, result, key, delta)
     return false, 'No dynamic color field is active'
   end
 
-  dynamic.duration = dynamic_model.normalize_duration((dynamic.duration or dynamic_model.default_duration) + (tonumber(delta) or 0))
+  dynamic.duration =
+    dynamic_model.normalize_duration((dynamic.duration or dynamic_model.default_duration) + (tonumber(delta) or 0))
   return set_normalized(instance, result, key, dynamic)
 end
 

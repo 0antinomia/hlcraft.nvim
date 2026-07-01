@@ -39,7 +39,12 @@ local dynamic_ok, dynamic_err = engine.set_dynamic('HlcraftEngineNormal', 'fg', 
   },
 })
 h.assert_true(dynamic_ok, dynamic_err or 'set_dynamic failed', scope)
-h.assert_equal(engine.get('HlcraftEngineNormal').dynamic.fg.timeline[2].color, '#ffffff', 'dynamic draft did not set', scope)
+h.assert_equal(
+  engine.get('HlcraftEngineNormal').dynamic.fg.timeline[2].color,
+  '#ffffff',
+  'dynamic draft did not set',
+  scope
+)
 
 engine.restore_persisted('HlcraftEngineNormal')
 h.assert_true(engine.get('HlcraftEngineNormal').dynamic == nil, 'restore did not discard unsaved dynamic draft', scope)
