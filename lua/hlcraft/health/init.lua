@@ -43,6 +43,13 @@ function M.check()
         count = count + 1
       end
       vim.health.ok(('All TOML files parsed successfully (%d entries)'):format(count))
+      local dynamic_count = 0
+      for _, entry in pairs(data.entries or {}) do
+        if type(entry.dynamic) == 'table' and next(entry.dynamic) ~= nil then
+          dynamic_count = dynamic_count + 1
+        end
+      end
+      vim.health.ok(('Dynamic color entries parsed: %d'):format(dynamic_count))
     else
       vim.health.error('Failed to parse TOML files: ' .. tostring(data))
     end
