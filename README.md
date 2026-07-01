@@ -174,15 +174,14 @@ dynamic = {
 Dynamic color configuration is edited from the existing `FG`, `BG`, and `SP` editors:
 
 - Press `d` in a color editor to toggle dynamic mode for the current `FG`, `BG`, or `SP` channel.
-- Press `m` to switch between the current modes: `rgb` and `breath`.
-- Press `+` / `-` to change the effect speed, or the selected dynamic parameter when a parameter row is selected.
-- In `rgb` mode, palette rows can be selected and edited to change the animated color stops.
-- In `breath` mode, parameter rows expose editable `min` and `max` brightness values.
+- Press `m` to cycle presets: `pulse`, `breath`, `hue`, `gradient`, `blink`, and `duotone`.
+- Press `+` / `-` to adjust the dynamic duration.
+- Press `e` to open the raw JSON editor for the current dynamic channel.
 - Press `s` in the detail view to persist the override, just like static color changes.
 
-Dynamic rows use animated color swatches as the primary preview. Compact text such as `rgb 2000ms` remains visible as metadata and as a fallback for environments where the preview cannot animate.
+Dynamic rows use animated color swatches as the primary preview. Compact text such as `pulse 2000ms` remains visible as metadata and as a fallback for environments where the preview cannot animate.
 
-The current implementation is still early-stage and intentionally small. It exposes dynamic `fg`, `bg`, and `sp` channels, two built-in modes, speed control, editable `rgb` palette stops, and editable `breath` brightness bounds, but broader configurability is deliberately limited while the feature settles.
+Each dynamic channel is stored as a JSON model with `version`, `preset`, `duration`, `loop`, and `timeline` fields. Presets provide common shapes, while the raw JSON editor can hold custom timelines and transforms. Runtime animation updates group-level `fg`, `bg`, and `sp` highlight values over time; it is not per-character or spatial terminal animation.
 
 #### `debounce_ms`
 
@@ -241,7 +240,12 @@ vim.fn.stdpath('config') .. '/hlcraft'
 
 Each file stores one top-level TOML section. Section names come from groups you explicitly select or create in the detail view. If an override has no group, hlcraft asks you to choose or create one before saving.
 
-Dynamic color settings are stored as hlcraft-specific flat keys such as `dyn_fg_mode` and `dyn_fg_speed`. Palette stops and mode parameters are serialized as JSON strings in optional flat keys such as `dyn_fg_palette` and `dyn_fg_params`; the same pattern applies to each dynamic channel, for example `dyn_bg_palette`, `dyn_bg_params`, `dyn_sp_palette`, and `dyn_sp_params`. Depending on mode and defaults, absent palette or params keys can still be valid.
+Dynamic color settings are stored as hlcraft-specific flat keys such as `dyn_fg`, `dyn_bg`, and `dyn_sp`. Each value is a JSON string containing the complete channel model:
+
+```toml
+["demo.group"]
+"Normal" = { fg = "#d7d7ff", dyn_fg = "{\"version\":1,\"preset\":\"pulse\",\"duration\":2000,\"loop\":\"pingpong\",\"timeline\":[{\"at\":0,\"color\":\"base\"},{\"at\":1,\"color\":\"#ff6699\"}]}" }
+```
 
 Persisted overrides are loaded during `setup()` and replayed again on configured `reapply_events`.
 
