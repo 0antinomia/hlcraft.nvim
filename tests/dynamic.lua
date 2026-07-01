@@ -84,38 +84,30 @@ h.assert_true(
   'invalid color stop at was accepted',
   scope
 )
-h.assert_true(
-  model.normalize_channel({
-    version = 1,
-    timeline = { { at = 0, color = 'base' } },
-    transforms = {
-      {
-        type = 'brightness',
-        timeline = {
-          { value = 1 },
-        },
+h.assert_true(model.normalize_channel({
+  version = 1,
+  timeline = { { at = 0, color = 'base' } },
+  transforms = {
+    {
+      type = 'brightness',
+      timeline = {
+        { value = 1 },
       },
     },
-  }) == nil,
-  'missing transform stop at was accepted',
-  scope
-)
-h.assert_true(
-  model.normalize_channel({
-    version = 1,
-    timeline = { { at = 0, color = 'base' } },
-    transforms = {
-      {
-        type = 'brightness',
-        timeline = {
-          { at = 'bad', value = 1 },
-        },
+  },
+}) == nil, 'missing transform stop at was accepted', scope)
+h.assert_true(model.normalize_channel({
+  version = 1,
+  timeline = { { at = 0, color = 'base' } },
+  transforms = {
+    {
+      type = 'brightness',
+      timeline = {
+        { at = 'bad', value = 1 },
       },
     },
-  }) == nil,
-  'invalid transform stop at was accepted',
-  scope
-)
+  },
+}) == nil, 'invalid transform stop at was accepted', scope)
 h.assert_true(model.normalize_channel({ mode = 'rgb', speed = 1000 }) == nil, 'old rgb mode was accepted', scope)
 h.assert_true(model.normalize_channel({ mode = 'breath', speed = 1000 }) == nil, 'old breath mode was accepted', scope)
 
@@ -165,18 +157,48 @@ local numeric_stops = {
 }
 h.assert_equal(timeline.sample_numeric(numeric_stops, 0.5, 'linear'), 5, 'linear numeric sample changed', scope)
 h.assert_equal(timeline.sample_numeric(numeric_stops, 0.5, 'step'), 0, 'step numeric sample changed', scope)
-h.assert_equal(timeline.sample_numeric({ { at = 0, value = 0 }, { at = 1, value = 1 } }, 0.25, 'smoothstep'), 0.15625, 'smoothstep numeric sample changed', scope)
+h.assert_equal(
+  timeline.sample_numeric({ { at = 0, value = 0 }, { at = 1, value = 1 } }, 0.25, 'smoothstep'),
+  0.15625,
+  'smoothstep numeric sample changed',
+  scope
+)
 h.assert_equal(timeline.phase(250, 1000, 0, 'repeat'), 0.25, 'repeat phase changed', scope)
 h.assert_equal(timeline.phase(1250, 1000, 0, 'repeat'), 0.25, 'repeat wrapped phase changed', scope)
 h.assert_equal(timeline.phase(1250, 1000, 0, 'pingpong'), 0.75, 'pingpong phase changed', scope)
 h.assert_equal(timeline.phase(1250, 1000, 0, 'once'), 1, 'once phase changed', scope)
 h.assert_equal(timeline.phase(250, 1000, 0.25, 'repeat'), 0.5, 'phase offset changed', scope)
 
-h.assert_equal(transforms.apply('#808080', { type = 'brightness', value = 0.5 }), '#404040', 'brightness transform changed', scope)
-h.assert_equal(transforms.apply('#202020', { type = 'brightness', value = 3 }), transforms.apply('#202020', { type = 'brightness', value = 2 }), 'brightness transform was not clamped', scope)
-h.assert_equal(transforms.apply('#808080', { type = 'saturation', value = 0 }), '#808080', 'zero saturation on gray changed', scope)
-h.assert_equal(transforms.apply('#804020', { type = 'saturation', value = 3 }), transforms.apply('#804020', { type = 'saturation', value = 2 }), 'saturation transform was not clamped', scope)
-h.assert_equal(transforms.apply('#ff0000', { type = 'hue_shift', value = 120 }), '#00ff00', 'hue shift transform changed', scope)
+h.assert_equal(
+  transforms.apply('#808080', { type = 'brightness', value = 0.5 }),
+  '#404040',
+  'brightness transform changed',
+  scope
+)
+h.assert_equal(
+  transforms.apply('#202020', { type = 'brightness', value = 3 }),
+  transforms.apply('#202020', { type = 'brightness', value = 2 }),
+  'brightness transform was not clamped',
+  scope
+)
+h.assert_equal(
+  transforms.apply('#808080', { type = 'saturation', value = 0 }),
+  '#808080',
+  'zero saturation on gray changed',
+  scope
+)
+h.assert_equal(
+  transforms.apply('#804020', { type = 'saturation', value = 3 }),
+  transforms.apply('#804020', { type = 'saturation', value = 2 }),
+  'saturation transform was not clamped',
+  scope
+)
+h.assert_equal(
+  transforms.apply('#ff0000', { type = 'hue_shift', value = 120 }),
+  '#00ff00',
+  'hue shift transform changed',
+  scope
+)
 
 h.assert_equal(
   effects.compute({
