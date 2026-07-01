@@ -52,7 +52,7 @@ function M.tick(now_ms)
     for _, channel in ipairs(model.channels) do
       local channel_spec = dynamic and dynamic[channel] or nil
       if channel_spec then
-        local value = effects.compute(channel_spec, task.base_spec[channel], now_ms)
+        local value = effects.compute(channel_spec, task.base_spec[channel], now_ms, task.base_spec)
         if value ~= nil then
           spec[channel] = value
         end
