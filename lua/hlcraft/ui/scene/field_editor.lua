@@ -68,6 +68,31 @@ local function finish_edit(instance, ok, err, preserve_field)
   return true, nil
 end
 
+local function dynamic_value(result, field)
+  if not result or not color_fields[field] then
+    return nil
+  end
+  return session.dynamic_value(result.name, field)
+end
+
+local function prompt_dynamic_value(instance, action, prompt, default)
+  vim.ui.input({ prompt = prompt, default = default }, function(value)
+    if value == nil then
+      return
+    end
+    local ok, err = M.handle(instance, action, value)
+    if not ok and err then
+      notify_error(err)
+    end
+  end)
+  return true, nil
+end
+
+local function selected_editor_row_key(instance)
+  local row = M.editor_row_at_cursor(instance)
+  return row and row.key or nil
+end
+
 function M.open(instance, key)
   instance.state.field_editor.field = key
   instance:rerender()
@@ -83,6 +108,39 @@ function M.selected_param_name(instance)
 end
 
 M.selected_dynamic_param_name = M.selected_param_name
+
+function M.selected_dynamic_row_key(instance)
+  local result = M.current_result(instance)
+  local field = M.current_field(instance)
+  if not dynamic_value(result, field) then
+    return nil
+  end
+  return selected_editor_row_key(instance)
+end
+
+function M.input_dynamic_row(instance, opts)
+  opts = opts or {}
+  local result = M.current_result(instance)
+  local field = M.current_field(instance)
+  local dynamic = dynamic_value(result, field)
+  if not dynamic then
+    return false, 'No dynamic color field is active'
+  end
+
+  local row_key = selected_editor_row_key(instance)
+  if row_key == 'dynamic_loop' then
+    return prompt_dynamic_value(instance, 'set_dynamic_loop', 'Loop: ', dynamic.loop or 'repeat')
+  end
+  if row_key == 'dynamic_phase' then
+    return prompt_dynamic_value(instance, 'set_dynamic_phase', 'Phase: ', ('%.2f'):format(dynamic.phase or 0))
+  end
+  if row_key == 'dynamic_raw_json' or opts.default_raw then
+    require('hlcraft.ui.raw_dynamic').open(instance, result, field)
+    return true, nil
+  end
+
+  return false, nil
+end
 
 function M.enter(instance, opts)
   instance.state.field_editor.field = opts and opts.field or instance.state.field_editor.field
@@ -103,6 +161,14 @@ end
 
 function M.activate(instance)
   local result = M.current_result(instance)
+  local field = M.current_field(instance)
+  if dynamic_value(result, field) then
+    local row_key = M.selected_dynamic_row_key(instance)
+    if row_key == 'dynamic_loop' or row_key == 'dynamic_phase' or row_key == 'dynamic_raw_json' then
+      return M.input_dynamic_row(instance)
+    end
+  end
+
   if M.current_field(instance) == 'group' then
     local editor_row = M.editor_row_at_cursor(instance)
     local row_key = editor_row and editor_row.key or nil
@@ -153,6 +219,12 @@ function M.handle(instance, action, ...)
   end
   if action == 'selected_param_name' or action == 'selected_dynamic_param_name' then
     return true, M.selected_param_name(instance)
+  end
+  if action == 'selected_dynamic_row_key' then
+    return true, M.selected_dynamic_row_key(instance)
+  end
+  if action == 'input_dynamic_row' then
+    return M.input_dynamic_row(instance, ...)
   end
 
   local result = M.current_result(instance)

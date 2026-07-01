@@ -33,10 +33,12 @@ function M.build(instance, geometry, result, field, width, line_offset, dynamic)
     'Mode: dynamic',
     ('Preset: %s'):format(dynamic.preset or 'custom'),
     ('Duration: %dms'):format(dynamic.duration or 0),
-    ('Loop: %s'):format(dynamic.loop or 'repeat'),
-    ('Phase: %.2f'):format(dynamic.phase or 0),
-    ('Swatch: %s'):format(swatch),
   }
+
+  append_editor_row(lines, geometry, 'dynamic_loop', ('Loop: %s'):format(dynamic.loop or 'repeat'))
+  append_editor_row(lines, geometry, 'dynamic_phase', ('Phase: %.2f'):format(dynamic.phase or 0))
+
+  lines[#lines + 1] = ('Swatch: %s'):format(swatch)
 
   dynamic_preview.register(instance, {
     line = 8 + line_offset,
@@ -60,7 +62,8 @@ function M.build(instance, geometry, result, field, width, line_offset, dynamic)
       ('%s%s'):format(prefix, ui_fields.dynamic_timeline_swatch)
     )
     local sample_dynamic = vim.deepcopy(dynamic)
-    sample_dynamic.phase = phase
+    sample_dynamic.phase = 0
+    sample_dynamic.loop = 'once'
     local col_start = vim.fn.strdisplaywidth(prefix)
     dynamic_preview.register(instance, {
       line = row.line + line_offset,
@@ -70,6 +73,7 @@ function M.build(instance, geometry, result, field, width, line_offset, dynamic)
       field = field,
       base = fallback,
       dynamic = sample_dynamic,
+      now_ms = phase * math.max(1, tonumber(sample_dynamic.duration) or 1),
     })
   end
 
@@ -77,7 +81,7 @@ function M.build(instance, geometry, result, field, width, line_offset, dynamic)
     lines,
     geometry,
     'dynamic_keys',
-    'Keys: m preset, -/+ duration, e raw JSON, d static, s save, q back'
+    'Keys: i edit row, m preset, -/+ duration/phase, e raw JSON, d static, s save, q back'
   )
 
   for index, line in ipairs(lines) do
