@@ -34,34 +34,27 @@ local symlink_decoded = storage.load(persist_dir)
 h.assert_equal(symlink_decoded.groups.LinkedNormal, 'linked.group', 'symlinked TOML group did not load', scope)
 h.assert_equal(symlink_decoded.entries.LinkedNormal.fg, '#123456', 'symlinked TOML entry did not load', scope)
 
+local dynamic_json = vim.json.encode({
+  version = 1,
+  preset = 'pulse',
+  duration = 1500,
+  loop = 'pingpong',
+  timeline = {
+    { at = 0, color = 'base' },
+    { at = 1, color = '#ffffff' },
+  },
+})
 h.write_file(persist_dir .. '/dynamic.toml', {
   '["dynamic.group"]',
-  '"DynamicNormal" = { fg = "#101010", dyn_fg_mode = "rgb", dyn_fg_params = "{\\"phase\\":0.25}", dyn_fg_palette = "[\\"#000000\\",\\"#ffffff\\"]", dyn_fg_speed = 1500 }',
+  ('"DynamicNormal" = { fg = "#101010", dyn_fg = "%s" }'):format(dynamic_json:gsub('\\', '\\\\'):gsub('"', '\\"')),
   '"OldDynamic" = { fg = "#202020", dyn_fg_mode = "rgb", dyn_fg_speed = 1500 }',
 })
 
 local dynamic_decoded = storage.load(persist_dir)
-h.assert_equal(dynamic_decoded.entries.DynamicNormal.dynamic.fg.mode, 'rgb', 'dynamic mode did not load', scope)
-h.assert_equal(dynamic_decoded.entries.DynamicNormal.dynamic.fg.speed, 1500, 'dynamic speed did not load', scope)
-h.assert_equal(
-  dynamic_decoded.entries.DynamicNormal.dynamic.fg.params.phase,
-  0.25,
-  'dynamic params did not load',
-  scope
-)
-h.assert_equal(
-  dynamic_decoded.entries.DynamicNormal.dynamic.fg.palette[2],
-  '#ffffff',
-  'dynamic palette did not load',
-  scope
-)
-h.assert_equal(
-  dynamic_decoded.entries.OldDynamic.dynamic.fg.palette[1],
-  '#ff0000',
-  'old dynamic default palette did not load',
-  scope
-)
-h.assert_true(dynamic_decoded.entries.DynamicNormal.dyn_fg_mode == nil, 'flat dynamic key leaked after load', scope)
+h.assert_equal(dynamic_decoded.entries.DynamicNormal.dynamic.fg.preset, 'pulse', 'dynamic preset did not load', scope)
+h.assert_equal(dynamic_decoded.entries.DynamicNormal.dynamic.fg.duration, 1500, 'dynamic duration did not load', scope)
+h.assert_true(dynamic_decoded.entries.OldDynamic.dynamic == nil, 'old dynamic keys should not load', scope)
+h.assert_true(dynamic_decoded.entries.DynamicNormal.dyn_fg == nil, 'flat dynamic key leaked after load', scope)
 
 h.write_file(persist_dir .. '/stale.toml', {
   '["stale"]',
@@ -75,12 +68,34 @@ local save_ok, save_err = storage.save({
     fg = '#101010',
     dynamic = {
       fg = {
-        mode = 'rgb',
-        speed = 1500,
-        params = { phase = 0.25 },
-        palette = { '#000000', '#ffffff' },
+        version = 1,
+        preset = 'pulse',
+        duration = 1500,
+        loop = 'pingpong',
+        timeline = {
+          { at = 0, color = 'base' },
+          { at = 1, color = '#ffffff' },
+        },
       },
-      bg = { mode = 'breath', speed = 2500, params = { min = 0.2, max = 0.8 } },
+      bg = {
+        version = 1,
+        preset = 'breath',
+        duration = 2500,
+        loop = 'pingpong',
+        timeline = {
+          { at = 0, color = 'base' },
+        },
+        transforms = {
+          {
+            type = 'brightness',
+            interpolation = 'sine',
+            timeline = {
+              { at = 0, value = 0.2 },
+              { at = 1, value = 0.8 },
+            },
+          },
+        },
+      },
     },
   },
 }, {
@@ -100,16 +115,38 @@ h.assert_true(saved.entries.Comment ~= nil, 'group-only entry did not reload', s
 h.assert_equal(next(saved.entries.Comment), nil, 'group-only entry persisted fields', scope)
 h.assert_equal(saved.groups.Comment, 'group-only', 'group-only group did not reload', scope)
 h.assert_equal(
-  saved.entries.DynamicNormal.dynamic.fg.palette[2],
+  saved.entries.DynamicNormal.dynamic.fg.timeline[2].color,
   '#ffffff',
-  'saved dynamic palette did not reload',
+  'saved dynamic fg did not reload',
   scope
 )
-h.assert_equal(saved.entries.DynamicNormal.dynamic.bg.params.max, 0.8, 'saved breath params did not reload', scope)
+h.assert_equal(
+  saved.entries.DynamicNormal.dynamic.bg.transforms[1].timeline[2].value,
+  0.8,
+  'saved dynamic bg transform did not reload',
+  scope
+)
 
 local dynamic_content = h.read_file(files.file_path(persist_dir, 'dynamic/group'))
-h.assert_true(dynamic_content:find('dyn_fg_mode = "rgb"', 1, true) ~= nil, 'saved TOML omitted dynamic mode', scope)
-h.assert_true(dynamic_content:find('dyn_fg_palette = ', 1, true) ~= nil, 'saved TOML omitted dynamic palette', scope)
+h.assert_true(dynamic_content:find('dyn_fg = ', 1, true) ~= nil, 'saved TOML omitted dyn_fg', scope)
+h.assert_true(dynamic_content:find('dyn_bg = ', 1, true) ~= nil, 'saved TOML omitted dyn_bg', scope)
+local old_dynamic_keys = {
+  'dyn_fg_mode',
+  'dyn_fg_speed',
+  'dyn_fg_params',
+  'dyn_fg_palette',
+  'dyn_bg_mode',
+  'dyn_bg_speed',
+  'dyn_bg_params',
+  'dyn_bg_palette',
+}
+for _, old_dynamic_key in ipairs(old_dynamic_keys) do
+  h.assert_true(
+    dynamic_content:find(old_dynamic_key, 1, true) == nil,
+    ('saved TOML wrote old dynamic key %s'):format(old_dynamic_key),
+    scope
+  )
+end
 
 vim.fn.delete(persist_dir, 'rf')
 vim.fn.delete(symlink_target, 'rf')
