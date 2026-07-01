@@ -30,19 +30,38 @@ h.assert_equal(overrides.get_persisted('HlcraftTestNormal').fg, '#abcdef', 'save
 h.assert_equal(overrides.get_persisted_group('HlcraftTestNormal'), 'main', 'save did not update persisted group', scope)
 
 local dynamic_ok, dynamic_err = overrides.set_dynamic('HlcraftTestNormal', 'fg', {
+  version = 1,
+  preset = 'pulse',
+  duration = 1500,
+  loop = 'pingpong',
+  timeline = {
+    { at = 0, color = 'base' },
+    { at = 1, color = '#ffffff' },
+  },
+})
+h.assert_true(dynamic_ok, dynamic_err or 'set_dynamic failed', scope)
+h.assert_equal(overrides.get('HlcraftTestNormal').dynamic.fg.preset, 'pulse', 'runtime dynamic preset was not set', scope)
+
+local before_legacy_dynamic = vim.deepcopy(overrides.get('HlcraftTestNormal').dynamic)
+local legacy_ok = overrides.set_dynamic('HlcraftTestNormal', 'fg', {
   mode = 'rgb',
   speed = 1500,
   palette = { '#000000', '#ffffff' },
 })
-h.assert_true(dynamic_ok, dynamic_err or 'set_dynamic failed', scope)
-h.assert_equal(overrides.get('HlcraftTestNormal').dynamic.fg.mode, 'rgb', 'runtime dynamic mode was not set', scope)
+h.assert_true(not legacy_ok, 'legacy dynamic mutation was accepted', scope)
+h.assert_true(
+  vim.deep_equal(overrides.get('HlcraftTestNormal').dynamic, before_legacy_dynamic),
+  'legacy dynamic mutation changed runtime dynamic config',
+  scope
+)
+
 local dynamic_save_ok, dynamic_save_err = overrides.save()
 h.assert_true(dynamic_save_ok, dynamic_save_err or 'dynamic save failed', scope)
 
 local loaded = storage.load(persist_dir)
 h.assert_equal(loaded.entries.HlcraftTestNormal.fg, '#abcdef', 'saved override did not load from storage', scope)
 h.assert_equal(
-  loaded.entries.HlcraftTestNormal.dynamic.fg.palette[2],
+  loaded.entries.HlcraftTestNormal.dynamic.fg.timeline[2].color,
   '#ffffff',
   'saved dynamic did not load from storage',
   scope
@@ -56,9 +75,9 @@ h.assert_equal(
   scope
 )
 h.assert_equal(
-  overrides.get_persisted('HlcraftTestNormal').dynamic.fg.speed,
+  overrides.get_persisted('HlcraftTestNormal').dynamic.fg.duration,
   1500,
-  'bootstrap did not reload persisted dynamic speed',
+  'bootstrap did not reload persisted dynamic duration',
   scope
 )
 
