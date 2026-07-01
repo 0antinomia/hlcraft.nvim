@@ -37,7 +37,8 @@ function M.display_text(value)
 end
 
 local function dynamic_metadata(dynamic)
-  return ('%s %dms'):format(dynamic.mode, dynamic.speed)
+  local preset = dynamic.preset or 'custom'
+  return ('%s %dms %s'):format(preset, dynamic.duration or 0, dynamic.loop or 'repeat')
 end
 
 local function swatch_end_col(col_start, swatch)

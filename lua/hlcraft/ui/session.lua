@@ -16,8 +16,10 @@ local function same_entry(left, right)
 end
 
 local function refresh(instance, name)
-  if instance then
+  if instance and instance.state and type(instance.state.results) == 'table' then
     require('hlcraft.ui.scene.detail').refresh(instance, name, true)
+  elseif instance and instance.rerender then
+    instance:rerender()
   end
 end
 
@@ -62,7 +64,7 @@ end
 function M.display_color_value(name, key, fallback)
   local dynamic = M.dynamic_value(name, key)
   if dynamic then
-    return ('dynamic:%s %dms'):format(dynamic.mode, dynamic.speed)
+    return ('dynamic:%s %dms'):format(dynamic.preset or 'custom', dynamic.duration or 0)
   end
   return M.display_value(name, key, fallback)
 end

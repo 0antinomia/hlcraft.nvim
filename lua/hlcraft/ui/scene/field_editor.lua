@@ -57,26 +57,6 @@ local function menu_row_at_cursor(instance)
   end
 end
 
-local function current_dynamic(result, key)
-  return session.dynamic_value(result.name, key)
-end
-
-local function selected_palette_index(instance, dynamic)
-  local editor_row = M.editor_row_at_cursor(instance)
-  local row_key = editor_row and editor_row.key or ''
-  local index = tonumber(tostring(row_key):match('^dynamic_palette:(%d+)$'))
-  local count = type(dynamic.palette) == 'table' and #dynamic.palette or 0
-  if index and dynamic.palette and dynamic.palette[index] then
-    return index
-  end
-  if count == 0 then
-    return 1
-  end
-
-  local stored = tonumber(instance.state.field_editor.palette_index) or 1
-  return math.max(1, math.min(count, stored))
-end
-
 local function finish_edit(instance, ok, err, preserve_field)
   if not ok then
     return false, err
@@ -86,14 +66,6 @@ local function finish_edit(instance, ok, err, preserve_field)
     instance.state.field_editor.field = preserve_field
   end
   return true, nil
-end
-
-local function jump_to_palette_index(instance, index)
-  local row = instance.state.geometry.editor_rows[('dynamic_palette:%d'):format(index)]
-  local win = window.get_win(instance)
-  if row and window.is_valid_win(win) then
-    pcall(vim.api.nvim_win_set_cursor, win, { row.line, 0 })
-  end
 end
 
 function M.open(instance, key)
@@ -107,9 +79,7 @@ function M.close(instance)
 end
 
 function M.selected_param_name(instance)
-  local editor_row = M.editor_row_at_cursor(instance)
-  local row_key = editor_row and editor_row.key or ''
-  return tostring(row_key):match('^dynamic_param:(%w+)$')
+  return nil
 end
 
 M.selected_dynamic_param_name = M.selected_param_name
@@ -192,15 +162,15 @@ function M.handle(instance, action, ...)
   end
 
   if action == 'set_color' and color_fields[field] then
-    if current_dynamic(result, field) then
-      return false, 'Static color controls are disabled in dynamic mode'
+    if session.dynamic_value(result.name, field) then
+      return false, 'Static color controls are disabled while dynamic is active'
     end
     local ok, err = color_editor.set(instance, result, field, ...)
     return finish_edit(instance, ok, err, field)
   end
   if action == 'adjust_color' and color_fields[field] then
-    if current_dynamic(result, field) then
-      return false, 'Static color controls are disabled in dynamic mode'
+    if session.dynamic_value(result.name, field) then
+      return false, 'Static color controls are disabled while dynamic is active'
     end
     local ok, err = color_editor.adjust(instance, result, field, ...)
     return finish_edit(instance, ok, err, field)
@@ -209,68 +179,33 @@ function M.handle(instance, action, ...)
     local ok, err = dynamic_editor.toggle(instance, result, field)
     return finish_edit(instance, ok, err, field)
   end
-  if action == 'cycle_dynamic_mode' and color_fields[field] then
-    local ok, err = dynamic_editor.cycle_mode(instance, result, field)
+  if action == 'cycle_dynamic_preset' and color_fields[field] then
+    local ok, err = dynamic_editor.cycle_preset(instance, result, field)
     return finish_edit(instance, ok, err, field)
   end
-  if action == 'adjust_dynamic_speed' and color_fields[field] then
-    local ok, err = dynamic_editor.adjust_speed(instance, result, field, ...)
+  if action == 'reset_dynamic_preset' and color_fields[field] then
+    local ok, err = dynamic_editor.reset_preset(instance, result, field)
     return finish_edit(instance, ok, err, field)
   end
-  if action == 'set_dynamic_param' and color_fields[field] then
-    local ok, err = dynamic_editor.set_param(instance, result, field, ...)
+  if action == 'adjust_dynamic_duration' and color_fields[field] then
+    local ok, err = dynamic_editor.adjust_duration(instance, result, field, ...)
     return finish_edit(instance, ok, err, field)
   end
-  if action == 'adjust_dynamic_param' and color_fields[field] then
-    local name, delta = ...
-    local param_name = name or M.selected_param_name(instance) or 'min'
-    local ok, err = dynamic_editor.adjust_param(instance, result, field, param_name, delta)
+  if action == 'set_dynamic_loop' and color_fields[field] then
+    local ok, err = dynamic_editor.set_loop(instance, result, field, ...)
     return finish_edit(instance, ok, err, field)
   end
-  if action == 'select_dynamic_palette' and color_fields[field] then
-    local dynamic = current_dynamic(result, field) or {}
-    local current_index = selected_palette_index(instance, dynamic)
-    local ok, next_index_or_err = dynamic_editor.select_palette(instance, result, field, current_index, ...)
-    if not ok then
-      return false, next_index_or_err
-    end
-    instance.state.field_editor.palette_index = next_index_or_err
-    instance:rerender()
-    jump_to_palette_index(instance, next_index_or_err)
+  if action == 'set_dynamic_phase' and color_fields[field] then
+    local ok, err = dynamic_editor.set_phase(instance, result, field, ...)
+    return finish_edit(instance, ok, err, field)
+  end
+  if action == 'set_dynamic_raw_json' and color_fields[field] then
+    local ok, err = dynamic_editor.set_raw_json(instance, result, field, ...)
+    return finish_edit(instance, ok, err, field)
+  end
+  if action == 'open_dynamic_raw_json' and color_fields[field] then
+    require('hlcraft.ui.raw_dynamic').open(instance, result, field)
     return true, nil
-  end
-  if action == 'add_dynamic_palette_color' and color_fields[field] then
-    local dynamic = current_dynamic(result, field) or {}
-    local index = selected_palette_index(instance, dynamic)
-    local ok, err, next_index = dynamic_editor.add_palette_color(instance, result, field, index)
-    local finished_ok, finished_err = finish_edit(instance, ok, err, field)
-    if finished_ok then
-      instance.state.field_editor.palette_index = next_index
-      jump_to_palette_index(instance, next_index)
-    end
-    return finished_ok, finished_err
-  end
-  if action == 'delete_dynamic_palette_color' and color_fields[field] then
-    local dynamic = current_dynamic(result, field) or {}
-    local index = selected_palette_index(instance, dynamic)
-    local ok, err, next_index = dynamic_editor.delete_palette_color(instance, result, field, index)
-    local finished_ok, finished_err = finish_edit(instance, ok, err, field)
-    if finished_ok then
-      instance.state.field_editor.palette_index = next_index
-      jump_to_palette_index(instance, next_index)
-    end
-    return finished_ok, finished_err
-  end
-  if action == 'set_dynamic_palette_color' and color_fields[field] then
-    local dynamic = current_dynamic(result, field) or {}
-    local index = selected_palette_index(instance, dynamic)
-    local ok, err, next_index = dynamic_editor.set_palette_color(instance, result, field, index, ...)
-    local finished_ok, finished_err = finish_edit(instance, ok, err, field)
-    if finished_ok then
-      instance.state.field_editor.palette_index = next_index
-      jump_to_palette_index(instance, next_index)
-    end
-    return finished_ok, finished_err
   end
   if action == 'set_group' and ui_fields.detail_kinds[field] == 'group' then
     local ok, err = group_editor.set(instance, result, ...)

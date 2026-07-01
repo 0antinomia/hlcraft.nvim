@@ -1,6 +1,5 @@
 local ui_fields = require('hlcraft.ui.fields')
 local render_util = require('hlcraft.render.util')
-local dynamic_model = require('hlcraft.dynamic.model')
 local dynamic_preview = require('hlcraft.ui.dynamic_preview')
 local detail_render = require('hlcraft.ui.render.detail')
 
@@ -20,21 +19,27 @@ local function append_editor_row(lines, geometry, key, text)
   return row
 end
 
+local function phase_label(phase)
+  return phase == 1 and '1.00' or ('%.2f'):format(phase)
+end
+
 function M.build(instance, geometry, result, field, width, line_offset, dynamic)
   local label = ui_fields.detail_labels[field] or field:upper()
   local fallback = detail_render.fallback_value(result, field)
-  local swatch = '████████████'
+  local swatch = ui_fields.dynamic_preview_swatch
   local lines = {
     ('Color editor: %s'):format(label),
-    string.rep('─', math.max(20, math.min(width, 36))),
+    string.rep('-', math.max(20, math.min(width, 36))),
     'Mode: dynamic',
-    ('Effect: %s'):format(dynamic.mode),
-    ('Speed: %dms'):format(dynamic.speed),
+    ('Preset: %s'):format(dynamic.preset or 'custom'),
+    ('Duration: %dms'):format(dynamic.duration or 0),
+    ('Loop: %s'):format(dynamic.loop or 'repeat'),
+    ('Phase: %.2f'):format(dynamic.phase or 0),
     ('Swatch: %s'):format(swatch),
   }
 
   dynamic_preview.register(instance, {
-    line = 6 + line_offset,
+    line = 8 + line_offset,
     col_start = 8,
     col_end = swatch_end_col(8, swatch),
     text = swatch,
@@ -42,40 +47,37 @@ function M.build(instance, geometry, result, field, width, line_offset, dynamic)
     base = fallback,
     dynamic = dynamic,
   })
-  if dynamic.mode == 'rgb' then
-    for index, palette_color in ipairs(dynamic.palette or dynamic_model.default_palette()) do
-      local prefix = ('Palette %d: '):format(index)
-      local row = append_editor_row(
-        lines,
-        geometry,
-        ('dynamic_palette:%d'):format(index),
-        ('%s%s %s'):format(prefix, ui_fields.dynamic_palette_swatch, palette_color)
-      )
-      local col_start = vim.fn.strdisplaywidth(prefix)
-      dynamic_preview.register(instance, {
-        line = row.line + line_offset,
-        col_start = col_start,
-        col_end = swatch_end_col(col_start, ui_fields.dynamic_palette_swatch),
-        text = ui_fields.dynamic_palette_swatch,
-        field = field,
-        base = palette_color,
-        dynamic = {
-          mode = 'rgb',
-          speed = dynamic.speed,
-          palette = { palette_color, palette_color },
-        },
-      })
-    end
-  elseif dynamic.mode == 'breath' then
-    local params = dynamic_model.normalize_params('breath', dynamic.params)
-    append_editor_row(lines, geometry, 'dynamic_param:min', ('Min: %.2f'):format(params.min))
-    append_editor_row(lines, geometry, 'dynamic_param:max', ('Max: %.2f'):format(params.max))
+
+  append_editor_row(lines, geometry, 'dynamic_raw_json', 'Raw JSON')
+
+  local samples = { 0, 0.25, 0.5, 0.75, 1 }
+  for _, phase in ipairs(samples) do
+    local prefix = ('Sample %s: '):format(phase_label(phase))
+    local row = append_editor_row(
+      lines,
+      geometry,
+      ('dynamic_sample:%s'):format(phase_label(phase)),
+      ('%s%s'):format(prefix, ui_fields.dynamic_timeline_swatch)
+    )
+    local sample_dynamic = vim.deepcopy(dynamic)
+    sample_dynamic.phase = phase
+    local col_start = vim.fn.strdisplaywidth(prefix)
+    dynamic_preview.register(instance, {
+      line = row.line + line_offset,
+      col_start = col_start,
+      col_end = swatch_end_col(col_start, ui_fields.dynamic_timeline_swatch),
+      text = ui_fields.dynamic_timeline_swatch,
+      field = field,
+      base = fallback,
+      dynamic = sample_dynamic,
+    })
   end
+
   append_editor_row(
     lines,
     geometry,
     'dynamic_keys',
-    'Keys: m mode, -/+ speed/param, [/] palette, a add, x delete, i input, d static, s save, q back'
+    'Keys: m preset, -/+ duration, e raw JSON, d static, s save, q back'
   )
 
   for index, line in ipairs(lines) do
