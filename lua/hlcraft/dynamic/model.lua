@@ -4,38 +4,30 @@ local M = {}
 
 M.channels = { 'fg', 'bg', 'sp' }
 M.channel_set = { fg = true, bg = true, sp = true }
-M.modes = { 'rgb', 'breath' }
-M.mode_set = { rgb = true, breath = true }
-M.default_speed = 2000
-M.min_speed = 250
-M.max_speed = 10000
-M.default_rgb_palette = { '#ff0000', '#00ff00', '#0000ff' }
-M.default_breath_params = {
-  min = 0.45,
-  max = 1.0,
+
+M.version = 1
+M.presets = { 'pulse', 'breath', 'hue', 'gradient', 'blink', 'duotone' }
+M.preset_set = {
+  pulse = true,
+  breath = true,
+  hue = true,
+  gradient = true,
+  blink = true,
+  duotone = true,
 }
-M.breath_param_step = 0.05
+M.loop_values = { 'repeat', 'pingpong', 'once' }
+M.interpolations = { 'linear', 'step', 'smooth', 'smoothstep', 'sine' }
+M.interpolation_set = { linear = true, step = true, smooth = true, smoothstep = true, sine = true }
+M.transform_types = { 'brightness', 'hue_shift', 'saturation' }
+M.transform_type_set = { brightness = true, hue_shift = true, saturation = true }
+M.default_duration = 2000
+M.min_duration = 250
+M.max_duration = 10000
+
+local color_refs = { base = true, fg = true, bg = true, sp = true }
 
 local function is_finite_number(value)
   return type(value) == 'number' and value == value and value ~= math.huge and value ~= -math.huge
-end
-
-local function clamp_number(value, min, max, fallback)
-  local number = tonumber(value)
-  if not is_finite_number(number) then
-    return fallback
-  end
-  if number < min then
-    return min
-  end
-  if number > max then
-    return max
-  end
-  return number
-end
-
-local function non_empty_table(value)
-  return type(value) == 'table' and next(value) ~= nil
 end
 
 local function decode_extension(value)
@@ -51,7 +43,7 @@ local function decode_extension(value)
 end
 
 local function encode_extension(value)
-  if not non_empty_table(value) then
+  if type(value) ~= 'table' then
     return nil
   end
 
@@ -62,107 +54,205 @@ local function encode_extension(value)
   return nil
 end
 
-local function same_list(left, right)
-  if type(left) ~= 'table' or type(right) ~= 'table' or #left ~= #right then
-    return false
-  end
-
-  for index, value in ipairs(left) do
-    if value ~= right[index] then
-      return false
-    end
-  end
-  return true
+local function valid_loop(value)
+  return value == 'repeat' or value == 'pingpong' or value == 'once'
 end
 
-local function encode_palette(spec)
-  if spec.mode == 'rgb' and same_list(spec.palette, M.default_rgb_palette) then
+local function clamp_unit(value, fallback)
+  local number = tonumber(value)
+  if not is_finite_number(number) then
+    return fallback
+  end
+  if number < 0 then
+    return 0
+  end
+  if number > 1 then
+    return 1
+  end
+  return number
+end
+
+local function normalize_at(value)
+  if not is_finite_number(value) then
     return nil
   end
-  return encode_extension(spec.palette)
+  return clamp_unit(value, 0)
 end
 
-function M.default_spec()
+function M.normalize_duration(value)
+  local duration = tonumber(value)
+  if not is_finite_number(duration) then
+    return M.default_duration
+  end
+
+  duration = math.floor(duration)
+  if duration < M.min_duration then
+    return M.min_duration
+  end
+  if duration > M.max_duration then
+    return M.max_duration
+  end
+  return duration
+end
+
+function M.normalize_interpolation(value)
+  if M.interpolation_set[value] then
+    return value
+  end
+  return 'linear'
+end
+
+function M.normalize_loop(value)
+  if valid_loop(value) then
+    return value
+  end
+  return 'repeat'
+end
+
+function M.normalize_color_ref(value)
+  if type(value) ~= 'string' then
+    return nil
+  end
+
+  if color_refs[value] then
+    return value
+  end
+
+  local normalized = color.normalize(value)
+  if normalized and normalized ~= 'NONE' then
+    return normalized
+  end
+  return nil
+end
+
+local function normalize_value_stop(stop)
+  if type(stop) ~= 'table' or type(stop.value) ~= 'number' or not is_finite_number(stop.value) then
+    return nil
+  end
+  local at = normalize_at(stop.at)
+  if at == nil then
+    return nil
+  end
+
   return {
-    mode = 'rgb',
-    speed = M.default_speed,
-    params = {},
-    palette = M.default_palette(),
+    at = at,
+    value = stop.value,
   }
 end
 
-function M.default_palette()
-  return vim.deepcopy(M.default_rgb_palette)
-end
+function M.normalize_timeline(timeline)
+  if type(timeline) ~= 'table' or #timeline == 0 then
+    return nil
+  end
 
-function M.normalize_palette(palette)
   local normalized = {}
-  if type(palette) == 'table' then
-    for _, value in ipairs(palette) do
-      if type(value) == 'string' then
-        local normalized_color = color.normalize(value)
-        if normalized_color and normalized_color ~= 'NONE' then
-          normalized[#normalized + 1] = normalized_color
-        end
-      end
+  for _, stop in ipairs(timeline) do
+    if type(stop) ~= 'table' then
+      return nil
     end
+
+    local color_ref = M.normalize_color_ref(stop.color)
+    if not color_ref then
+      return nil
+    end
+    local at = normalize_at(stop.at)
+    if at == nil then
+      return nil
+    end
+
+    normalized[#normalized + 1] = {
+      at = at,
+      color = color_ref,
+    }
   end
-  if #normalized < 2 then
-    return M.default_palette()
+
+  table.sort(normalized, function(left, right)
+    return left.at < right.at
+  end)
+
+  return normalized
+end
+
+function M.normalize_transform(transform)
+  if type(transform) ~= 'table' or not M.transform_type_set[transform.type] then
+    return nil
+  end
+
+  if type(transform.timeline) ~= 'table' or #transform.timeline == 0 then
+    return nil
+  end
+
+  local normalized_timeline = {}
+  for _, stop in ipairs(transform.timeline) do
+    local normalized_stop = normalize_value_stop(stop)
+    if not normalized_stop then
+      return nil
+    end
+    normalized_timeline[#normalized_timeline + 1] = normalized_stop
+  end
+
+  table.sort(normalized_timeline, function(left, right)
+    return left.at < right.at
+  end)
+
+  return {
+    type = transform.type,
+    interpolation = M.normalize_interpolation(transform.interpolation),
+    timeline = normalized_timeline,
+  }
+end
+
+function M.normalize_transforms(transforms)
+  if transforms == nil then
+    return {}
+  end
+  if type(transforms) ~= 'table' then
+    return nil
+  end
+
+  local normalized = {}
+  for _, transform in ipairs(transforms) do
+    local normalized_transform = M.normalize_transform(transform)
+    if not normalized_transform then
+      return nil
+    end
+    normalized[#normalized + 1] = normalized_transform
   end
   return normalized
 end
 
-function M.normalize_params(mode, params)
-  local normalized = type(params) == 'table' and vim.deepcopy(params) or {}
-  if mode ~= 'breath' then
-    return normalized
-  end
-
-  normalized.min = clamp_number(normalized.min, 0, 1, M.default_breath_params.min)
-  normalized.max = clamp_number(normalized.max, 0, 1, M.default_breath_params.max)
-  if normalized.min > normalized.max then
-    normalized.min, normalized.max = normalized.max, normalized.min
-  end
-  return normalized
-end
-
-function M.normalize_speed(value)
-  local speed = tonumber(value)
-  if not is_finite_number(speed) then
-    return M.default_speed
-  end
-
-  speed = math.floor(speed)
-  if speed < M.min_speed then
-    return M.min_speed
-  end
-  if speed > M.max_speed then
-    return M.max_speed
-  end
-  return speed
+function M.default_spec(preset)
+  local presets = require('hlcraft.dynamic.presets')
+  return presets.get(preset or 'pulse')
 end
 
 function M.normalize_channel(spec)
-  if type(spec) ~= 'table' or not M.mode_set[spec.mode] then
+  if type(spec) ~= 'table' or spec.version ~= M.version then
     return nil
   end
 
-  local mode = spec.mode
-  local normalized = {
-    mode = mode,
-    speed = M.normalize_speed(spec.speed),
-    params = M.normalize_params(mode, spec.params),
-    palette = nil,
-  }
-
-  if mode == 'rgb' then
-    normalized.palette = M.normalize_palette(spec.palette)
-  elseif type(spec.palette) == 'table' then
-    normalized.palette = vim.deepcopy(spec.palette)
+  local timeline = M.normalize_timeline(spec.timeline)
+  if not timeline then
+    return nil
   end
 
-  return normalized
+  local transforms = M.normalize_transforms(spec.transforms)
+  if not transforms then
+    return nil
+  end
+
+  local preset = type(spec.preset) == 'string' and spec.preset ~= '' and spec.preset or nil
+
+  return {
+    version = M.version,
+    preset = preset,
+    duration = M.normalize_duration(spec.duration),
+    loop = M.normalize_loop(spec.loop),
+    phase = clamp_unit(spec.phase, 0),
+    interpolation = M.normalize_interpolation(spec.interpolation),
+    timeline = timeline,
+    transforms = transforms,
+  }
 end
 
 function M.normalize_dynamic(dynamic)
@@ -186,28 +276,18 @@ function M.inflate_entry(entry)
   local dynamic = type(result.dynamic) == 'table' and vim.deepcopy(result.dynamic) or {}
 
   for _, channel in ipairs(M.channels) do
+    local dynamic_key = ('dyn_%s'):format(channel)
     local mode_key = ('dyn_%s_mode'):format(channel)
     local speed_key = ('dyn_%s_speed'):format(channel)
     local params_key = ('dyn_%s_params'):format(channel)
     local palette_key = ('dyn_%s_palette'):format(channel)
-    local params = decode_extension(result[params_key])
-    local palette = decode_extension(result[palette_key])
 
-    if result[mode_key] ~= nil or result[speed_key] ~= nil or params ~= nil or palette ~= nil then
-      local spec = type(dynamic[channel]) == 'table' and vim.deepcopy(dynamic[channel]) or {}
-      if result[mode_key] ~= nil or result[speed_key] ~= nil then
-        spec.mode = result[mode_key]
-        spec.speed = result[speed_key]
-      end
-      if params ~= nil then
-        spec.params = params
-      end
-      if palette ~= nil then
-        spec.palette = palette
-      end
-      dynamic[channel] = spec
+    local decoded = decode_extension(result[dynamic_key])
+    if decoded then
+      dynamic[channel] = decoded
     end
 
+    result[dynamic_key] = nil
     result[mode_key] = nil
     result[speed_key] = nil
     result[params_key] = nil
@@ -224,11 +304,13 @@ function M.flatten_entry(entry)
 
   result.dynamic = nil
   for _, channel in ipairs(M.channels) do
+    local dynamic_key = ('dyn_%s'):format(channel)
     local mode_key = ('dyn_%s_mode'):format(channel)
     local speed_key = ('dyn_%s_speed'):format(channel)
     local params_key = ('dyn_%s_params'):format(channel)
     local palette_key = ('dyn_%s_palette'):format(channel)
 
+    result[dynamic_key] = nil
     result[mode_key] = nil
     result[speed_key] = nil
     result[params_key] = nil
@@ -236,10 +318,7 @@ function M.flatten_entry(entry)
 
     local spec = dynamic and dynamic[channel] or nil
     if spec then
-      result[mode_key] = spec.mode
-      result[speed_key] = spec.speed
-      result[params_key] = encode_extension(spec.params)
-      result[palette_key] = encode_palette(spec)
+      result[dynamic_key] = encode_extension(spec)
     end
   end
 

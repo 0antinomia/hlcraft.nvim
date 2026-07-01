@@ -1,5 +1,7 @@
 local color = require('hlcraft.core.color')
 local model = require('hlcraft.dynamic.model')
+local timeline = require('hlcraft.dynamic.timeline')
+local transforms = require('hlcraft.dynamic.transforms')
 
 local M = {}
 
@@ -18,8 +20,29 @@ local function rgb_to_hex(r, g, b)
   return ('#%02x%02x%02x'):format(clamp_channel(r), clamp_channel(g), clamp_channel(b))
 end
 
-local function interpolate_channel(left, right, amount)
-  return left + ((right - left) * amount)
+local function normalize_hex(value)
+  if type(value) == 'number' then
+    return color.int_to_hex(value)
+  end
+  if type(value) ~= 'string' then
+    return nil
+  end
+
+  local normalized = color.normalize(value)
+  if normalized and normalized ~= 'NONE' then
+    return normalized
+  end
+  return nil
+end
+
+local function resolve_color_ref(value, base_hex, context)
+  if value == 'base' then
+    return base_hex
+  end
+  if value == 'fg' or value == 'bg' or value == 'sp' then
+    return normalize_hex(context and context[value])
+  end
+  return normalize_hex(value)
 end
 
 local function interpolate_hex(left_hex, right_hex, amount)
@@ -32,53 +55,46 @@ local function interpolate_hex(left_hex, right_hex, amount)
   local lr, lg, lb = color.int_to_rgb(left)
   local rr, rg, rb = color.int_to_rgb(right)
   return rgb_to_hex(
-    interpolate_channel(lr, rr, amount),
-    interpolate_channel(lg, rg, amount),
-    interpolate_channel(lb, rb, amount)
+    lr + ((rr - lr) * amount),
+    lg + ((rg - lg) * amount),
+    lb + ((rb - lb) * amount)
   )
 end
 
-function M.rgb(now_ms, speed, palette)
-  speed = model.normalize_speed(speed)
-  local normalized_palette = model.normalize_palette(palette)
-  local phase = ((tonumber(now_ms) or 0) % speed) / speed
-  local scaled = phase * #normalized_palette
-  local left_index = math.floor(scaled) + 1
-  local right_index = (left_index % #normalized_palette) + 1
-  local amount = scaled - math.floor(scaled)
-
-  return interpolate_hex(normalized_palette[left_index], normalized_palette[right_index], amount)
-end
-
-function M.breath(base_hex, now_ms, speed, params)
-  local base = color.hex_to_int(base_hex)
-  if not base then
-    return nil
-  end
-
-  speed = model.normalize_speed(speed)
-  local normalized_params = model.normalize_params('breath', params)
-  local phase = ((tonumber(now_ms) or 0) % speed) / speed
-  local curve = (math.sin((phase * 2 * math.pi) - (math.pi / 2)) + 1) / 2
-  local amount = normalized_params.min + ((normalized_params.max - normalized_params.min) * curve)
-  local r, g, b = color.int_to_rgb(base)
-
-  return rgb_to_hex(r * amount, g * amount, b * amount)
-end
-
-function M.compute(spec, base_hex, now_ms)
+function M.compute(spec, base_hex, now_ms, context)
   local normalized = model.normalize_channel(spec)
-  if not normalized then
+  base_hex = normalize_hex(base_hex)
+  if not normalized or not base_hex then
     return nil
   end
 
-  if normalized.mode == 'rgb' then
-    return M.rgb(now_ms, normalized.speed, normalized.palette)
-  elseif normalized.mode == 'breath' then
-    return M.breath(base_hex, now_ms, normalized.speed, normalized.params)
+  local phase = timeline.phase(now_ms, normalized.duration, normalized.phase, normalized.loop)
+  local sampled = timeline.sample(normalized.timeline, phase, normalized.interpolation, function(left, right, amount)
+    local left_color = resolve_color_ref(left.color, base_hex, context)
+    local right_color = resolve_color_ref(right.color, base_hex, context)
+    if not left_color or not right_color then
+      return nil
+    end
+
+    return {
+      at = phase,
+      color = interpolate_hex(left_color, right_color, amount),
+    }
+  end)
+  local computed = sampled and resolve_color_ref(sampled.color, base_hex, context) or nil
+  if not computed then
+    return nil
   end
 
-  return nil
+  for _, transform in ipairs(normalized.transforms) do
+    local value = timeline.sample_numeric(transform.timeline, phase, transform.interpolation)
+    computed = transforms.apply(computed, { type = transform.type, value = value })
+    if not computed then
+      return nil
+    end
+  end
+
+  return computed
 end
 
 return M
