@@ -17,7 +17,7 @@ h.assert_equal(default_spec.loop, 'pingpong', 'default dynamic loop changed', sc
 h.assert_equal(default_spec.timeline[1].color, 'base', 'default dynamic first color changed', scope)
 h.assert_equal(default_spec.timeline[2].color, '#ff6699', 'default dynamic second color changed', scope)
 
-h.assert_true(model.mode_set == nil, 'old dynamic mode set should be removed', scope)
+h.assert_true(model.mode_set == nil, 'old effect mode set should be removed', scope)
 h.assert_true(model.default_rgb_palette == nil, 'old rgb palette default should be removed', scope)
 h.assert_true(model.default_breath_params == nil, 'old breath params default should be removed', scope)
 
@@ -139,12 +139,12 @@ h.assert_equal(inflated.dynamic.fg.preset, 'pulse', 'dyn_fg JSON did not inflate
 h.assert_equal(inflated.dynamic.fg.duration, 1500, 'dyn_fg duration did not inflate', scope)
 h.assert_true(inflated.dyn_fg == nil, 'dyn_fg key leaked after inflate', scope)
 h.assert_true(inflated.dyn_fg_mode == nil, 'old flat key leaked after inflate', scope)
-h.assert_true(inflated.dynamic.bg == nil, 'old dynamic mode key created bg dynamic config', scope)
+h.assert_true(inflated.dynamic.bg == nil, 'old effect mode key created bg dynamic config', scope)
 
 local flattened = model.flatten_entry(inflated)
 h.assert_true(type(flattened.dyn_fg) == 'string', 'dynamic fg did not flatten to JSON', scope)
-h.assert_true(flattened.dyn_fg_mode == nil, 'old dynamic mode key was written', scope)
-h.assert_true(flattened.dyn_fg_speed == nil, 'old dynamic speed key was written', scope)
+h.assert_true(flattened.dyn_fg_mode == nil, 'old effect mode key was written', scope)
+h.assert_true(flattened.dyn_fg_speed == nil, 'old effect timing key was written', scope)
 local decoded_flat = vim.json.decode(flattened.dyn_fg)
 h.assert_equal(decoded_flat.preset, 'pulse', 'flattened preset changed', scope)
 h.assert_equal(decoded_flat.duration, 1500, 'flattened duration changed', scope)

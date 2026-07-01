@@ -112,24 +112,6 @@ function M.setup_workspace_keymaps(instance, buf)
     return current_color_dynamic() ~= nil
   end
 
-  local function current_color_field_is_rgb_dynamic()
-    local dynamic = current_color_dynamic()
-    return dynamic ~= nil and dynamic.mode == 'rgb'
-  end
-
-  local function current_color_field_is_breath_dynamic()
-    local dynamic = current_color_dynamic()
-    return dynamic ~= nil and dynamic.mode == 'breath'
-  end
-
-  local function selected_param_name()
-    local ok, value = actions.dispatch(instance, 'selected_param_name')
-    if ok then
-      return value
-    end
-    return nil
-  end
-
   local function toggle_dynamic_color()
     if current_field_kind() ~= 'color' then
       return
@@ -137,14 +119,14 @@ function M.setup_workspace_keymaps(instance, buf)
     run_action('toggle_dynamic')
   end
 
-  local function cycle_dynamic_mode(fallback_key)
+  local function cycle_dynamic_preset(fallback_key)
     if not current_color_field_is_dynamic() then
       if fallback_key then
         feed_normal_key(fallback_key)
       end
       return
     end
-    run_action('cycle_dynamic_mode')
+    run_action('cycle_dynamic_preset')
   end
 
   local function adjust_color(channel, delta, fallback_key)
@@ -190,16 +172,6 @@ function M.setup_workspace_keymaps(instance, buf)
     run_action('set_blend', nil)
   end
 
-  local function adjust_dynamic_param_or_speed(param_delta, speed_delta)
-    local param_name = selected_param_name()
-    if param_name then
-      run_action('adjust_dynamic_param', param_name, param_delta)
-      return
-    end
-
-    run_action('adjust_dynamic_speed', speed_delta)
-  end
-
   local function input_current_editor_field()
     local kind = current_field_kind()
     if not kind then
@@ -208,25 +180,6 @@ function M.setup_workspace_keymaps(instance, buf)
     local field = instance.state.field_editor and instance.state.field_editor.field
 
     if kind == 'color' then
-      if current_color_field_is_rgb_dynamic() then
-        vim.ui.input({ prompt = 'Palette color: ' }, function(value)
-          if value == nil then
-            return
-          end
-          run_action('set_dynamic_palette_color', value)
-        end)
-        return true
-      end
-      if current_color_field_is_breath_dynamic() then
-        local param_name = selected_param_name() or 'min'
-        vim.ui.input({ prompt = ('Breath %s: '):format(param_name) }, function(value)
-          if value == nil then
-            return
-          end
-          run_action('set_dynamic_param', param_name, value)
-        end)
-        return true
-      end
       vim.ui.input({ prompt = field .. ': ' }, function(value)
         if value == nil then
           return
@@ -359,32 +312,24 @@ function M.setup_workspace_keymaps(instance, buf)
     toggle_dynamic_color()
   end, opts)
   vim.keymap.set('n', 'm', function()
-    cycle_dynamic_mode('m')
+    cycle_dynamic_preset('m')
   end, opts)
   vim.keymap.set('n', '[', function()
-    if not current_color_field_is_rgb_dynamic() then
-      feed_normal_key('[')
-      return
-    end
-    run_action('select_dynamic_palette', -1)
+    feed_normal_key('[')
   end, opts)
   vim.keymap.set('n', ']', function()
-    if not current_color_field_is_rgb_dynamic() then
-      feed_normal_key(']')
-      return
-    end
-    run_action('select_dynamic_palette', 1)
+    feed_normal_key(']')
   end, opts)
   vim.keymap.set('n', '+', function()
     if current_color_field_is_dynamic() then
-      adjust_dynamic_param_or_speed(ui_fields.dynamic_param_step, ui_fields.dynamic_speed_step)
+      run_action('adjust_dynamic_duration', ui_fields.dynamic_duration_step)
       return
     end
     adjust_blend(ui_fields.blend_small_step, '+')
   end, opts)
   vim.keymap.set('n', '-', function()
     if current_color_field_is_dynamic() then
-      adjust_dynamic_param_or_speed(-ui_fields.dynamic_param_step, -ui_fields.dynamic_speed_step)
+      run_action('adjust_dynamic_duration', -ui_fields.dynamic_duration_step)
       return
     end
     adjust_blend(-ui_fields.blend_small_step, '-')
@@ -411,11 +356,14 @@ function M.setup_workspace_keymaps(instance, buf)
       navigation.jump_to_row(instance, field.line, true)
     end
   end, opts)
-  vim.keymap.set('n', 'x', function()
-    if current_color_field_is_rgb_dynamic() then
-      run_action('delete_dynamic_palette_color')
+  vim.keymap.set('n', 'e', function()
+    if current_color_field_is_dynamic() then
+      run_action('open_dynamic_raw_json')
       return
     end
+    feed_normal_key('e')
+  end, opts)
+  vim.keymap.set('n', 'x', function()
     feed_normal_key('x')
   end, opts)
   vim.keymap.set('n', 'a', function()
@@ -428,9 +376,7 @@ function M.setup_workspace_keymaps(instance, buf)
       navigation.jump_to_row(instance, field.line, true)
       return
     end
-    if current_color_field_is_rgb_dynamic() then
-      run_action('add_dynamic_palette_color')
-    end
+    feed_normal_key('a')
   end, opts)
 
   vim.keymap.set({ 'n', 'i' }, '<CR>', function()
