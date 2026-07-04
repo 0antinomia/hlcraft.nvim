@@ -66,6 +66,14 @@ h.assert_true(not raw_static_ok, 'raw JSON editor opened for a static color fiel
 h.assert_equal(raw_static_err, 'No dynamic color field is active', 'raw JSON static error changed', scope)
 local invalid_dynamic_input_opts_ok = pcall(field_scene.input_dynamic_row, instance, false)
 h.assert_true(not invalid_dynamic_input_opts_ok, 'field editor accepted non-table dynamic input options', scope)
+instance.state.scene = {}
+field_scene.enter(instance, { field = 'bg' })
+h.assert_equal(instance.state.field_editor.field, 'bg', 'field editor enter did not set field', scope)
+h.assert_equal(instance.state.scene.field, 'bg', 'field editor enter did not mirror scene field', scope)
+local invalid_enter_opts_ok = pcall(field_scene.enter, instance, false)
+h.assert_true(not invalid_enter_opts_ok, 'field editor enter accepted non-table options', scope)
+instance.state.field_editor.field = 'fg'
+instance.state.scene.field = 'fg'
 
 local matched_dynamic, dynamic_ok, dynamic_err = actions.handle(instance, 'toggle_dynamic', result, 'fg')
 h.assert_true(matched_dynamic, 'toggle_dynamic action was not matched', scope)
