@@ -1,6 +1,7 @@
 local config = require('hlcraft.config')
 local effects = require('hlcraft.dynamic.effects')
 local model = require('hlcraft.dynamic.model')
+local numbers = require('hlcraft.core.number')
 local timers = require('hlcraft.core.timers')
 
 local M = {}
@@ -83,13 +84,8 @@ local function set_preview_hl(instance, item, now_ms)
 end
 
 local function set_preview_mark(instance, item, hl_name)
-  local line = tonumber(item.line)
-  if not line or line < 1 then
-    return nil
-  end
-
   local ok, mark_id =
-    pcall(vim.api.nvim_buf_set_extmark, instance.state.buf, instance.ns, line - 1, item.col_start or 0, {
+    pcall(vim.api.nvim_buf_set_extmark, instance.state.buf, instance.ns, item.line - 1, item.col_start, {
       end_col = item.col_end,
       virt_text = { { item.text, hl_name } },
       virt_text_pos = 'overlay',
@@ -101,6 +97,33 @@ local function set_preview_mark(instance, item, hl_name)
   return mark_id
 end
 
+local function normalize_item(item, dynamic)
+  if type(item) ~= 'table' or type(item.text) ~= 'string' or item.text == '' then
+    return nil
+  end
+  if
+    type(item.line) ~= 'number'
+    or not numbers.is_finite(item.line)
+    or item.line < 1
+    or math.floor(item.line) ~= item.line
+  then
+    return nil
+  end
+  if type(item.col_start) ~= 'number' or not numbers.is_finite(item.col_start) or item.col_start < 0 then
+    return nil
+  end
+  if type(item.col_end) ~= 'number' or not numbers.is_finite(item.col_end) or item.col_end <= item.col_start then
+    return nil
+  end
+  if item.now_ms ~= nil and (type(item.now_ms) ~= 'number' or not numbers.is_finite(item.now_ms)) then
+    return nil
+  end
+
+  local normalized = vim.deepcopy(item)
+  normalized.dynamic = dynamic
+  return normalized
+end
+
 function M.register(instance, item)
   if not valid_buffer(instance) then
     return nil
@@ -110,9 +133,11 @@ function M.register(instance, item)
   if not dynamic then
     return nil
   end
+  local next_item = normalize_item(item, dynamic)
+  if not next_item then
+    return nil
+  end
   local id = #instance.state.dynamic_preview_items + 1
-  local next_item = vim.deepcopy(item)
-  next_item.dynamic = dynamic
   next_item.id = id
   instance.state.dynamic_preview_items[id] = next_item
   return id
