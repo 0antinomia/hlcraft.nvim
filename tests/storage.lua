@@ -119,6 +119,18 @@ local save_ok, save_err = storage.save({
 }, persist_dir)
 h.assert_true(save_ok, save_err or 'storage.save failed', scope)
 
+local invalid_group_ok, invalid_group_err = storage.save({
+  InvalidGroup = { fg = '#111111' },
+}, {
+  InvalidGroup = 42,
+}, persist_dir)
+h.assert_true(not invalid_group_ok, 'storage.save accepted a non-string group', scope)
+h.assert_true(
+  invalid_group_err:find('Highlight InvalidGroup must have a group before saving', 1, true) ~= nil,
+  'storage.save reported wrong non-string group error',
+  scope
+)
+
 h.assert_file_exists(files.file_path(persist_dir, 'main/group'), 'main group file was not created', scope)
 h.assert_file_missing(persist_dir .. '/stale.toml', 'stale TOML file was not removed', scope)
 
