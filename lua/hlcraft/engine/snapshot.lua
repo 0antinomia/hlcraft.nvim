@@ -18,12 +18,12 @@ function M.refresh_base_specs()
   data.base_specs = {}
 end
 
-function M.normalize_draft_entry(entry)
+function M.normalize_entry(entry, label)
   if entry == nil then
     return nil
   end
 
-  local normalized, err = override_entries.normalize(entry, { label = 'draft entry' })
+  local normalized, err = override_entries.normalize(entry, { label = label or 'entry' })
   if err then
     error(err, 2)
   end
@@ -33,6 +33,10 @@ function M.normalize_draft_entry(entry)
   end
 
   return normalized
+end
+
+function M.normalize_draft_entry(entry)
+  return M.normalize_entry(entry, 'draft entry')
 end
 
 local function assert_group_name(value, label)
