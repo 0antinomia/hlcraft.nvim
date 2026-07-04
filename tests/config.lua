@@ -2,6 +2,7 @@ local h = require('tests.helpers')
 local scope = 'hlcraft config'
 
 local config = require('hlcraft.config')
+local schema = require('hlcraft.config.schema')
 
 local function assert_invalid(value, expected_error, message)
   local ok, err = config.validate(value)
@@ -95,6 +96,15 @@ local valid_ok, valid_err = config.validate({
   preview_key = false,
 })
 h.assert_true(valid_ok, valid_err or 'valid config was rejected', scope)
+
+local function normalize_with(overrides)
+  return schema.normalize(vim.tbl_deep_extend('force', vim.deepcopy(schema.defaults), overrides))
+end
+
+local low_dynamic = normalize_with({ dynamic = { interval_ms = 1 } })
+h.assert_equal(low_dynamic.dynamic.interval_ms, 16, 'dynamic interval did not clamp to minimum', scope)
+local high_dynamic = normalize_with({ dynamic = { interval_ms = 5000 } })
+h.assert_equal(high_dynamic.dynamic.interval_ms, 1000, 'dynamic interval did not clamp to maximum', scope)
 
 local defaults = config.setup({})
 h.assert_equal(defaults.from_none.enabled, false, 'default from_none.enabled changed', scope)
