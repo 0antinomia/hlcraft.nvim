@@ -12,6 +12,7 @@ local engine = require('hlcraft.engine.service')
 local editor_layout = require('hlcraft.ui.render.editor_layout')
 local editor_rows = require('hlcraft.ui.render.editor_rows')
 local field_editor_renderer = require('hlcraft.ui.render.field_editor')
+local render_buffer = require('hlcraft.ui.render.buffer')
 local render_util = require('hlcraft.render.util')
 local theme = require('hlcraft.ui.theme')
 local ui_state = require('hlcraft.ui.state')
@@ -52,6 +53,8 @@ h.assert_equal(editor_row.line, 1, 'editor row helper returned wrong line', scop
 h.assert_equal(editor_row.key, 'sample_row', 'editor row helper returned wrong key', scope)
 h.assert_equal(editor_geometry.editor_rows.sample_row, editor_row, 'editor row helper did not register geometry', scope)
 h.assert_equal(editor_lines[1], 'Sample', 'editor row helper did not append line', scope)
+local invalid_input_extra_ok = pcall(render_buffer.new_input_field, 'name', 'name', 1, false)
+h.assert_true(not invalid_input_extra_ok, 'input field helper accepted non-table extra options', scope)
 h.assert_equal(render_util.truncate('abcdef', 4), 'abc…', 'render truncate lost ellipsis budget', scope)
 h.assert_equal(
   render_util.truncate('你好世界', 5),

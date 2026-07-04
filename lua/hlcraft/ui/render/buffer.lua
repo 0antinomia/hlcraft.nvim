@@ -9,6 +9,16 @@ local M = {}
 
 M.new_geometry = ui_state.geometry
 
+local function optional_table(value, label)
+  if value == nil then
+    return {}
+  end
+  if type(value) ~= 'table' then
+    error(('%s must be a table'):format(label), 3)
+  end
+  return value
+end
+
 function M.set_lines(instance, lines)
   instance.state.rendering = true
   local ok, err = pcall(function()
@@ -50,11 +60,12 @@ end
 --- @param extra table|nil Additional properties (key, label, width)
 --- @return table Field descriptor
 function M.new_input_field(name, kind, line, extra)
+  extra = optional_table(extra, 'input field extra')
   return vim.tbl_extend('force', {
     name = name,
     kind = kind,
     line = line,
-  }, extra or {})
+  }, extra)
 end
 
 --- Append an input field line to the lines list and register it in geometry.
