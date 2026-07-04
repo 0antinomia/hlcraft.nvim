@@ -19,6 +19,7 @@ local tests = {
   'tests/persistence_codec.lua',
   'tests/storage.lua',
   'tests/engine_patch.lua',
+  'tests/engine_base_specs.lua',
   'tests/engine.lua',
   'tests/overrides.lua',
 }
