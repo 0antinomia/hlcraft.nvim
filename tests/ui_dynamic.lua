@@ -8,6 +8,7 @@ local dynamic_preview = require('hlcraft.ui.dynamic_preview')
 local dynamic_renderer = require('hlcraft.ui.render.editors.dynamic')
 local editor = require('hlcraft.ui.editor.dynamic')
 local engine = require('hlcraft.engine.service')
+local raw_dynamic = require('hlcraft.ui.raw_dynamic')
 local ui_state = require('hlcraft.ui.state')
 
 local persist_dir = h.temp_dir('hlcraft-ui-dynamic')
@@ -150,6 +151,15 @@ h.assert_true(
   'invalid raw json changed draft',
   scope
 )
+
+local missing_raw_instance_ok = pcall(raw_dynamic.close, nil)
+h.assert_true(not missing_raw_instance_ok, 'raw dynamic close accepted missing instance', scope)
+local invalid_raw_state_ok = pcall(raw_dynamic.close, {
+  state = {
+    raw_dynamic = true,
+  },
+})
+h.assert_true(not invalid_raw_state_ok, 'raw dynamic close accepted invalid state schema', scope)
 
 h.with_temp_buf(function(render_buf)
   local render_instance = {

@@ -6,16 +6,23 @@ local window = require('hlcraft.ui.workspace.window')
 
 local M = {}
 
+local function raw_dynamic_state(instance)
+  if not instance or not instance.state then
+    error('raw dynamic editor requires an instance', 3)
+  end
+  local state = instance.state.raw_dynamic
+  if state ~= nil and type(state) ~= 'table' then
+    error('raw dynamic editor state must be a table', 3)
+  end
+  return state
+end
+
 local function buffer_text(buf)
   return table.concat(vim.api.nvim_buf_get_lines(buf, 0, -1, false), '\n')
 end
 
 local function clear_state(instance, buf, win)
-  if not instance or not instance.state then
-    return
-  end
-
-  local state = instance.state.raw_dynamic
+  local state = raw_dynamic_state(instance)
   if state and state.buf == buf and state.win == win then
     instance.state.raw_dynamic = nil
   end
@@ -39,16 +46,16 @@ local function register_cleanup(instance, buf, win)
 end
 
 function M.close(instance)
-  local state = instance and instance.state and instance.state.raw_dynamic or {}
-  if window.is_valid_win(state.win) then
-    pcall(vim.api.nvim_win_close, state.win, true)
+  local state = raw_dynamic_state(instance)
+  if state then
+    if window.is_valid_win(state.win) then
+      pcall(vim.api.nvim_win_close, state.win, true)
+    end
+    if window.is_valid_buf(state.buf) then
+      pcall(vim.api.nvim_buf_delete, state.buf, { force = true })
+    end
   end
-  if window.is_valid_buf(state.buf) then
-    pcall(vim.api.nvim_buf_delete, state.buf, { force = true })
-  end
-  if instance and instance.state then
-    instance.state.raw_dynamic = nil
-  end
+  instance.state.raw_dynamic = nil
 end
 
 function M.open(instance, result, field)
