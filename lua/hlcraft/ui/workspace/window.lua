@@ -1,3 +1,4 @@
+local handles = require('hlcraft.ui.handles')
 local window_options = require('hlcraft.ui.window_options')
 
 local M = {}
@@ -50,14 +51,14 @@ end
 --- @param buf number|nil Buffer handle
 --- @return boolean True if buffer is valid
 function M.is_valid_buf(buf)
-  return buf ~= nil and vim.api.nvim_buf_is_valid(buf)
+  return handles.is_valid_buf(buf)
 end
 
 --- Check if a window handle is valid
 --- @param win number|nil Window handle
 --- @return boolean True if window is valid
 function M.is_valid_win(win)
-  return win ~= nil and vim.api.nvim_win_is_valid(win)
+  return handles.is_valid_win(win)
 end
 
 --- Get the window displaying the workspace buffer
