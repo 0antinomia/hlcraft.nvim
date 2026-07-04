@@ -160,6 +160,18 @@ h.assert_true(model.normalize_channel({
     },
   },
 }) == nil, 'invalid transform stop at was accepted', scope)
+h.assert_true(model.normalize_channel({
+  version = 1,
+  timeline = { { at = 0, color = 'base' } },
+  transforms = {
+    brightness = {
+      type = 'brightness',
+      timeline = {
+        { at = 0, value = 1 },
+      },
+    },
+  },
+}) == nil, 'non-array transforms table was accepted', scope)
 h.assert_true(
   model.normalize_channel({ timeline = { { at = 0, color = 'base' } } }) == nil,
   'missing version was accepted',
