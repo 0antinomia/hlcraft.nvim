@@ -1,7 +1,6 @@
 local dynamic_editor = require('hlcraft.ui.editor.dynamic')
 local json = require('hlcraft.ui.json')
 local notify = require('hlcraft.notify')
-local presets = require('hlcraft.dynamic.presets')
 local session = require('hlcraft.ui.session')
 local window = require('hlcraft.ui.workspace.window')
 
@@ -55,7 +54,11 @@ end
 function M.open(instance, result, field)
   M.close(instance)
 
-  local dynamic = session.dynamic_value(result.name, field) or presets.default()
+  local dynamic = result and result.name and session.dynamic_value(result.name, field) or nil
+  if not dynamic then
+    return false, 'No dynamic color field is active'
+  end
+
   local text = json.format(dynamic)
   local lines = vim.split(text, '\n', { plain = true })
   local width = math.max(48, math.min(96, math.floor(vim.o.columns * 0.7)))
@@ -107,6 +110,8 @@ function M.open(instance, result, field)
     end
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, vim.split(json.format(decoded), '\n', { plain = true }))
   end, { buffer = buf, silent = true, nowait = true })
+
+  return true, nil
 end
 
 return M

@@ -52,8 +52,7 @@ local color_actions = {
     return dynamic_editor.set_phase(instance, result, field, ...)
   end,
   open_dynamic_raw_json = function(instance, result, field)
-    require('hlcraft.ui.raw_dynamic').open(instance, result, field)
-    return true, nil
+    return require('hlcraft.ui.raw_dynamic').open(instance, result, field)
   end,
 }
 

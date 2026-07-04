@@ -39,6 +39,12 @@ h.assert_true(color_ok, color_err or 'set_color failed', scope)
 h.assert_equal(engine.get(result.name).fg, '#fedcba', 'set_color did not update draft', scope)
 h.assert_equal(instance.state.field_editor.field, 'fg', 'set_color did not preserve field', scope)
 
+local matched_raw_static, raw_static_ok, raw_static_err =
+  actions.handle(instance, 'open_dynamic_raw_json', result, 'fg')
+h.assert_true(matched_raw_static, 'open_dynamic_raw_json action was not matched', scope)
+h.assert_true(not raw_static_ok, 'raw JSON editor opened for a static color field', scope)
+h.assert_equal(raw_static_err, 'No dynamic color field is active', 'raw JSON static error changed', scope)
+
 local matched_dynamic, dynamic_ok, dynamic_err = actions.handle(instance, 'toggle_dynamic', result, 'fg')
 h.assert_true(matched_dynamic, 'toggle_dynamic action was not matched', scope)
 h.assert_true(dynamic_ok, dynamic_err or 'toggle_dynamic failed', scope)

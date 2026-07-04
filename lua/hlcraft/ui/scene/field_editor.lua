@@ -78,8 +78,7 @@ function M.input_dynamic_row(instance, opts)
     return prompt_dynamic_value(instance, 'set_dynamic_phase', 'Phase: ', ('%.2f'):format(dynamic.phase))
   end
   if row_key == 'dynamic_raw_json' or opts.default_raw then
-    require('hlcraft.ui.raw_dynamic').open(instance, result, field)
-    return true, nil
+    return require('hlcraft.ui.raw_dynamic').open(instance, result, field)
   end
 
   return false, nil
