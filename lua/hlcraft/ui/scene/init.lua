@@ -21,6 +21,13 @@ local function scene_state(instance)
   return state
 end
 
+local function instance_state(instance)
+  if type(instance) ~= 'table' or type(instance.state) ~= 'table' then
+    error('scene set requires an instance', 3)
+  end
+  return instance.state
+end
+
 local function optional_opts(opts)
   if opts == nil then
     return {}
@@ -53,11 +60,12 @@ end
 function M.set(instance, name, opts)
   name = assert_scene_name(name, 'scene name', 2)
   opts = optional_opts(opts)
+  local state = instance_state(instance)
   local scene = registry[name]
   if not scene then
     return false, ('unknown scene: %s'):format(tostring(name))
   end
-  instance.state.scene = vim.tbl_extend('force', opts, { name = name })
+  state.scene = vim.tbl_extend('force', opts, { name = name })
   if scene.enter then
     scene.enter(instance, opts)
   end
