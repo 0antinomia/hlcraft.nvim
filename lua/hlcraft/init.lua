@@ -6,7 +6,7 @@ local highlights = require('hlcraft.core.highlights')
 local source = require('hlcraft.core.source')
 local search = require('hlcraft.core.search')
 local ui = require('hlcraft.ui')
-local overrides = require('hlcraft.overrides')
+local overrides = require('hlcraft.engine.service')
 local initialized = false
 
 --- Setup hlcraft.nvim with user configuration
@@ -46,8 +46,8 @@ function M.is_setup()
   return initialized
 end
 
--- Public API surface. Deeper implementation modules under hlcraft.ui.*,
--- hlcraft.ui.render.*, hlcraft.storage.*, and hlcraft.overrides.* are internal.
+-- Public API surface. Deeper implementation modules under hlcraft.core.*,
+-- hlcraft.engine.*, hlcraft.persistence.*, and hlcraft.ui.* are internal.
 M.highlights = highlights
 M.get_source = source.get_source
 M.search = search

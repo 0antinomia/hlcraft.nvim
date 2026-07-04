@@ -4,8 +4,8 @@ local scope = 'hlcraft overrides'
 vim.cmd('runtime plugin/hlcraft.lua')
 
 local hlcraft = require('hlcraft')
-local overrides = require('hlcraft.overrides')
-local storage = require('hlcraft.storage')
+local overrides = require('hlcraft.engine.service')
+local storage = require('hlcraft.persistence.repository')
 
 local persist_dir = h.temp_dir('hlcraft-overrides')
 hlcraft.setup({
