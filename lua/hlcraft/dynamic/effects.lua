@@ -7,7 +7,8 @@ local M = {}
 
 local function normalize_hex(value)
   if type(value) == 'number' then
-    return color.int_to_hex(value)
+    local normalized = color.int_to_hex(value)
+    return normalized ~= 'NONE' and normalized or nil
   end
   if type(value) ~= 'string' then
     return nil
