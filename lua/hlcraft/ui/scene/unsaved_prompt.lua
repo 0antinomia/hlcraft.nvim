@@ -14,8 +14,19 @@ M.lines = {
   '[c/q/Esc] cancel',
 }
 
+local function prompt_state(instance)
+  if not instance or not instance.state then
+    error('unsaved prompt requires an instance', 3)
+  end
+  local prompt = instance.state.unsaved_prompt
+  if type(prompt) ~= 'table' then
+    error('unsaved prompt state must be a table', 3)
+  end
+  return prompt
+end
+
 function M.close(instance)
-  local prompt = instance.state.unsaved_prompt or {}
+  local prompt = prompt_state(instance)
   if window.is_valid_win(prompt.win) then
     pcall(vim.api.nvim_win_close, prompt.win, true)
   end

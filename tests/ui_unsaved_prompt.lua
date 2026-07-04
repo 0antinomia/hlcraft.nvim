@@ -3,6 +3,11 @@ local scope = 'hlcraft ui unsaved prompt'
 
 local prompt = require('hlcraft.ui.scene.unsaved_prompt')
 
+local missing_prompt_state_ok = pcall(prompt.close, {
+  state = {},
+})
+h.assert_true(not missing_prompt_state_ok, 'unsaved prompt accepted missing state schema', scope)
+
 local instance = {
   ns = vim.api.nvim_create_namespace('hlcraft-ui-unsaved-prompt-test'),
   state = {
