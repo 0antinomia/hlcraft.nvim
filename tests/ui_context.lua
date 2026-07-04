@@ -5,6 +5,7 @@ local config = require('hlcraft.config')
 local context = require('hlcraft.ui.context')
 local engine = require('hlcraft.engine.service')
 local hlcraft = require('hlcraft')
+local scene = require('hlcraft.ui.scene')
 
 local persist_dir = h.temp_dir('hlcraft-ui-context')
 hlcraft.setup({
@@ -42,6 +43,19 @@ h.assert_equal(context.current_field(instance), 'fg', 'current field changed', s
 h.assert_equal(context.current_field_kind(instance), 'color', 'field kind changed', scope)
 h.assert_true(context.color_field_is_dynamic(instance), 'dynamic color field was not detected', scope)
 h.assert_equal(context.current_color_dynamic(instance).preset, 'pulse', 'dynamic value changed', scope)
+
+local missing_scene_ok = pcall(scene.current_name, {
+  state = {},
+})
+h.assert_true(not missing_scene_ok, 'scene lookup accepted missing state schema', scope)
+local invalid_scene_name_ok = pcall(scene.current_name, {
+  state = {
+    scene = {},
+  },
+})
+h.assert_true(not invalid_scene_name_ok, 'scene lookup accepted missing scene name', scope)
+local invalid_scene_opts_ok = pcall(scene.set, instance, 'field_editor', false)
+h.assert_true(not invalid_scene_opts_ok, 'scene set accepted non-table options', scope)
 
 instance.state.field_editor.field = 'blend'
 h.assert_equal(context.current_field_kind(instance), 'blend', 'blend field kind changed', scope)
