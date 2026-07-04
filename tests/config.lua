@@ -53,6 +53,11 @@ for _, case in ipairs({
     message = 'unknown reapply_events key was accepted',
   },
   {
+    value = { reapply_events = { events = { ColorScheme = true } } },
+    error = 'reapply_events.events: must be a sequence',
+    message = 'non-sequence reapply events were accepted',
+  },
+  {
     value = { reapply_events = { events = { '' } } },
     error = 'reapply_events.events[1]: must be a non-empty string',
     message = 'empty reapply event was accepted',
