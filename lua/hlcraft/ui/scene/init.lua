@@ -2,6 +2,13 @@ local M = {}
 
 local registry = {}
 
+local function assert_scene_name(name, label, level)
+  if type(name) ~= 'string' or name == '' then
+    error(('%s must be a non-empty string'):format(label), level or 3)
+  end
+  return name
+end
+
 local function scene_state(instance)
   if not instance or not instance.state then
     error('scene lookup requires an instance', 3)
@@ -10,9 +17,7 @@ local function scene_state(instance)
   if type(state) ~= 'table' then
     error('scene state must be a table', 3)
   end
-  if type(state.name) ~= 'string' then
-    error('scene name must be a string', 3)
-  end
+  assert_scene_name(state.name, 'scene name', 3)
   return state
 end
 
@@ -27,6 +32,10 @@ local function optional_opts(opts)
 end
 
 function M.register(name, scene)
+  name = assert_scene_name(name, 'scene registration name', 2)
+  if type(scene) ~= 'table' then
+    error('scene registration must be a table', 2)
+  end
   registry[name] = scene
 end
 
@@ -39,9 +48,7 @@ function M.current(instance)
 end
 
 function M.set(instance, name, opts)
-  if type(name) ~= 'string' then
-    error('scene name must be a string', 2)
-  end
+  name = assert_scene_name(name, 'scene name', 2)
   opts = optional_opts(opts)
   local scene = registry[name]
   if not scene then
