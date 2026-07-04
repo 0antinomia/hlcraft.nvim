@@ -3,26 +3,80 @@ local scope = 'hlcraft config'
 
 local config = require('hlcraft.config')
 
-for _, case in ipairs({
-  { value = 'bad', message = 'non-table config was accepted' },
-  { value = { unknown = true }, message = 'unknown config key was accepted' },
-  { value = { persist_dir = '' }, message = 'empty persist_dir was accepted' },
-  { value = { threshold = -1 }, message = 'negative threshold was accepted' },
-  { value = { threshold = 0 / 0, debounce_ms = math.huge }, message = 'non-finite numeric config was accepted' },
-  { value = { include_sp_in_color_search = 'yes' }, message = 'non-boolean color search config was accepted' },
-  { value = { from_none = { scope = 'bad' } }, message = 'invalid from_none scope was accepted' },
-  { value = { reapply_events = { events = { '' } } }, message = 'empty reapply event was accepted' },
-  { value = { reapply_events = { events = { { event = '' } } } }, message = 'empty table event was accepted' },
-  { value = { dynamic = { enabled = 'yes', interval_ms = 0 } }, message = 'invalid dynamic config was accepted' },
-  { value = { preview_key = true }, message = 'preview_key=true was accepted' },
-  { value = { preview_key = '' }, message = 'blank preview_key was accepted' },
-}) do
-  local ok = config.validate(case.value)
-  h.assert_true(not ok, case.message, scope)
+local function assert_invalid(value, expected_error, message)
+  local ok, err = config.validate(value)
+  h.assert_true(not ok, message, scope)
+  h.assert_true(
+    tostring(err):find(expected_error, 1, true) ~= nil,
+    ('%s reported the wrong error (expected %s, got %s)'):format(message, vim.inspect(expected_error), vim.inspect(err)),
+    scope
+  )
 end
 
-local invalid_setup_ok = pcall(config.setup, { threshold = 0 / 0 })
+for _, case in ipairs({
+  { value = 'bad', error = 'hlcraft config must be a table, got string', message = 'non-table config was accepted' },
+  { value = { unknown = true }, error = 'unknown config key: "unknown"', message = 'unknown config key was accepted' },
+  {
+    value = { persist_dir = '' },
+    error = 'persist_dir: must be a non-empty string',
+    message = 'empty persist_dir was accepted',
+  },
+  {
+    value = { threshold = -1 },
+    error = 'threshold: must be between 0 and 1000',
+    message = 'negative threshold was accepted',
+  },
+  {
+    value = { threshold = 0 / 0, debounce_ms = math.huge },
+    error = 'threshold: must be finite',
+    message = 'non-finite numeric config was accepted',
+  },
+  {
+    value = { include_sp_in_color_search = 'yes' },
+    error = 'include_sp_in_color_search: must be boolean, got string',
+    message = 'non-boolean color search config was accepted',
+  },
+  {
+    value = { from_none = { scope = 'bad' } },
+    error = 'from_none.scope: must be "core" or "extended", got "bad"',
+    message = 'invalid from_none scope was accepted',
+  },
+  {
+    value = { reapply_events = { events = { '' } } },
+    error = 'reapply_events.events[1]: must be a non-empty string',
+    message = 'empty reapply event was accepted',
+  },
+  {
+    value = { reapply_events = { events = { { event = '' } } } },
+    error = 'reapply_events.events[1].event: must be a non-empty string',
+    message = 'empty table event was accepted',
+  },
+  {
+    value = { dynamic = { enabled = 'yes', interval_ms = 0 } },
+    error = 'dynamic.enabled: must be boolean, got string',
+    message = 'invalid dynamic config was accepted',
+  },
+  {
+    value = { preview_key = true },
+    error = 'preview_key: boolean value must be false when used',
+    message = 'preview_key=true was accepted',
+  },
+  {
+    value = { preview_key = '' },
+    error = 'preview_key: must be a non-empty string when provided',
+    message = 'blank preview_key was accepted',
+  },
+}) do
+  assert_invalid(case.value, case.error, case.message)
+end
+
+local invalid_setup_ok, invalid_setup_err = pcall(config.setup, { threshold = 0 / 0 })
 h.assert_true(not invalid_setup_ok, 'config.setup accepted invalid config directly', scope)
+h.assert_true(
+  tostring(invalid_setup_err):find('threshold: must be finite', 1, true) ~= nil,
+  'config.setup reported the wrong validation error',
+  scope
+)
 
 local valid_ok, valid_err = config.validate({
   from_none = { enabled = true, scope = 'core' },
