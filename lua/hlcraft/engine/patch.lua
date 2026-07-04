@@ -1,7 +1,7 @@
 local M = {}
 
 local dynamic_model = require('hlcraft.dynamic.model')
-local patch_values = require('hlcraft.engine.patch_values')
+local override_values = require('hlcraft.core.override_values')
 local store = require('hlcraft.engine.store')
 
 local color_key_set = {}
@@ -35,7 +35,7 @@ function M.is_dynamic_key(key)
   return dynamic_model.channel_set[key] == true
 end
 
-M.is_unset = patch_values.is_unset
+M.is_unset = override_values.is_unset
 
 function M.validate(patch)
   if type(patch) ~= 'table' then
@@ -72,12 +72,12 @@ function M.normalize(patch)
   local normalized = {}
 
   if patch.group ~= nil then
-    normalized.group = patch_values.is_unset(patch.group) and vim.NIL or vim.trim(tostring(patch.group))
+    normalized.group = override_values.is_unset(patch.group) and vim.NIL or vim.trim(tostring(patch.group))
   end
 
   for _, key in ipairs(store.color_keys) do
     if patch[key] ~= nil then
-      local value, err = patch_values.normalize_color(patch[key])
+      local value, err = override_values.normalize_color(patch[key])
       if err then
         return nil, err
       end
@@ -87,7 +87,7 @@ function M.normalize(patch)
 
   for _, key in ipairs(store.style_keys) do
     if patch[key] ~= nil then
-      local value, err = patch_values.normalize_style(key, patch[key])
+      local value, err = override_values.normalize_style(key, patch[key])
       if err then
         return nil, err
       end
@@ -96,7 +96,7 @@ function M.normalize(patch)
   end
 
   if patch.blend ~= nil then
-    local value, err = patch_values.normalize_blend(patch.blend)
+    local value, err = override_values.normalize_blend(patch.blend)
     if err then
       return nil, err
     end
@@ -107,7 +107,7 @@ function M.normalize(patch)
     normalized.dynamic = {}
     for _, key in ipairs(dynamic_model.channels) do
       if patch.dynamic[key] ~= nil then
-        local value, err = patch_values.normalize_dynamic_channel(key, patch.dynamic[key])
+        local value, err = override_values.normalize_dynamic_channel(key, patch.dynamic[key])
         if err then
           return nil, err
         end
@@ -122,25 +122,25 @@ end
 function M.apply_entry(entry, patch)
   for _, key in ipairs(store.color_keys) do
     if patch[key] ~= nil then
-      entry[key] = patch_values.entry_value(patch[key])
+      entry[key] = override_values.entry_value(patch[key])
     end
   end
 
   for _, key in ipairs(store.style_keys) do
     if patch[key] ~= nil then
-      entry[key] = patch_values.entry_value(patch[key])
+      entry[key] = override_values.entry_value(patch[key])
     end
   end
 
   if patch.blend ~= nil then
-    entry.blend = patch_values.entry_value(patch.blend)
+    entry.blend = override_values.entry_value(patch.blend)
   end
 
   if type(patch.dynamic) == 'table' then
     entry.dynamic = type(entry.dynamic) == 'table' and entry.dynamic or {}
     for _, key in ipairs(dynamic_model.channels) do
       if patch.dynamic[key] ~= nil then
-        entry.dynamic[key] = patch_values.entry_value(patch.dynamic[key])
+        entry.dynamic[key] = override_values.entry_value(patch.dynamic[key])
       end
     end
   end

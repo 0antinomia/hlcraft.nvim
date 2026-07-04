@@ -1,5 +1,6 @@
 local color = require('hlcraft.core.color')
 local dynamic_model = require('hlcraft.dynamic.model')
+local numbers = require('hlcraft.core.number')
 
 local M = {}
 
@@ -19,7 +20,7 @@ function M.normalize_blend(value)
     return vim.NIL, nil
   end
 
-  local number_value = tonumber(value)
+  local number_value = numbers.to_finite(value, nil)
   if number_value == nil then
     return nil, 'Blend override must be a number or empty'
   end

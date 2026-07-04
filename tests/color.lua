@@ -8,6 +8,12 @@ h.assert_equal(color.clamp_channel(0 / 0), 0, 'NaN channel was not clamped', sco
 h.assert_equal(color.clamp_channel(255.9), 255, 'high channel was not clamped', scope)
 h.assert_equal(color.clamp_channel(127.5), 128, 'channel was not rounded', scope)
 h.assert_equal(color.rgb_to_hex(127.5, -20, 300), '#8000ff', 'rgb hex conversion changed', scope)
+h.assert_equal(
+  select(2, color.normalize(123)),
+  'Invalid color: 123. Use #RRGGBB, color name, or NONE.',
+  'numeric color error changed',
+  scope
+)
 h.assert_equal(color.int_to_rgb(0x123456), 0x12, 'red channel changed', scope)
 
 local _, green, blue = color.int_to_rgb(0x123456)

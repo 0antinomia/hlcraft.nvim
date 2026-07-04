@@ -42,7 +42,7 @@ function M.name_to_int(name)
 end
 
 --- Normalize user color input into hlcraft's persisted representation.
---- @param value string|nil User-provided color string
+--- @param value any User-provided color string
 --- @return string|nil normalized Normalized value as "#rrggbb" or "NONE"
 --- @return string|nil err Validation error for invalid input
 function M.normalize(value)
@@ -50,7 +50,7 @@ function M.normalize(value)
     return nil, nil
   end
 
-  local text = vim.trim(value)
+  local text = vim.trim(tostring(value))
   if text == '' then
     return nil, nil
   end
