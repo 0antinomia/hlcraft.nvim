@@ -35,34 +35,17 @@ local symlink_decoded = storage.load(persist_dir)
 h.assert_equal(symlink_decoded.groups.LinkedNormal, 'linked.group', 'symlinked TOML group did not load', scope)
 h.assert_equal(symlink_decoded.entries.LinkedNormal.fg, '#123456', 'symlinked TOML entry did not load', scope)
 
-local dynamic_json = vim.json.encode({
-  version = 1,
-  preset = 'pulse',
-  duration = 1500,
-  loop = 'pingpong',
-  timeline = {
-    { at = 0, color = 'base' },
-    { at = 1, color = '#ffffff' },
-  },
-})
-local invalid_dynamic_json = vim.json.encode({
-  version = 1,
-  timeline = {},
-})
 h.write_file(persist_dir .. '/dynamic.toml', {
   '["dynamic.group"]',
-  ('"DynamicNormal" = { fg = "#101010", dyn_fg = "%s" }'):format(dynamic_json:gsub('\\', '\\\\'):gsub('"', '\\"')),
-  ('"InvalidDynamic" = { fg = "#202020", dyn_fg = "%s" }'):format(
-    invalid_dynamic_json:gsub('\\', '\\\\'):gsub('"', '\\"')
-  ),
+  '"DynamicNormal" = { fg = "#101010", dynamic = { fg = { version = 1, preset = "pulse", duration = 1500, loop = "pingpong", timeline = [{ at = 0, color = "base" }, { at = 1, color = "#ffffff" }] } } }',
+  '"InvalidDynamic" = { fg = "#202020", dynamic = { fg = { version = 1, timeline = [] } } }',
 })
 
 local dynamic_decoded = storage.load(persist_dir)
 h.assert_equal(dynamic_decoded.entries.DynamicNormal.dynamic.fg.preset, 'pulse', 'dynamic preset did not load', scope)
 h.assert_equal(dynamic_decoded.entries.DynamicNormal.dynamic.fg.duration, 1500, 'dynamic duration did not load', scope)
 h.assert_true(dynamic_decoded.entries.InvalidDynamic ~= nil, 'invalid dynamic entry did not load', scope)
-h.assert_true(dynamic_decoded.entries.InvalidDynamic.dynamic == nil, 'invalid dynamic JSON should not load', scope)
-h.assert_true(dynamic_decoded.entries.DynamicNormal.dyn_fg == nil, 'flat dynamic key leaked after load', scope)
+h.assert_true(dynamic_decoded.entries.InvalidDynamic.dynamic == nil, 'invalid dynamic config should not load', scope)
 
 h.write_file(persist_dir .. '/stale.toml', {
   '["stale"]',
@@ -136,8 +119,18 @@ h.assert_equal(
 )
 
 local dynamic_content = h.read_file(files.file_path(persist_dir, 'dynamic/group'))
-h.assert_true(dynamic_content:find('dyn_fg = ', 1, true) ~= nil, 'saved TOML omitted dyn_fg', scope)
-h.assert_true(dynamic_content:find('dyn_bg = ', 1, true) ~= nil, 'saved TOML omitted dyn_bg', scope)
+h.assert_true(dynamic_content:find('dynamic = {', 1, true) ~= nil, 'saved TOML omitted nested dynamic config', scope)
+h.assert_true(
+  dynamic_content:find('timeline = [{ at = 0, color = "base" }', 1, true) ~= nil,
+  'saved TOML omitted dynamic timeline',
+  scope
+)
+h.assert_true(
+  dynamic_content:find('transforms = [{ type = "brightness"', 1, true) ~= nil,
+  'saved TOML omitted dynamic transforms',
+  scope
+)
+h.assert_true(dynamic_content:find('dyn_', 1, true) == nil, 'saved TOML wrote legacy dynamic key', scope)
 h.assert_true(dynamic_content:find('unknown = ', 1, true) == nil, 'saved TOML wrote unknown field', scope)
 
 vim.fn.delete(persist_dir, 'rf')

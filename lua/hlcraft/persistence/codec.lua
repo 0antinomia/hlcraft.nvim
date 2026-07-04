@@ -8,6 +8,34 @@ local function unescape_string(value)
   return tostring(value):gsub('\\"', '"'):gsub('\\\\', '\\')
 end
 
+local key_priority = {
+  fg = 10,
+  bg = 20,
+  sp = 30,
+  bold = 40,
+  italic = 50,
+  underline = 60,
+  undercurl = 70,
+  strikethrough = 80,
+  underdouble = 90,
+  underdotted = 100,
+  underdashed = 110,
+  blend = 120,
+  dynamic = 130,
+  version = 140,
+  preset = 150,
+  duration = 160,
+  loop = 170,
+  phase = 180,
+  type = 185,
+  interpolation = 190,
+  timeline = 200,
+  transforms = 210,
+  at = 230,
+  color = 240,
+  value = 250,
+}
+
 function M.normalize_group_name(name)
   local normalized = vim.trim(tostring(name or ''))
   if normalized == '' then
@@ -15,29 +43,6 @@ function M.normalize_group_name(name)
   end
 
   return normalized
-end
-
-local function parse_scalar(raw)
-  local value = vim.trim(raw or '')
-
-  if value == 'true' then
-    return true
-  end
-
-  if value == 'false' then
-    return false
-  end
-
-  if value:match('^".*"$') then
-    return unescape_string(value:sub(2, -2))
-  end
-
-  local number_value = tonumber(value)
-  if number_value ~= nil then
-    return number_value
-  end
-
-  return value
 end
 
 local function parse_quoted_token(text, index)
@@ -69,6 +74,8 @@ local function split_top_level(text, separator)
   local current = {}
   local in_string = false
   local escaped = false
+  local table_depth = 0
+  local array_depth = 0
 
   for i = 1, #text do
     local char = text:sub(i, i)
@@ -81,7 +88,19 @@ local function split_top_level(text, separator)
     elseif char == '"' then
       current[#current + 1] = char
       in_string = not in_string
-    elseif char == separator and not in_string then
+    elseif not in_string and char == '{' then
+      current[#current + 1] = char
+      table_depth = table_depth + 1
+    elseif not in_string and char == '}' then
+      current[#current + 1] = char
+      table_depth = math.max(0, table_depth - 1)
+    elseif not in_string and char == '[' then
+      current[#current + 1] = char
+      array_depth = array_depth + 1
+    elseif not in_string and char == ']' then
+      current[#current + 1] = char
+      array_depth = math.max(0, array_depth - 1)
+    elseif char == separator and not in_string and table_depth == 0 and array_depth == 0 then
       parts[#parts + 1] = table.concat(current)
       current = {}
     else
@@ -91,6 +110,80 @@ local function split_top_level(text, separator)
 
   parts[#parts + 1] = table.concat(current)
   return parts
+end
+
+local parse_value
+
+local function parse_array(text)
+  local body = vim.trim(text:sub(2, -2))
+  local result = {}
+  if body == '' then
+    return result
+  end
+
+  for _, raw_item in ipairs(split_top_level(body, ',')) do
+    local value = parse_value(raw_item)
+    if value == nil then
+      return nil
+    end
+    result[#result + 1] = value
+  end
+
+  return result
+end
+
+local function parse_inline_table(text)
+  local body = vim.trim(text:sub(2, -2))
+  local entry = {}
+  if body == '' then
+    return entry
+  end
+
+  for _, field in ipairs(split_top_level(body, ',')) do
+    local key, raw = vim.trim(field):match('^([%w_]+)%s*=%s*(.+)$')
+    if not key or not raw then
+      return nil
+    end
+
+    local value = parse_value(raw)
+    if value == nil then
+      return nil
+    end
+    entry[key] = value
+  end
+
+  return entry
+end
+
+parse_value = function(raw)
+  local value = vim.trim(raw or '')
+
+  if value == 'true' then
+    return true
+  end
+
+  if value == 'false' then
+    return false
+  end
+
+  if value:match('^%b{}$') then
+    return parse_inline_table(value)
+  end
+
+  if value:match('^%b[]$') then
+    return parse_array(value)
+  end
+
+  if value:match('^".*"$') then
+    return unescape_string(value:sub(2, -2))
+  end
+
+  local number_value = tonumber(value)
+  if number_value ~= nil then
+    return number_value
+  end
+
+  return value
 end
 
 local function parse_section_header(text)
@@ -136,7 +229,10 @@ local function parse_entry_line(text)
     for _, field in ipairs(split_top_level(body, ',')) do
       local key, raw = vim.trim(field):match('^([%w_]+)%s*=%s*(.+)$')
       if key and raw then
-        entry[key] = parse_scalar(raw)
+        local value = parse_value(raw)
+        if value ~= nil then
+          entry[key] = value
+        end
       end
     end
   end
@@ -144,7 +240,62 @@ local function parse_entry_line(text)
   return key_part, entry
 end
 
-local function encode_scalar(value)
+local function is_array(value)
+  if type(value) ~= 'table' then
+    return false
+  end
+
+  local count = 0
+  for key, _ in pairs(value) do
+    if type(key) ~= 'number' or key < 1 or key % 1 ~= 0 then
+      return false
+    end
+    count = count + 1
+  end
+
+  return count == #value
+end
+
+local function ordered_keys(entry)
+  local keys = vim.tbl_keys(entry or {})
+  table.sort(keys, function(left, right)
+    local left_priority = key_priority[left] or math.huge
+    local right_priority = key_priority[right] or math.huge
+    if left_priority == right_priority then
+      return tostring(left) < tostring(right)
+    end
+    return left_priority < right_priority
+  end)
+  return keys
+end
+
+local encode_value
+
+local function encode_array(values)
+  local parts = {}
+  for _, value in ipairs(values) do
+    local encoded = encode_value(value)
+    if encoded == nil then
+      return nil
+    end
+    parts[#parts + 1] = encoded
+  end
+  return ('[%s]'):format(table.concat(parts, ', '))
+end
+
+function M.encode_inline_table(entry)
+  local parts = {}
+  for _, key in ipairs(ordered_keys(entry)) do
+    local encoded = encode_value(entry[key])
+    if encoded ~= nil then
+      parts[#parts + 1] = ('%s = %s'):format(key, encoded)
+    end
+  end
+
+  return ('{ %s }'):format(table.concat(parts, ', '))
+end
+
+encode_value = function(value)
   if type(value) == 'string' then
     return ('"%s"'):format(escape_string(value))
   end
@@ -155,6 +306,13 @@ local function encode_scalar(value)
 
   if type(value) == 'number' then
     return tostring(value)
+  end
+
+  if type(value) == 'table' then
+    if is_array(value) then
+      return encode_array(value)
+    end
+    return M.encode_inline_table(value)
   end
 
   return nil
@@ -206,21 +364,6 @@ function M.load_file(target, data)
   file:close()
 
   return M.decode_lines(lines, data)
-end
-
-function M.encode_inline_table(entry)
-  local parts = {}
-  local keys = vim.tbl_keys(entry or {})
-  table.sort(keys)
-
-  for _, key in ipairs(keys) do
-    local encoded = encode_scalar(entry[key])
-    if encoded ~= nil then
-      parts[#parts + 1] = ('%s = %s'):format(key, encoded)
-    end
-  end
-
-  return ('{ %s }'):format(table.concat(parts, ', '))
 end
 
 function M.encode_section(section_name, entries)
