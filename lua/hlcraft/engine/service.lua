@@ -9,6 +9,17 @@ local store = require('hlcraft.engine.store')
 
 local data = store.data
 
+local function entry_or_empty(entries, name, label)
+  local entry = entries[name]
+  if entry == nil then
+    return {}
+  end
+  if type(entry) ~= 'table' then
+    error(('%s must be a table'):format(label), 3)
+  end
+  return entry
+end
+
 --- Bootstrap draft overrides and automatic reapplication after colorscheme changes.
 --- @param force boolean|nil Force re-bootstrap even if already bootstrapped
 --- @return nil
@@ -28,14 +39,14 @@ end
 --- @param name string
 --- @return table
 function M.get(name)
-  return snapshot.deepcopy(data.draft[name] or {})
+  return snapshot.deepcopy(entry_or_empty(data.draft, name, 'draft entry'))
 end
 
 --- Return the persisted override for a group.
 --- @param name string
 --- @return table
 function M.get_persisted(name)
-  return snapshot.deepcopy(data.persisted[name] or {})
+  return snapshot.deepcopy(entry_or_empty(data.persisted, name, 'persisted entry'))
 end
 
 --- Return the current draft TOML section for a highlight group.
