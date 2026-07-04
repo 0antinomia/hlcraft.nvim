@@ -26,6 +26,21 @@ local function assert_lines(value)
   return value
 end
 
+local function assert_data(value)
+  if value == nil then
+    return M.empty_data()
+  end
+  if type(value) ~= 'table' then
+    error('TOML data must be a table', 3)
+  end
+  for _, key in ipairs({ 'entries', 'groups', 'sections' }) do
+    if type(value[key]) ~= 'table' then
+      error(('TOML data %s must be a table'):format(key), 3)
+    end
+  end
+  return value
+end
+
 function M.empty_data()
   return {
     entries = {},
@@ -36,7 +51,7 @@ end
 
 function M.decode_lines(lines, data)
   lines = assert_lines(lines)
-  data = data or M.empty_data()
+  data = assert_data(data)
   local current_section = nil
 
   for _, line in ipairs(lines) do
@@ -62,6 +77,7 @@ end
 
 function M.load_file(target, data)
   target = assert_string(target, 'TOML file path')
+  data = assert_data(data)
   local file = io.open(target, 'r')
   if not file then
     return data
