@@ -107,6 +107,20 @@ h.assert_equal(
   'duration adjust did not rely on normalized value',
   scope
 )
+local bad_duration_delta_ok, bad_duration_delta_err = editor.adjust_duration(instance, result, 'fg', 0 / 0)
+h.assert_true(not bad_duration_delta_ok, 'duration adjust accepted NaN delta', scope)
+h.assert_equal(
+  bad_duration_delta_err,
+  'Duration adjustment delta must be a finite number',
+  'duration adjust NaN error changed',
+  scope
+)
+h.assert_equal(
+  engine.get('HlcraftUiDynamicNormal').dynamic.fg.duration,
+  dynamic_model.default_duration + 100,
+  'duration adjust NaN changed draft',
+  scope
+)
 
 local before_bad_json = vim.deepcopy(engine.get('HlcraftUiDynamicNormal').dynamic.fg)
 local bad_schema_ok = editor.set_raw_json(
