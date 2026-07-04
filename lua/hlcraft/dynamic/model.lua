@@ -372,7 +372,10 @@ function M.compact_dynamic(dynamic)
 end
 
 function M.normalize_entry(entry)
-  local result = vim.deepcopy(entry or {})
+  if type(entry) ~= 'table' then
+    error('dynamic entry must be a table', 2)
+  end
+  local result = vim.deepcopy(entry)
   result.dynamic = M.normalize_dynamic(result.dynamic)
   return result
 end
