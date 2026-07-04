@@ -320,6 +320,27 @@ h.assert_true(model.normalize_dynamic({
   },
 }) == nil, 'unknown dynamic root key was accepted', scope)
 
+h.assert_true(model.normalize_dynamic({
+  fg = {
+    version = 1,
+    timeline = { { at = 0, color = 'base' } },
+  },
+  bg = {
+    version = 1,
+    timeline = {},
+  },
+}) == nil, 'invalid dynamic channel was silently dropped', scope)
+h.assert_true(model.compact_dynamic({
+  fg = {
+    version = 1,
+    timeline = { { at = 0, color = 'base' } },
+  },
+  bg = {
+    version = 1,
+    timeline = {},
+  },
+}) == nil, 'compact dynamic silently dropped an invalid channel', scope)
+
 local normalized_entry = model.normalize_entry({
   fg = '#101010',
   dynamic = {
