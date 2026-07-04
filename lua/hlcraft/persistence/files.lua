@@ -35,6 +35,11 @@ end
 
 local function toml_directory_opts(opts)
   opts = optional_opts(opts)
+  for key in pairs(opts) do
+    if key ~= 'include_links' then
+      error(('Unknown TOML directory option: %s'):format(tostring(key)), 3)
+    end
+  end
   if opts.include_links ~= nil and type(opts.include_links) ~= 'boolean' then
     error('TOML directory include_links must be boolean', 3)
   end

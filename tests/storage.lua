@@ -260,6 +260,8 @@ local invalid_toml_dir_opts_ok = pcall(files.toml_files_in_dir, persist_dir, fal
 h.assert_true(not invalid_toml_dir_opts_ok, 'toml directory scan accepted non-table options', scope)
 local invalid_toml_link_opts_ok = pcall(files.toml_files_in_dir, persist_dir, { include_links = 'yes' })
 h.assert_true(not invalid_toml_link_opts_ok, 'toml directory scan accepted non-boolean link option', scope)
+local unknown_toml_dir_opts_ok = pcall(files.toml_files_in_dir, persist_dir, { unknown = true })
+h.assert_true(not unknown_toml_dir_opts_ok, 'toml directory scan accepted an unknown option', scope)
 local invalid_atomic_lines_ok = pcall(files.atomic_write, persist_dir .. '/bad.toml', { false })
 h.assert_true(not invalid_atomic_lines_ok, 'atomic_write accepted a non-string content line', scope)
 local invalid_stale_sections_ok = pcall(files.remove_stale_toml_files, persist_dir, false)
