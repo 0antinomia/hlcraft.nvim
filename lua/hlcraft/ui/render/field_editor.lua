@@ -92,9 +92,7 @@ function M.render(instance)
     apply_color_marker(instance, lines, geometry, 'color_sample')
     apply_color_marker(instance, lines, geometry, 'color_swatch')
 
-    if session.is_dirty(detail_result.name) then
-      decorations.apply_dirty_marks(instance, geometry.detail_menu)
-    end
+    decorations.apply_detail_menu_highlights(instance, geometry.detail_menu, session.is_dirty(detail_result.name))
   end
 
   decorations.refresh_input_placeholders(instance)
