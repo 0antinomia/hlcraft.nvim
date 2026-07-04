@@ -34,6 +34,11 @@ with_draft_state(function()
   )
 end)
 
+local nil_name_ok = pcall(mutations.apply_patch, nil, { fg = '#ffffff' })
+h.assert_true(not nil_name_ok, 'mutation accepted nil highlight name', scope)
+local empty_name_ok = pcall(mutations.toggle_style, '', 'bold')
+h.assert_true(not empty_name_ok, 'mutation accepted empty highlight name', scope)
+
 with_draft_state(function()
   local name = 'HlcraftEngineMutationsToggleFalse'
   vim.api.nvim_set_hl(0, name, { bold = true })

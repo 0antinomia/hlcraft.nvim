@@ -9,6 +9,13 @@ local store = require('hlcraft.engine.store')
 
 local data = store.data
 
+local function assert_name(name)
+  if type(name) ~= 'string' or name == '' then
+    error('highlight name must be a non-empty string', 3)
+  end
+  return name
+end
+
 local function entry_or_empty(entries, name, label)
   local entry = entries[name]
   if entry == nil then
@@ -39,6 +46,7 @@ end
 --- @param name string
 --- @return table
 function M.get(name)
+  name = assert_name(name)
   return snapshot.deepcopy(entry_or_empty(data.draft, name, 'draft entry'))
 end
 
@@ -46,6 +54,7 @@ end
 --- @param name string
 --- @return table
 function M.get_persisted(name)
+  name = assert_name(name)
   return snapshot.deepcopy(entry_or_empty(data.persisted, name, 'persisted entry'))
 end
 
@@ -53,6 +62,7 @@ end
 --- @param name string
 --- @return string
 function M.get_draft_group(name)
+  name = assert_name(name)
   return data.draft_groups[name]
 end
 
@@ -60,6 +70,7 @@ end
 --- @param name string
 --- @return string
 function M.get_persisted_group(name)
+  name = assert_name(name)
   return data.persisted_groups[name]
 end
 
@@ -73,6 +84,7 @@ end
 --- @param name string Highlight group name
 --- @return nil
 function M.restore_persisted(name)
+  name = assert_name(name)
   lifecycle.restore_persisted(name)
 end
 
@@ -82,6 +94,7 @@ end
 --- @return boolean ok
 --- @return string|nil err
 function M.set_group(name, group_name)
+  name = assert_name(name)
   local normalized, err = patch_model.normalize_group(group_name)
   if err or patch_model.is_unset(normalized) then
     return false, err or 'Group name is required'
@@ -97,6 +110,7 @@ end
 --- @return boolean ok
 --- @return string|nil err
 function M.set_color(name, key, value)
+  name = assert_name(name)
   if not patch_model.is_color_key(key) then
     return false, ('Unsupported override key: %s'):format(tostring(key))
   end
@@ -111,6 +125,7 @@ end
 --- @return boolean ok
 --- @return string|nil err
 function M.set_dynamic(name, key, spec)
+  name = assert_name(name)
   if not patch_model.is_dynamic_key(key) then
     return false, ('Unsupported dynamic key: %s'):format(tostring(key))
   end
@@ -125,6 +140,7 @@ end
 --- @return boolean ok
 --- @return string|nil err
 function M.set_style(name, key, value)
+  name = assert_name(name)
   if not patch_model.is_style_key(key) then
     return false, ('Unsupported style key: %s'):format(tostring(key))
   end
@@ -139,6 +155,7 @@ end
 --- @return boolean|nil value
 --- @return string|nil err
 function M.toggle_style(name, key)
+  name = assert_name(name)
   if not patch_model.is_style_key(key) then
     return false, nil, ('Unsupported style key: %s'):format(tostring(key))
   end
@@ -152,6 +169,7 @@ end
 --- @return boolean ok
 --- @return string|nil err
 function M.set_blend(name, value)
+  name = assert_name(name)
   return mutations.apply_patch(name, { blend = value == nil and vim.NIL or value })
 end
 
@@ -161,6 +179,7 @@ end
 --- @return boolean ok
 --- @return string|nil err
 function M.apply_patch(name, patch)
+  name = assert_name(name)
   return mutations.apply_patch(name, patch)
 end
 
@@ -168,6 +187,7 @@ end
 --- @param name string Highlight group name
 --- @return nil
 function M.clear(name)
+  name = assert_name(name)
   lifecycle.clear(name)
 end
 
@@ -182,6 +202,7 @@ end
 --- @param name string
 --- @return boolean
 function M.has_draft(name)
+  name = assert_name(name)
   return data.draft[name] ~= nil and next(data.draft[name]) ~= nil
 end
 
@@ -189,6 +210,7 @@ end
 --- @param name string
 --- @return boolean
 function M.has_persisted(name)
+  name = assert_name(name)
   return data.persisted[name] ~= nil and next(data.persisted[name]) ~= nil
 end
 
@@ -202,6 +224,7 @@ end
 --- @param name string
 --- @return string|nil
 function M.file_path(name)
+  name = assert_name(name)
   return lifecycle.file_path(M.get_draft_group(name))
 end
 

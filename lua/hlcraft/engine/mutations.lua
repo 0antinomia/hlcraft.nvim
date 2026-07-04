@@ -8,6 +8,13 @@ local store = require('hlcraft.engine.store')
 
 local data = store.data
 
+local function assert_name(name)
+  if type(name) ~= 'string' or name == '' then
+    error('highlight name must be a non-empty string', 3)
+  end
+  return name
+end
+
 local function draft_entry(name)
   local entry = data.draft[name]
   if entry == nil then
@@ -32,6 +39,7 @@ end
 --- @return boolean ok
 --- @return string|nil err
 function M.apply_patch(name, patch_spec)
+  name = assert_name(name)
   local normalized_patch, validation_err = patch_model.normalize(patch_spec)
   if not normalized_patch then
     return false, validation_err
@@ -84,6 +92,7 @@ end
 --- @return boolean|nil value
 --- @return string|nil err
 function M.toggle_style(name, key)
+  name = assert_name(name)
   local current = highlights.get_group(name)
   if not current then
     return false, nil, ('Unknown highlight group: %s'):format(name)
