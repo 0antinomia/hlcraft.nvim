@@ -1,16 +1,11 @@
-local ui_fields = require('hlcraft.ui.fields')
 local color = require('hlcraft.core.color')
 local ui_detail = require('hlcraft.ui.detail')
 local window = require('hlcraft.ui.workspace.window')
-local buffer_fields = require('hlcraft.ui.input.buffer_fields')
 local line_highlights = require('hlcraft.ui.render.line_highlights')
+local placeholders = require('hlcraft.ui.render.placeholders')
 local theme = require('hlcraft.ui.theme')
 
 local M = {}
-
-local function get_detail_scene()
-  return require('hlcraft.ui.scene.detail')
-end
 
 --- Build virtual lines with detail info (name, colors, source, links, file) for a highlight group
 --- @param instance table The Instance object holding UI state
@@ -22,36 +17,6 @@ function M.detail_info_virt_lines(instance, result)
   return ui_detail.build_virt_lines(result, function(bg, suffix)
     return M.detail_color_hl(instance, bg, suffix)
   end, width)
-end
-
---- Set or update an overlay extmark (placeholder text) on a buffer line
---- @param instance table The Instance object holding UI state
---- @param buf number Buffer handle
---- @param key string Unique key for this overlay
---- @param row0 number 0-based row number
---- @param text string Overlay text to display
---- @param hl string Highlight group name for the overlay
---- @return nil
-function M.set_overlay(instance, buf, key, row0, text, hl)
-  instance.state.placeholder_marks[key] = vim.api.nvim_buf_set_extmark(buf, instance.ns, row0, 0, {
-    id = instance.state.placeholder_marks[key],
-    virt_text = { { text, hl } },
-    virt_text_pos = 'overlay',
-    right_gravity = false,
-  })
-end
-
---- Remove an overlay extmark by key
---- @param instance table The Instance object holding UI state
---- @param key string Unique key of the overlay to remove
---- @return nil
-function M.clear_overlay(instance, key)
-  local mark_id = instance.state.placeholder_marks[key]
-  if not mark_id or not window.is_valid_buf(instance.state.buf) then
-    return
-  end
-  pcall(vim.api.nvim_buf_del_extmark, instance.state.buf, instance.ns, mark_id)
-  instance.state.placeholder_marks[key] = nil
 end
 
 --- Build the help keybinding hint virtual line tokens
@@ -178,66 +143,6 @@ function M.find_text_start(line, text, start_col)
   return first and (first - 1) or nil
 end
 
---- Build placeholder values table for detail fields from a highlight result
---- @param result table Highlight group result with resolved colors and styles
---- @return table Map of field names to placeholder string values
-local function detail_placeholder_values(result)
-  local resolved_fg = result.resolved_fg ~= 'NONE' and result.resolved_fg or result.fg
-  local resolved_bg = result.resolved_bg ~= 'NONE' and result.resolved_bg or result.bg
-  return {
-    group = '',
-    fg = resolved_fg or 'NONE',
-    bg = resolved_bg or 'NONE',
-    sp = result.sp or 'NONE',
-    bold = result.bold and 'true' or 'false',
-    italic = result.italic and 'true' or 'false',
-    underline = result.underline and 'true' or 'false',
-    undercurl = result.undercurl and 'true' or 'false',
-    strikethrough = result.strikethrough and 'true' or 'false',
-    blend = result.blend ~= nil and tostring(result.blend) or '',
-  }
-end
-
---- Get the placeholder text for a given input field
---- @param instance table The Instance object holding UI state
---- @param field table Field descriptor with name/key
---- @return string|nil Placeholder text, or nil if none applicable
-local function placeholder_text_for_field(instance, field)
-  local name = field.key or field.name
-  if name == 'name' then
-    return ui_fields.search_placeholders.name
-  end
-  if name == 'color' then
-    return ui_fields.search_placeholders.color
-  end
-  if not instance.state.detail_index then
-    return nil
-  end
-  local result = get_detail_scene().current_result(instance)
-  if not result then
-    return nil
-  end
-  return detail_placeholder_values(result)[name]
-end
-
---- Update overlay placeholders for all input fields based on current values
---- @param instance table The Instance object holding UI state
---- @return nil
-function M.refresh_input_placeholders(instance)
-  if not window.is_valid_buf(instance.state.buf) then
-    return
-  end
-
-  for _, field in ipairs(instance.state.geometry.inputs or {}) do
-    local key = field.key or field.name
-    local text = placeholder_text_for_field(instance, field)
-    local value = buffer_fields.field_line_text(instance, field)
-    if value == '' and text and text ~= '' then
-      M.set_overlay(instance, instance.state.buf, key, field.line - 1, tostring(text), theme.groups.muted)
-    else
-      M.clear_overlay(instance, key)
-    end
-  end
-end
+M.refresh_input_placeholders = placeholders.refresh
 
 return M
