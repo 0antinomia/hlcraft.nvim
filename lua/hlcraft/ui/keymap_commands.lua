@@ -119,8 +119,7 @@ function M.input_current_editor_field(instance)
 
   if kind == 'color' then
     if context.color_field_is_dynamic(instance) then
-      M.run_action(instance, 'input_dynamic_row', { default_raw = true })
-      return true
+      return M.run_action(instance, 'input_dynamic_row', { default_raw = true })
     end
     return prompt.input({ prompt = field .. ': ' }, function(value)
       return M.set_color(instance, value)
