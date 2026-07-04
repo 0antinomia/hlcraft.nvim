@@ -3,6 +3,7 @@ local scope = 'hlcraft ui dynamic'
 
 local config = require('hlcraft.config')
 local hlcraft = require('hlcraft')
+local dynamic_model = require('hlcraft.dynamic.model')
 local dynamic_preview = require('hlcraft.ui.dynamic_preview')
 local dynamic_renderer = require('hlcraft.ui.render.editors.dynamic')
 local editor = require('hlcraft.ui.editor.dynamic')
@@ -80,6 +81,34 @@ local raw_ok, raw_err = editor.set_raw_json(
 h.assert_true(raw_ok, raw_err or 'raw json set failed', scope)
 h.assert_equal(engine.get('HlcraftUiDynamicNormal').dynamic.fg.preset, 'manual', 'raw json preset did not set', scope)
 
+local compact_raw_ok, compact_raw_err = editor.set_raw_json(
+  instance,
+  result,
+  'fg',
+  vim.json.encode({
+    version = 1,
+    timeline = {
+      { at = 0, color = 'base' },
+    },
+  })
+)
+h.assert_true(compact_raw_ok, compact_raw_err or 'compact raw json set failed', scope)
+h.assert_equal(
+  engine.get('HlcraftUiDynamicNormal').dynamic.fg.duration,
+  dynamic_model.default_duration,
+  'compact raw json did not normalize duration',
+  scope
+)
+local compact_duration_ok, compact_duration_err = editor.adjust_duration(instance, result, 'fg', 100)
+h.assert_true(compact_duration_ok, compact_duration_err or 'compact duration adjust failed', scope)
+h.assert_equal(
+  engine.get('HlcraftUiDynamicNormal').dynamic.fg.duration,
+  dynamic_model.default_duration + 100,
+  'duration adjust did not rely on normalized value',
+  scope
+)
+
+local before_bad_json = vim.deepcopy(engine.get('HlcraftUiDynamicNormal').dynamic.fg)
 local bad_schema_ok = editor.set_raw_json(
   instance,
   result,
@@ -93,18 +122,16 @@ local bad_schema_ok = editor.set_raw_json(
   })
 )
 h.assert_true(not bad_schema_ok, 'invalid dynamic JSON schema was accepted', scope)
-h.assert_equal(
-  engine.get('HlcraftUiDynamicNormal').dynamic.fg.preset,
-  'manual',
+h.assert_true(
+  vim.deep_equal(engine.get('HlcraftUiDynamicNormal').dynamic.fg, before_bad_json),
   'invalid dynamic JSON schema changed draft',
   scope
 )
 
 local bad_raw_ok = editor.set_raw_json(instance, result, 'fg', '{bad json')
 h.assert_true(not bad_raw_ok, 'invalid raw json was accepted', scope)
-h.assert_equal(
-  engine.get('HlcraftUiDynamicNormal').dynamic.fg.preset,
-  'manual',
+h.assert_true(
+  vim.deep_equal(engine.get('HlcraftUiDynamicNormal').dynamic.fg, before_bad_json),
   'invalid raw json changed draft',
   scope
 )
