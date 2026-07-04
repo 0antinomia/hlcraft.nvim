@@ -8,6 +8,17 @@ local store = require('hlcraft.engine.store')
 
 local data = store.data
 
+local function draft_entry(name)
+  local entry = data.draft[name]
+  if entry == nil then
+    return {}
+  end
+  if type(entry) ~= 'table' then
+    error('draft entry must be a table', 2)
+  end
+  return snapshot.deepcopy(entry)
+end
+
 local function restore(name, entry, group)
   data.draft[name] = snapshot.deepcopy(entry)
   data.draft_groups[name] = group
@@ -28,7 +39,7 @@ function M.apply_patch(name, patch_spec)
 
   local previous_entry = snapshot.deepcopy(data.draft[name])
   local previous_group = data.draft_groups[name]
-  local entry = snapshot.deepcopy(data.draft[name] or {})
+  local entry = draft_entry(name)
 
   local function fail(err)
     restore(name, previous_entry, previous_group)
