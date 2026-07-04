@@ -29,28 +29,25 @@ function M.run_search_action(instance, action)
   if scene.current_name(instance) ~= 'search' then
     return false
   end
-  actions.dispatch(instance, action)
-  return true
+  return M.run_action(instance, action)
 end
 
 function M.toggle_dynamic_color(instance)
   if context.current_field_kind(instance) ~= 'color' then
     return false
   end
-  M.run_action(instance, 'toggle_dynamic')
-  return true
+  return M.run_action(instance, 'toggle_dynamic')
 end
 
 function M.cycle_dynamic_preset(instance, fallback_key)
   if not context.color_field_is_dynamic(instance) then
     if fallback_key then
-      M.feed_normal_key(instance, fallback_key)
+      return M.feed_normal_key(instance, fallback_key)
     end
     return false
   end
 
-  M.run_action(instance, 'cycle_dynamic_preset')
-  return true
+  return M.run_action(instance, 'cycle_dynamic_preset')
 end
 
 function M.adjust_dynamic_color(instance, delta)
@@ -61,23 +58,20 @@ function M.adjust_dynamic_color(instance, delta)
   local step = numbers.to_finite(delta, 0)
   if context.current_dynamic_editor_row_key(instance) == 'dynamic_phase' then
     local dynamic = context.current_color_dynamic(instance)
-    M.run_action(
+    return M.run_action(
       instance,
       'set_dynamic_phase',
       numbers.to_finite(dynamic.phase, 0) + (step * ui_fields.dynamic_phase_step)
     )
-  else
-    M.run_action(instance, 'adjust_dynamic_duration', step * ui_fields.dynamic_duration_step)
   end
-  return true
+  return M.run_action(instance, 'adjust_dynamic_duration', step * ui_fields.dynamic_duration_step)
 end
 
 function M.open_dynamic_raw_json(instance)
   if not context.color_field_is_dynamic(instance) then
     return false
   end
-  M.run_action(instance, 'open_dynamic_raw_json')
-  return true
+  return M.run_action(instance, 'open_dynamic_raw_json')
 end
 
 function M.adjust_color(instance, channel, delta, fallback_key)
@@ -85,12 +79,10 @@ function M.adjust_color(instance, channel, delta, fallback_key)
     return true
   end
   if context.current_field_kind(instance) == 'color' then
-    M.run_action(instance, 'adjust_color', channel, delta)
-    return true
+    return M.run_action(instance, 'adjust_color', channel, delta)
   end
   if fallback_key then
-    M.feed_normal_key(instance, fallback_key)
-    return true
+    return M.feed_normal_key(instance, fallback_key)
   end
   return false
 end
@@ -98,37 +90,31 @@ end
 function M.set_color(instance, value, fallback_key)
   if context.current_field_kind(instance) ~= 'color' then
     if fallback_key then
-      M.feed_normal_key(instance, fallback_key)
-      return true
+      return M.feed_normal_key(instance, fallback_key)
     end
     return false
   end
-  M.run_action(instance, 'set_color', value)
-  return true
+  return M.run_action(instance, 'set_color', value)
 end
 
 function M.adjust_blend(instance, delta, fallback_key)
   if context.current_field_kind(instance) ~= 'blend' then
     if fallback_key then
-      M.feed_normal_key(instance, fallback_key)
-      return true
+      return M.feed_normal_key(instance, fallback_key)
     end
     return false
   end
-  M.run_action(instance, 'adjust_blend', delta)
-  return true
+  return M.run_action(instance, 'adjust_blend', delta)
 end
 
 function M.unset_blend(instance, fallback_key)
   if context.current_field_kind(instance) ~= 'blend' then
     if fallback_key then
-      M.feed_normal_key(instance, fallback_key)
-      return true
+      return M.feed_normal_key(instance, fallback_key)
     end
     return false
   end
-  M.run_action(instance, 'set_blend', nil)
-  return true
+  return M.run_action(instance, 'set_blend', nil)
 end
 
 function M.input_current_editor_field(instance)
