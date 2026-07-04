@@ -1,5 +1,6 @@
 local defaults = require('hlcraft.config.defaults')
 local numbers = require('hlcraft.core.number')
+local tables = require('hlcraft.core.tables')
 
 local M = {}
 
@@ -141,6 +142,10 @@ local function validate_reapply_events(errors, value)
   end
 
   if type(value.events) ~= 'table' then
+    return
+  end
+  if not tables.is_sequence(value.events) then
+    add(errors, 'reapply_events.events: must be a sequence')
     return
   end
   for index, entry in ipairs(value.events) do
