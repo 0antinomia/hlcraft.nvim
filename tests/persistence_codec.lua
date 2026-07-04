@@ -4,6 +4,15 @@ local scope = 'hlcraft persistence codec'
 local codec = require('hlcraft.persistence.codec')
 local parser = require('hlcraft.persistence.codec.parser')
 
+local function assert_invalid_entry(line)
+  local name, entry = parser.entry_line(line)
+  h.assert_true(name == nil and entry == nil, ('invalid codec line parsed: %s'):format(line), scope)
+end
+
+local function assert_invalid_section(line)
+  h.assert_true(parser.section_header(line) == nil, ('invalid section parsed: %s'):format(line), scope)
+end
+
 local decoded = codec.decode_lines({
   '# ignored',
   '["dynamic.group"]',
@@ -45,6 +54,24 @@ h.assert_equal(
 local escaped_name, escaped_entry = parser.entry_line([["Escaped" = { label = "quote \" and slash \\" }]])
 h.assert_equal(escaped_name, 'Escaped', 'escaped string entry name did not parse', scope)
 h.assert_equal(escaped_entry.label, 'quote " and slash \\', 'escaped string value did not parse', scope)
+h.assert_equal(
+  parser.section_header('["escaped \\" group"]'),
+  'escaped " group',
+  'escaped section did not parse',
+  scope
+)
+
+for _, line in ipairs({
+  [["escaped \" group"]],
+  '[]',
+  '[bare]',
+  '[""]',
+  '["unterminated]',
+  '["bad\\n"]',
+  '["ok" trailing]',
+}) do
+  assert_invalid_section(line)
+end
 
 for _, line in ipairs({
   [["BareColor" = { fg = #ffffff }]],
@@ -52,8 +79,7 @@ for _, line in ipairs({
   [["BadEscape" = { label = "\n" }]],
   [["Duplicate" = { fg = "#101010", fg = "#202020" }]],
 }) do
-  local name, entry = parser.entry_line(line)
-  h.assert_true(name == nil and entry == nil, ('invalid codec line parsed: %s'):format(line), scope)
+  assert_invalid_entry(line)
 end
 
 local strict_decoded = codec.decode_lines({
