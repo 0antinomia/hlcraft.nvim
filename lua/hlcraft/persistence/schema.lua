@@ -1,4 +1,5 @@
 local fields = require('hlcraft.core.fields')
+local dynamic_model = require('hlcraft.dynamic.model')
 local override_values = require('hlcraft.core.override_values')
 
 local M = {}
@@ -19,7 +20,7 @@ local function normalize_override_fields(entry, normalized)
   end
 end
 
-local function normalize_dynamic_fields(entry, normalized)
+local function normalize_dynamic_fields(entry, normalized, opts)
   if type(entry.dynamic) ~= 'table' then
     return
   end
@@ -33,18 +34,23 @@ local function normalize_dynamic_fields(entry, normalized)
   end
 
   if next(dynamic) ~= nil then
-    normalized.dynamic = dynamic
+    normalized.dynamic = opts.compact_dynamic and dynamic_model.compact_dynamic(dynamic) or dynamic
   end
 end
 
-function M.normalize_entry(entry)
+function M.normalize_entry(entry, opts)
   entry = entry or {}
+  opts = opts or {}
   local normalized = {}
 
   normalize_override_fields(entry, normalized)
-  normalize_dynamic_fields(entry, normalized)
+  normalize_dynamic_fields(entry, normalized, opts)
 
   return normalized
+end
+
+function M.compact_entry(entry)
+  return M.normalize_entry(entry, { compact_dynamic = true })
 end
 
 function M.normalize_loaded_data(data)
@@ -67,7 +73,7 @@ end
 function M.normalize_entries(entries)
   local normalized = {}
   for name, entry in pairs(entries or {}) do
-    normalized[name] = M.normalize_entry(entry)
+    normalized[name] = M.compact_entry(entry)
   end
   return normalized
 end

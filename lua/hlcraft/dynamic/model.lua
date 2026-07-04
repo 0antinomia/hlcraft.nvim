@@ -9,6 +9,9 @@ M.channel_set = vim.deepcopy(fields.color_set)
 
 M.version = 1
 M.default_duration = 2000
+M.default_interpolation = 'linear'
+M.default_loop = 'repeat'
+M.default_phase = 0
 
 local min_duration = 250
 local max_duration = 10000
@@ -46,14 +49,14 @@ function M.normalize_interpolation(value)
   if interpolation_set[value] then
     return value
   end
-  return 'linear'
+  return M.default_interpolation
 end
 
 function M.normalize_loop(value)
   if valid_loop(value) then
     return value
   end
-  return 'repeat'
+  return M.default_loop
 end
 
 function M.normalize_color_ref(value)
@@ -195,7 +198,7 @@ function M.normalize_channel(spec)
     preset = preset,
     duration = M.normalize_duration(spec.duration),
     loop = M.normalize_loop(spec.loop),
-    phase = numbers.unit(spec.phase, 0),
+    phase = numbers.unit(spec.phase, M.default_phase),
     interpolation = M.normalize_interpolation(spec.interpolation),
     timeline = timeline,
     transforms = transforms,
@@ -216,6 +219,68 @@ function M.normalize_dynamic(dynamic)
   end
 
   return next(normalized) and normalized or nil
+end
+
+local function compact_transform(transform)
+  local compacted = {
+    type = transform.type,
+    timeline = transform.timeline,
+  }
+  if transform.interpolation ~= M.default_interpolation then
+    compacted.interpolation = transform.interpolation
+  end
+  return compacted
+end
+
+function M.compact_channel(spec)
+  local normalized = M.normalize_channel(spec)
+  if not normalized then
+    return nil
+  end
+
+  local compacted = {
+    version = normalized.version,
+    timeline = normalized.timeline,
+  }
+  if normalized.preset ~= nil then
+    compacted.preset = normalized.preset
+  end
+  if normalized.duration ~= M.default_duration then
+    compacted.duration = normalized.duration
+  end
+  if normalized.loop ~= M.default_loop then
+    compacted.loop = normalized.loop
+  end
+  if normalized.phase ~= M.default_phase then
+    compacted.phase = normalized.phase
+  end
+  if normalized.interpolation ~= M.default_interpolation then
+    compacted.interpolation = normalized.interpolation
+  end
+  if #normalized.transforms > 0 then
+    compacted.transforms = {}
+    for _, transform in ipairs(normalized.transforms) do
+      compacted.transforms[#compacted.transforms + 1] = compact_transform(transform)
+    end
+  end
+
+  return compacted
+end
+
+function M.compact_dynamic(dynamic)
+  if type(dynamic) ~= 'table' then
+    return nil
+  end
+
+  local compacted = {}
+  for _, channel in ipairs(M.channels) do
+    local spec = M.compact_channel(dynamic[channel])
+    if spec then
+      compacted[channel] = spec
+    end
+  end
+
+  return next(compacted) and compacted or nil
 end
 
 function M.normalize_entry(entry)

@@ -48,6 +48,18 @@ h.write_file(persist_dir .. '/dynamic.toml', {
 local dynamic_decoded = storage.load(persist_dir)
 h.assert_equal(dynamic_decoded.entries.DynamicNormal.dynamic.fg.preset, 'pulse', 'dynamic preset did not load', scope)
 h.assert_equal(dynamic_decoded.entries.DynamicNormal.dynamic.fg.duration, 1500, 'dynamic duration did not load', scope)
+h.assert_equal(
+  dynamic_decoded.entries.DynamicNormal.dynamic.fg.phase,
+  0,
+  'dynamic default phase did not normalize on load',
+  scope
+)
+h.assert_equal(
+  dynamic_decoded.entries.DynamicNormal.dynamic.fg.interpolation,
+  'linear',
+  'dynamic default interpolation did not normalize on load',
+  scope
+)
 h.assert_true(dynamic_decoded.entries.InvalidDynamic ~= nil, 'invalid dynamic entry did not load', scope)
 h.assert_true(dynamic_decoded.entries.InvalidDynamic.dynamic == nil, 'invalid dynamic config should not load', scope)
 
@@ -132,6 +144,13 @@ h.assert_true(
 h.assert_true(
   dynamic_content:find('transforms = [{ type = "brightness"', 1, true) ~= nil,
   'saved TOML omitted dynamic transforms',
+  scope
+)
+h.assert_true(dynamic_content:find('transforms = []', 1, true) == nil, 'saved TOML kept empty transforms', scope)
+h.assert_true(dynamic_content:find('phase = 0', 1, true) == nil, 'saved TOML kept default phase', scope)
+h.assert_true(
+  dynamic_content:find('interpolation = "linear"', 1, true) == nil,
+  'saved TOML kept default interpolation',
   scope
 )
 h.assert_true(dynamic_content:find('dyn_', 1, true) == nil, 'saved TOML wrote non-declarative dynamic key', scope)
