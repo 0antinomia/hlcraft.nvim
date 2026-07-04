@@ -39,6 +39,20 @@ h.with_temp_bufs(2, function(workspace_buf, help_buf)
     },
   }, 0, 1)
   h.assert_true(not numeric_hint_ok, 'hint highlighter accepted a non-string line', scope)
+  local invalid_hint_opts_ok = pcall(line_highlights.apply_hint_line, {
+    ns = ns,
+    state = {
+      buf = help_buf,
+    },
+  }, 0, '[q] close', false)
+  h.assert_true(not invalid_hint_opts_ok, 'hint highlighter accepted non-table options', scope)
+  local invalid_target_buf_ok = pcall(line_highlights.apply_hint_line, {
+    ns = ns,
+    state = {
+      buf = help_buf,
+    },
+  }, 0, '[q] close', { buf = -1 })
+  h.assert_true(not invalid_target_buf_ok, 'hint highlighter accepted invalid target buffer', scope)
 
   local numeric_label_ok = pcall(line_highlights.apply_label_line, {
     ns = ns,
@@ -55,6 +69,13 @@ h.with_temp_bufs(2, function(workspace_buf, help_buf)
     },
   }, nil)
   h.assert_true(not invalid_lines_ok, 'workbench highlighter accepted non-table lines', scope)
+  local invalid_start_line_ok = pcall(line_highlights.apply_workbench_lines, {
+    ns = ns,
+    state = {
+      buf = help_buf,
+    },
+  }, {}, 0)
+  h.assert_true(not invalid_start_line_ok, 'workbench highlighter accepted invalid start line', scope)
 end)
 
 local line_highlights_module = 'hlcraft.ui.render.line_highlights'

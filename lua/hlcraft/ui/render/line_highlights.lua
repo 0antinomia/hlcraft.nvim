@@ -11,8 +11,29 @@ local span_groups = {
   value = theme.groups.value,
 }
 
+local function optional_opts(opts)
+  if opts == nil then
+    return {}
+  end
+  if type(opts) ~= 'table' then
+    error('line highlight options must be a table', 3)
+  end
+  return opts
+end
+
+local function positive_integer(value, label)
+  if type(value) ~= 'number' or math.floor(value) ~= value or value < 1 then
+    error(('%s must be a positive integer'):format(label), 3)
+  end
+  return value
+end
+
 local function target_buf(instance, opts)
-  return opts and opts.buf or instance.state.buf
+  opts = optional_opts(opts)
+  if opts.buf ~= nil and not window.is_valid_buf(opts.buf) then
+    error('line highlight target buffer must be valid', 3)
+  end
+  return opts.buf or instance.state.buf
 end
 
 local function assert_line(line)
@@ -84,7 +105,7 @@ function M.apply_workbench_lines(instance, lines, start_line)
     error('render lines must be a table', 2)
   end
 
-  start_line = start_line or 1
+  start_line = start_line == nil and 1 or positive_integer(start_line, 'render start line')
   for index, line in ipairs(lines) do
     if index >= start_line then
       local line_idx = index - 1
