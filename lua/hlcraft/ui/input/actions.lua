@@ -1,4 +1,5 @@
 local input_model = require('hlcraft.ui.input.model')
+local paste_plan = require('hlcraft.ui.input.paste_plan')
 local navigation = require('hlcraft.ui.navigation')
 local window = require('hlcraft.ui.workspace.window')
 
@@ -6,6 +7,28 @@ local M = {}
 
 local function get_search_scene()
   return require('hlcraft.ui.scene.search')
+end
+
+local function feed_key(key)
+  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(key, true, false, true), 'n', false)
+end
+
+local function apply_paste_plan(instance, win, cursor_row, cursor_col, input, plan)
+  if input and plan.append_newline then
+    input_model.fill_input(instance, input.name, input.value .. '\n', true)
+    vim.api.nvim_win_set_cursor(win, { cursor_row, cursor_col })
+  end
+
+  if input and plan.cleanup_trailing_newline then
+    vim.schedule(function()
+      local updated = input_model.get_input_at_row(instance, cursor_row - 1)
+      if updated and updated.value:sub(-1) == '\n' then
+        vim.api.nvim_buf_set_lines(instance.state.buf, updated.end_row, updated.end_row + 1, true, {})
+      end
+    end)
+  end
+
+  feed_key(plan.key)
 end
 
 --- Check if backward deletion (BS, C-h, C-w, C-u) should be blocked at current position
@@ -62,35 +85,8 @@ function M.paste_below(instance, is_visual)
   if get_search_scene().is_on_row(instance) then
     return
   end
-  if not input then
-    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('p', true, false, true), 'n', false)
-    return
-  end
 
-  local paste_cmd = 'p'
-  if not is_visual then
-    if input.end_row > input.start_row and cursor_row - 1 < input.end_row then
-      vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('p', true, false, true), 'n', false)
-      return
-    end
-    if input.value == '' then
-      paste_cmd = 'P'
-    end
-  end
-
-  if paste_cmd == 'p' then
-    input_model.fill_input(instance, input.name, input.value .. '\n', true)
-    vim.api.nvim_win_set_cursor(win, { cursor_row, cursor_col })
-  end
-
-  vim.schedule(function()
-    local updated = input_model.get_input_at_row(instance, cursor_row - 1)
-    if updated and updated.value:sub(-1) == '\n' then
-      vim.api.nvim_buf_set_lines(instance.state.buf, updated.end_row, updated.end_row + 1, true, {})
-    end
-  end)
-
-  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(paste_cmd, true, false, true), 'n', false)
+  apply_paste_plan(instance, win, cursor_row, cursor_col, input, paste_plan.below(input, cursor_row - 1, is_visual))
 end
 
 --- Paste register contents before the current position, respecting input boundaries
@@ -109,36 +105,8 @@ function M.paste_above(instance, is_visual)
   if get_search_scene().is_on_row(instance) then
     return
   end
-  if not input then
-    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('P', true, false, true), 'n', false)
-    return
-  end
 
-  local delete_newline = false
-  if not is_visual then
-    if input.end_row > input.start_row and cursor_row - 1 < input.end_row then
-      vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('P', true, false, true), 'n', false)
-      return
-    end
-    if input.value == '' then
-      delete_newline = true
-    end
-  end
-
-  if is_visual then
-    input_model.fill_input(instance, input.name, input.value .. '\n', true)
-    vim.api.nvim_win_set_cursor(win, { cursor_row, cursor_col })
-    delete_newline = true
-  end
-
-  vim.schedule(function()
-    local updated = input_model.get_input_at_row(instance, cursor_row - 1)
-    if delete_newline and updated and updated.value:sub(-1) == '\n' then
-      vim.api.nvim_buf_set_lines(instance.state.buf, updated.end_row, updated.end_row + 1, true, {})
-    end
-  end)
-
-  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('P', true, false, true), 'n', false)
+  apply_paste_plan(instance, win, cursor_row, cursor_col, input, paste_plan.above(input, cursor_row - 1, is_visual))
 end
 
 --- Open a new line below the current position, respecting input boundaries
@@ -156,11 +124,11 @@ function M.open_below(instance)
     return
   end
   if not input then
-    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('o', true, false, true), 'n', false)
+    feed_key('o')
     return
   end
 
-  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('A<CR>', true, false, true), 'n', false)
+  feed_key('A<CR>')
 end
 
 --- Move cursor to the start of a named input field
