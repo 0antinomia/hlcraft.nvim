@@ -19,8 +19,8 @@ function M.set(instance, result, value)
 end
 
 function M.adjust(instance, result, delta)
-  local runtime_value = session.field_value(result.name, 'blend')
-  local current = tonumber(runtime_value ~= nil and runtime_value or result.blend) or 0
+  local draft_value = session.field_value(result.name, 'blend')
+  local current = tonumber(draft_value ~= nil and draft_value or result.blend) or 0
   return M.set(instance, result, clamp(current + (tonumber(delta) or 0), 0, 100))
 end
 

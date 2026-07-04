@@ -36,8 +36,6 @@ function M.ensure_draft_group(name)
   end
 end
 
-M.ensure_runtime_group = M.ensure_draft_group
-
 function M.known_groups()
   local groups = {}
 
@@ -64,7 +62,5 @@ function M.remove_empty_draft_entry(name)
     data.draft_groups[name] = nil
   end
 end
-
-M.remove_empty_runtime_entry = M.remove_empty_draft_entry
 
 return M
