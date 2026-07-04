@@ -1,6 +1,6 @@
+local base_specs = require('hlcraft.engine.base_specs')
 local config = require('hlcraft.config')
 local dynamic_runtime = require('hlcraft.dynamic.runtime')
-local highlights = require('hlcraft.core.highlights')
 local presets = require('hlcraft.core.presets')
 local snapshot = require('hlcraft.engine.snapshot')
 local store = require('hlcraft.engine.store')
@@ -8,74 +8,6 @@ local store = require('hlcraft.engine.store')
 local M = {}
 
 local state = store.data
-
-local function normalized_set_hl_spec(name)
-  local group = highlights.get_group(name)
-  if not group then
-    return {}
-  end
-
-  return {
-    fg = group.resolved_fg ~= 'NONE' and group.resolved_fg or 'NONE',
-    bg = group.resolved_bg ~= 'NONE' and group.resolved_bg or 'NONE',
-    sp = group.sp ~= 'NONE' and group.sp or 'NONE',
-    bold = group.bold or nil,
-    italic = group.italic or nil,
-    underline = group.underline or nil,
-    undercurl = group.undercurl or nil,
-    strikethrough = group.strikethrough or nil,
-    underdouble = group.underdouble or nil,
-    underdotted = group.underdotted or nil,
-    underdashed = group.underdashed or nil,
-    blend = group.blend,
-  }
-end
-
-local function group_exists(name)
-  local ok, spec = pcall(vim.api.nvim_get_hl, 0, { name = name, create = false })
-  return ok and spec and not vim.tbl_isempty(spec)
-end
-
-local function capture_group(name)
-  if state.base_specs[name] ~= nil then
-    return
-  end
-
-  local ok, spec = pcall(vim.api.nvim_get_hl, 0, { name = name, create = false })
-  if ok and spec and not vim.tbl_isempty(spec) then
-    state.base_specs[name] = snapshot.deepcopy(spec)
-    return
-  end
-
-  state.base_specs[name] = normalized_set_hl_spec(name)
-end
-
-local function restore_group(name)
-  local base = state.base_specs[name]
-  if not base then
-    return
-  end
-
-  vim.api.nvim_set_hl(0, name, snapshot.deepcopy(base))
-end
-
-local function merged_spec(name)
-  capture_group(name)
-
-  local spec = normalized_set_hl_spec(name)
-  local override = state.active[name]
-  if not override then
-    return spec
-  end
-
-  for _, key in ipairs(store.override_keys) do
-    if override[key] ~= nil then
-      spec[key] = override[key]
-    end
-  end
-
-  return spec
-end
 
 function M.build_preset_overrides()
   if not config.from_none_enabled() then
@@ -107,12 +39,12 @@ function M.apply_group(name)
   local override = state.active[name]
   if not override or next(override) == nil then
     state.pending[name] = nil
-    restore_group(name)
+    base_specs.restore(state, name)
     dynamic_runtime.clear_group(name, state.base_specs[name])
     return
   end
 
-  if not group_exists(name) then
+  if not base_specs.group_exists(name) then
     state.pending[name] = true
     M.install_pending_hook()
     return
@@ -125,7 +57,7 @@ function M.apply_group(name)
   end
 
   state.applying = true
-  local spec = merged_spec(name)
+  local spec = base_specs.merged(state, name)
   local ok, err = pcall(state.original_set_hl, 0, name, spec)
   state.applying = false
 
