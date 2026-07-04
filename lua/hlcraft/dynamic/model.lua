@@ -306,7 +306,10 @@ function M.normalize_dynamic(dynamic)
     end
   end
 
-  return next(normalized) and normalized or nil
+  if next(normalized) == nil then
+    return nil
+  end
+  return normalized
 end
 
 local function compact_transform(transform)
@@ -368,7 +371,10 @@ function M.compact_dynamic(dynamic)
     end
   end
 
-  return next(compacted) and compacted or nil
+  if next(compacted) == nil then
+    return nil
+  end
+  return compacted
 end
 
 function M.normalize_entry(entry)
