@@ -20,6 +20,13 @@ function M.feed_normal_key(instance, lhs)
   return true
 end
 
+local function feed_fallback(instance, fallback_key)
+  if fallback_key then
+    return M.feed_normal_key(instance, fallback_key)
+  end
+  return false
+end
+
 function M.run_action(instance, action, ...)
   local ok = actions.dispatch(instance, action, ...)
   return ok
@@ -41,10 +48,7 @@ end
 
 function M.cycle_dynamic_preset(instance, fallback_key)
   if not context.color_field_is_dynamic(instance) then
-    if fallback_key then
-      return M.feed_normal_key(instance, fallback_key)
-    end
-    return false
+    return feed_fallback(instance, fallback_key)
   end
 
   return M.run_action(instance, 'cycle_dynamic_preset')
@@ -81,38 +85,26 @@ function M.adjust_color(instance, channel, delta, fallback_key)
   if context.current_field_kind(instance) == 'color' then
     return M.run_action(instance, 'adjust_color', channel, delta)
   end
-  if fallback_key then
-    return M.feed_normal_key(instance, fallback_key)
-  end
-  return false
+  return feed_fallback(instance, fallback_key)
 end
 
 function M.set_color(instance, value, fallback_key)
   if context.current_field_kind(instance) ~= 'color' then
-    if fallback_key then
-      return M.feed_normal_key(instance, fallback_key)
-    end
-    return false
+    return feed_fallback(instance, fallback_key)
   end
   return M.run_action(instance, 'set_color', value)
 end
 
 function M.adjust_blend(instance, delta, fallback_key)
   if context.current_field_kind(instance) ~= 'blend' then
-    if fallback_key then
-      return M.feed_normal_key(instance, fallback_key)
-    end
-    return false
+    return feed_fallback(instance, fallback_key)
   end
   return M.run_action(instance, 'adjust_blend', delta)
 end
 
 function M.unset_blend(instance, fallback_key)
   if context.current_field_kind(instance) ~= 'blend' then
-    if fallback_key then
-      return M.feed_normal_key(instance, fallback_key)
-    end
-    return false
+    return feed_fallback(instance, fallback_key)
   end
   return M.run_action(instance, 'set_blend', nil)
 end
