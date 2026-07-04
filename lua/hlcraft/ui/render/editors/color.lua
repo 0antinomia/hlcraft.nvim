@@ -1,16 +1,16 @@
 local ui_fields = require('hlcraft.ui.fields')
+local field_values = require('hlcraft.ui.field_values')
 local render_util = require('hlcraft.render.util')
 local session = require('hlcraft.ui.session')
 local hints = require('hlcraft.ui.render.hints')
-local detail_render = require('hlcraft.ui.render.detail')
 
 local M = {}
 
 function M.build(instance, geometry, result, field, width, line_offset)
   local label = ui_fields.detail_labels[field] or field:upper()
-  local fallback = detail_render.fallback_value(result, field)
+  local fallback = field_values.fallback_value(result, field)
   local value = session.display_value(result.name, field, fallback)
-  local display_value = detail_render.display_text(value)
+  local display_value = field_values.display_text(value)
   local sample = 'The quick brown fox jumps over hlcraft.'
 
   local lines = {

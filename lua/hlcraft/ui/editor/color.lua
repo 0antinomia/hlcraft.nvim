@@ -1,5 +1,6 @@
 local color = require('hlcraft.core.color')
 local numbers = require('hlcraft.core.number')
+local field_values = require('hlcraft.ui.field_values')
 local session = require('hlcraft.ui.session')
 
 local M = {}
@@ -12,16 +13,6 @@ local channel_shifts = {
   b = 0,
   blue = 0,
 }
-
-local function fallback_color(result, key)
-  if key == 'fg' then
-    return result.resolved_fg ~= 'NONE' and result.resolved_fg or result.fg
-  end
-  if key == 'bg' then
-    return result.resolved_bg ~= 'NONE' and result.resolved_bg or result.bg
-  end
-  return result[key]
-end
 
 function M.set(instance, result, key, value)
   local normalized, err = color.normalize(value)
@@ -38,7 +29,7 @@ function M.adjust(instance, result, key, channel, delta)
   end
   local current = session.field_value(result.name, key)
   if current == nil then
-    current = fallback_color(result, key)
+    current = field_values.fallback_value(result, key)
   end
   if current == nil or current == 'NONE' then
     current = '#000000'
