@@ -1,5 +1,9 @@
 local M = {}
 
+local function compare_keys(left, right)
+  return tostring(left) < tostring(right)
+end
+
 function M.is_sequence(value)
   if type(value) ~= 'table' then
     return false
@@ -16,6 +20,19 @@ function M.is_sequence(value)
   end
 
   return count == max_index
+end
+
+function M.sorted_keys(value, compare)
+  if type(value) ~= 'table' then
+    return {}
+  end
+
+  local keys = {}
+  for key in pairs(value) do
+    keys[#keys + 1] = key
+  end
+  table.sort(keys, compare or compare_keys)
+  return keys
 end
 
 return M
