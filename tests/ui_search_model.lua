@@ -81,6 +81,16 @@ h.assert_equal(#non_string, 0, 'non-string query returned results', scope)
 h.assert_equal(#provider_calls, 0, 'non-string query called providers', scope)
 
 provider_calls = {}
+local non_string_name = model.results(123, 'NONE', provider)
+h.assert_equal(#non_string_name, 0, 'non-string name query returned results', scope)
+h.assert_equal(#provider_calls, 0, 'non-string name query called providers', scope)
+
+provider_calls = {}
+local non_string_color = model.results('Alpha', 456, provider)
+h.assert_equal(#non_string_color, 0, 'non-string color query returned results', scope)
+h.assert_equal(#provider_calls, 0, 'non-string color query called providers', scope)
+
+provider_calls = {}
 local color_only = model.results('', 'NONE', provider)
 h.assert_equal(color_only[1].name, 'Beta', 'color-only search did not use color provider', scope)
 h.assert_equal(#provider_calls, 1, 'color-only search called wrong number of providers', scope)

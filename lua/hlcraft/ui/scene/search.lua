@@ -78,52 +78,52 @@ end
 --- Move the cursor by `step` result rows (jump between result entries)
 --- @param instance table The Instance object holding UI state
 --- @param step integer Number of entries to jump (+1 forward, -1 backward)
---- @return nil
+--- @return boolean moved True when the cursor was moved
 function M.goto_offset(instance, step)
   local win = window.get_win(instance)
   if not window.is_valid_win(win) then
-    return
+    return false
   end
 
   local rows = M.rows(instance)
   if #rows == 0 then
-    return
+    return false
   end
 
   local current_row = vim.api.nvim_win_get_cursor(win)[1]
   for idx, entry in ipairs(rows) do
     if entry.line == current_row then
       local target = rows[math.max(1, math.min(#rows, idx + step))]
-      navigation.jump_to_row(instance, target.line, false)
-      return
+      return navigation.jump_to_row(instance, target.line, false)
     end
   end
 
-  navigation.jump_to_row(instance, rows[1].line, false)
+  return navigation.jump_to_row(instance, rows[1].line, false)
 end
 
 --- Move the cursor to the first result row
 --- @param instance table The Instance object holding UI state
---- @return nil
+--- @return boolean moved True when the cursor was moved
 function M.goto_first(instance)
   local rows = M.rows(instance)
   if #rows > 0 then
-    navigation.jump_to_row(instance, rows[1].line, false)
+    return navigation.jump_to_row(instance, rows[1].line, false)
   end
+  return false
 end
 
 --- Open the detail view for the result at the current cursor position
 --- @param instance table The Instance object holding UI state
---- @return nil
+--- @return boolean opened True when the detail scene was opened
 function M.open_detail(instance)
   local win = window.get_win(instance)
   if not window.is_valid_win(win) then
-    return
+    return false
   end
   local row = vim.api.nvim_win_get_cursor(win)[1]
   local index = instance.state.geometry.result_lines[row]
   if not index then
-    return
+    return false
   end
   instance.state.detail_index = index
   instance.state.field_editor.field = nil
@@ -134,6 +134,7 @@ function M.open_detail(instance)
   if first_row then
     navigation.jump_to_row(instance, first_row.line, false)
   end
+  return true
 end
 
 function M.handle(instance, action)
@@ -142,8 +143,7 @@ function M.handle(instance, action)
     local row = window.is_valid_win(win) and vim.api.nvim_win_get_cursor(win)[1] or 0
     local area = buffer_fields.current_area(instance, row)
     if area == 'results' then
-      M.open_detail(instance)
-      return true, nil
+      return M.open_detail(instance), nil
     end
     if vim.fn.mode():lower():find('i') then
       vim.cmd('stopinsert')
@@ -167,20 +167,16 @@ function M.handle(instance, action)
     return true, nil
   end
   if action == 'open_detail' then
-    M.open_detail(instance)
-    return true, nil
+    return M.open_detail(instance), nil
   end
   if action == 'next_result' then
-    M.goto_offset(instance, 1)
-    return true, nil
+    return M.goto_offset(instance, 1), nil
   end
   if action == 'prev_result' then
-    M.goto_offset(instance, -1)
-    return true, nil
+    return M.goto_offset(instance, -1), nil
   end
   if action == 'first_result' then
-    M.goto_first(instance)
-    return true, nil
+    return M.goto_first(instance), nil
   end
   return false, ('unsupported search action: %s'):format(tostring(action))
 end
