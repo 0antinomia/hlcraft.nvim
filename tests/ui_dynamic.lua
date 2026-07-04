@@ -147,6 +147,15 @@ h.with_temp_buf(function(preview_buf)
     now_ms = 500,
   })
   h.assert_equal(preview_id, 1, 'preview item was not registered', scope)
+  h.assert_true(dynamic_preview.register(preview_instance, {
+    line = 1,
+    text = 'XXXX',
+    base = '#000000',
+    dynamic = {
+      version = 1,
+      timeline = {},
+    },
+  }) == nil, 'invalid dynamic preview item was registered', scope)
   dynamic_preview.tick(preview_instance, 0)
   local preview_hl_name = ('HlcraftDynamicPreview_%s_%d'):format(
     tostring(preview_instance.state.dynamic_preview_instance_id),
