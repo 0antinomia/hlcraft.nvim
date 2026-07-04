@@ -59,6 +59,12 @@ detail_instance.state.geometry.editor_rows = {
 }
 
 assert_list(navigation.allowed_rows(detail_instance), { 3, 7, 9 }, 'detail allowed rows changed')
+local invalid_geometry_ok = pcall(navigation.allowed_rows, {
+  state = {
+    geometry = {},
+  },
+})
+h.assert_true(not invalid_geometry_ok, 'navigation accepted missing geometry inputs', scope)
 
 local invalid_window_instance = {
   state = {

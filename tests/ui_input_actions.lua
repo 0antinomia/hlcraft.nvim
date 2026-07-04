@@ -101,4 +101,11 @@ h.with_temp_buf(function(buf)
   h.assert_equal(input_model.get_input_value(instance, 'name'), '', 'nil fill with clear did not empty input', scope)
 end, { current = true })
 
+local invalid_geometry_ok = pcall(input_model.get_input_at_row, {
+  state = {
+    geometry = {},
+  },
+}, 0)
+h.assert_true(not invalid_geometry_ok, 'input model accepted missing geometry inputs', scope)
+
 print('hlcraft ui input actions: OK')

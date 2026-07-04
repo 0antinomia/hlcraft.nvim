@@ -65,8 +65,7 @@ local function goto_relative_input(instance, resolve_name)
     return
   end
 
-  local inputs = instance.state.geometry.inputs or {}
-  local name = resolve_name(inputs, context.input and context.input.name or nil)
+  local name = resolve_name(instance.state.geometry.inputs, context.input and context.input.name or nil)
   if name then
     M.goto_input(instance, name)
   end

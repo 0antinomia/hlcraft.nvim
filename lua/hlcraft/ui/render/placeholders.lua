@@ -11,6 +11,14 @@ local function get_detail_scene()
   return require('hlcraft.ui.scene.detail')
 end
 
+local function geometry_inputs(instance)
+  local inputs = instance.state.geometry.inputs
+  if type(inputs) ~= 'table' then
+    error('placeholder geometry inputs must be a table', 3)
+  end
+  return inputs
+end
+
 local function set_overlay(instance, buf, key, row0, text, hl)
   instance.state.placeholder_marks[key] = vim.api.nvim_buf_set_extmark(buf, instance.ns, row0, 0, {
     id = instance.state.placeholder_marks[key],
@@ -71,7 +79,7 @@ function M.refresh(instance)
     return
   end
 
-  for _, field in ipairs(instance.state.geometry.inputs or {}) do
+  for _, field in ipairs(geometry_inputs(instance)) do
     local key = input_sequence.name(field)
     local text = text_for_field(instance, field)
     local value = buffer_fields.field_line_text(instance, field)
