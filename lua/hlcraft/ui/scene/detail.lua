@@ -191,11 +191,11 @@ function M.activate(instance)
     return false, nil
   end
   if row.kind == 'boolean' then
-    local runtime_value = session.field_value(result.name, row.key)
+    local draft_value = session.field_value(result.name, row.key)
     local next_value = true
-    if runtime_value == true then
+    if draft_value == true then
       next_value = false
-    elseif runtime_value == false then
+    elseif draft_value == false then
       next_value = nil
     end
     return session.set_style(instance, result.name, row.key, next_value)
