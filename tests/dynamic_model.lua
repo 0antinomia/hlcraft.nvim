@@ -193,6 +193,26 @@ h.assert_true(model.normalize_channel({
 }) == nil, 'invalid transform stop at was accepted', scope)
 h.assert_true(model.normalize_channel({
   version = 1,
+  timeline = {
+    { at = 0, color = 'base' },
+    named = { at = 1, color = '#ffffff' },
+  },
+}) == nil, 'non-sequence color timeline was accepted', scope)
+h.assert_true(model.normalize_channel({
+  version = 1,
+  timeline = { { at = 0, color = 'base' } },
+  transforms = {
+    {
+      type = 'brightness',
+      timeline = {
+        { at = 0, value = 1 },
+        named = { at = 1, value = 0.5 },
+      },
+    },
+  },
+}) == nil, 'non-sequence transform timeline was accepted', scope)
+h.assert_true(model.normalize_channel({
+  version = 1,
   timeline = { { at = 0, color = 'base' } },
   transforms = {
     brightness = {

@@ -34,7 +34,7 @@ local function sort_stops(stops)
 end
 
 local function normalize_stop_sequence(stops, normalize_stop)
-  if type(stops) ~= 'table' or #stops == 0 then
+  if not tables.is_sequence(stops) or next(stops) == nil then
     return nil
   end
 
