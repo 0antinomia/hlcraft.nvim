@@ -14,6 +14,7 @@ local editor_rows = require('hlcraft.ui.render.editor_rows')
 local field_editor_renderer = require('hlcraft.ui.render.field_editor')
 local render_util = require('hlcraft.render.util')
 local theme = require('hlcraft.ui.theme')
+local ui_state = require('hlcraft.ui.state')
 
 local persist_dir = h.temp_dir('hlcraft-ui-render')
 hlcraft.setup({
@@ -30,7 +31,9 @@ vim.api.nvim_set_hl(0, 'HlcraftUiRenderNormal', {
 engine.set_group('HlcraftUiRenderNormal', 'ui-render')
 
 local instance = {
-  state = {},
+  state = {
+    dynamic_preview = ui_state.dynamic_preview(),
+  },
   rerender = function() end,
 }
 local result = {

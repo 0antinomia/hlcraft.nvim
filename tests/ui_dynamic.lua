@@ -8,6 +8,7 @@ local dynamic_preview = require('hlcraft.ui.dynamic_preview')
 local dynamic_renderer = require('hlcraft.ui.render.editors.dynamic')
 local editor = require('hlcraft.ui.editor.dynamic')
 local engine = require('hlcraft.engine.service')
+local ui_state = require('hlcraft.ui.state')
 
 local persist_dir = h.temp_dir('hlcraft-ui-dynamic')
 hlcraft.setup({
@@ -155,6 +156,7 @@ h.with_temp_buf(function(render_buf)
     ns = vim.api.nvim_create_namespace('hlcraft-ui-dynamic-render-test'),
     state = {
       buf = render_buf,
+      dynamic_preview = ui_state.dynamic_preview(),
     },
   }
   local render_geometry = { editor_rows = {} }
@@ -180,7 +182,7 @@ h.with_temp_buf(function(render_buf)
   end
 
   h.assert_equal(
-    render_instance.state.dynamic_preview_items[1].line,
+    render_instance.state.dynamic_preview.items[1].line,
     swatch_line,
     'dynamic swatch preview did not track its rendered row',
     scope
@@ -195,6 +197,7 @@ h.with_temp_buf(function(preview_buf)
     ns = preview_ns,
     state = {
       buf = preview_buf,
+      dynamic_preview = ui_state.dynamic_preview(),
     },
   }
   local preview_dynamic = {
@@ -216,6 +219,20 @@ h.with_temp_buf(function(preview_buf)
     now_ms = 500,
   })
   h.assert_equal(preview_id, 1, 'preview item was not registered', scope)
+  local missing_preview_state_ok = pcall(dynamic_preview.register, {
+    ns = preview_ns,
+    state = {
+      buf = preview_buf,
+    },
+  }, {
+    line = 1,
+    col_start = 0,
+    col_end = 4,
+    text = 'XXXX',
+    base = '#000000',
+    dynamic = preview_dynamic,
+  })
+  h.assert_true(not missing_preview_state_ok, 'dynamic preview accepted missing state schema', scope)
   h.assert_true(dynamic_preview.register(preview_instance, {
     line = 1,
     col_start = 0,
@@ -245,7 +262,7 @@ h.with_temp_buf(function(preview_buf)
   }) == nil, 'invalid preview columns were registered', scope)
   dynamic_preview.tick(preview_instance, 0)
   local preview_hl_name = ('HlcraftDynamicPreview_%s_%d'):format(
-    tostring(preview_instance.state.dynamic_preview_instance_id),
+    tostring(preview_instance.state.dynamic_preview.instance_id),
     preview_id
   )
   local first_preview_hl = vim.api.nvim_get_hl(preview_ns, { name = preview_hl_name })

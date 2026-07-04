@@ -31,6 +31,15 @@ function M.preview()
   }
 end
 
+function M.dynamic_preview()
+  return {
+    marks = {},
+    items = {},
+    timer = nil,
+    instance_id = nil,
+  }
+end
+
 function M.search_scene()
   return {
     name = 'search',
@@ -60,6 +69,7 @@ function M.reset_view(target)
   target.extmark_ids = {}
   target.clamping_cursor = false
   target.preview = M.preview()
+  target.dynamic_preview = M.dynamic_preview()
   target.scene = M.search_scene()
 end
 
