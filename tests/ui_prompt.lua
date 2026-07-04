@@ -49,6 +49,8 @@ local invalid_submit_ok = pcall(prompt.input, {}, nil)
 h.assert_true(not invalid_submit_ok, 'prompt accepted missing submit callback', scope)
 local invalid_prompt_opts_ok = pcall(prompt.input, {}, function() end, false)
 h.assert_true(not invalid_prompt_opts_ok, 'prompt accepted non-table options', scope)
+local invalid_notify_opts_ok = pcall(prompt.input, {}, function() end, { notify_errors = 'no' })
+h.assert_true(not invalid_notify_opts_ok, 'prompt accepted non-boolean notify_errors option', scope)
 
 vim.ui.input = original_input
 
