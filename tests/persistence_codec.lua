@@ -16,6 +16,8 @@ h.assert_equal(decoded.entries.Normal.dynamic.fg.timeline[2].color, '#ffffff', '
 local encoded = codec.encode_section('dynamic.group', {
   Normal = {
     fg = '#101010',
+    underdashed = true,
+    blend = 12,
     dynamic = {
       fg = {
         version = 1,
@@ -34,7 +36,7 @@ local encoded = codec.encode_section('dynamic.group', {
 h.assert_equal(encoded[1], '["dynamic.group"]', 'section header did not encode', scope)
 h.assert_equal(
   encoded[2],
-  '"Normal" = { fg = "#101010", dynamic = { fg = { version = 1, preset = "pulse", duration = 1500, loop = "pingpong", timeline = [{ at = 0, color = "base" }, { at = 1, color = "#ffffff" }] } } }',
+  '"Normal" = { fg = "#101010", underdashed = true, blend = 12, dynamic = { fg = { version = 1, preset = "pulse", duration = 1500, loop = "pingpong", timeline = [{ at = 0, color = "base" }, { at = 1, color = "#ffffff" }] } } }',
   'nested dynamic table did not encode deterministically',
   scope
 )

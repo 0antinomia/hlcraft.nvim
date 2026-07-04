@@ -1,34 +1,37 @@
+local fields = require('hlcraft.core.fields')
 local util = require('hlcraft.persistence.codec.util')
 
 local M = {}
 
-local key_priority = {
-  fg = 10,
-  bg = 20,
-  sp = 30,
-  bold = 40,
-  italic = 50,
-  underline = 60,
-  undercurl = 70,
-  strikethrough = 80,
-  underdouble = 90,
-  underdotted = 100,
-  underdashed = 110,
-  blend = 120,
-  dynamic = 130,
-  version = 140,
-  preset = 150,
-  duration = 160,
-  loop = 170,
-  phase = 180,
-  type = 185,
-  interpolation = 190,
-  timeline = 200,
-  transforms = 210,
-  at = 230,
-  color = 240,
-  value = 250,
-}
+local key_priority = {}
+local next_priority = 10
+
+local function append_priority(key)
+  key_priority[key] = next_priority
+  next_priority = next_priority + 10
+end
+
+for _, key in ipairs(fields.override_keys) do
+  append_priority(key)
+end
+
+for _, key in ipairs({
+  'dynamic',
+  'version',
+  'preset',
+  'duration',
+  'loop',
+  'phase',
+  'type',
+  'interpolation',
+  'timeline',
+  'transforms',
+  'at',
+  'color',
+  'value',
+}) do
+  append_priority(key)
+end
 
 local function is_array(value)
   if type(value) ~= 'table' then
