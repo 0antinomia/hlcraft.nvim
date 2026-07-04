@@ -84,6 +84,8 @@ h.assert_true(help_model.is_item_line('[q / Esc] back/close'), 'help item line w
 h.assert_true(not help_model.is_item_line('Navigation'), 'help section was treated as item line', scope)
 local numeric_preview_ok = pcall(help_model.lines, 1)
 h.assert_true(not numeric_preview_ok, 'help model accepted numeric preview key', scope)
+local empty_preview_ok = pcall(help_model.lines, '')
+h.assert_true(not empty_preview_ok, 'help model accepted empty preview key', scope)
 local numeric_line_ok = pcall(help_model.is_item_line, 1)
 h.assert_true(not numeric_line_ok, 'help item detector accepted a non-string line', scope)
 local original_sections = help_model.sections
@@ -113,6 +115,18 @@ help_model.sections = function()
     {
       title = 'Broken',
       items = {
+        { '', 'action' },
+      },
+    },
+  }
+end
+local empty_help_key_ok = pcall(help_model.lines)
+h.assert_true(not empty_help_key_ok, 'help model accepted an empty help item key', scope)
+help_model.sections = function()
+  return {
+    {
+      title = 'Broken',
+      items = {
         { 'x', false },
       },
     },
@@ -120,6 +134,30 @@ help_model.sections = function()
 end
 local invalid_help_action_ok = pcall(help_model.lines)
 h.assert_true(not invalid_help_action_ok, 'help model accepted a non-string help item action', scope)
+help_model.sections = function()
+  return {
+    {
+      title = 'Broken',
+      items = {
+        { 'x', '' },
+      },
+    },
+  }
+end
+local empty_help_action_ok = pcall(help_model.lines)
+h.assert_true(not empty_help_action_ok, 'help model accepted an empty help item action', scope)
+help_model.sections = function()
+  return {
+    {
+      title = '',
+      items = {
+        { 'x', 'action' },
+      },
+    },
+  }
+end
+local empty_help_title_ok = pcall(help_model.lines)
+h.assert_true(not empty_help_title_ok, 'help model accepted an empty section title', scope)
 help_model.sections = original_sections
 for _, line in ipairs(help_lines) do
   h.assert_true(vim.fn.strdisplaywidth(line) <= 38, 'help line exceeded compact width', scope)

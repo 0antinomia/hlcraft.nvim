@@ -7,6 +7,14 @@ local function assert_string(value, message)
   return value
 end
 
+local function assert_non_empty_string(value, message)
+  assert_string(value, message)
+  if value == '' then
+    error(message, 3)
+  end
+  return value
+end
+
 local function assert_table(value, message)
   if type(value) ~= 'table' then
     error(message, 3)
@@ -16,7 +24,7 @@ end
 
 local function keycap(item)
   item = assert_table(item, 'help item must be a table')
-  assert_string(item[1], 'help item key must be a string')
+  assert_non_empty_string(item[1], 'help item key must be a non-empty string')
   return ('[%s]'):format(item[1])
 end
 
@@ -34,7 +42,7 @@ local function item_line(item, width)
   if type(width) ~= 'number' then
     error('help item width must be a number', 3)
   end
-  assert_string(item[2], 'help item action must be a string')
+  assert_non_empty_string(item[2], 'help item action must be a non-empty string')
   local key = keycap(item)
   local padding = math.max(2, width - vim.fn.strdisplaywidth(key) + 2)
   return '  ' .. key .. string.rep(' ', padding) .. item[2]
@@ -52,10 +60,8 @@ function M.sections(preview_key)
   }
 
   if preview_key ~= nil and preview_key ~= false then
-    assert_string(preview_key, 'preview key must be a string or false')
-    if preview_key ~= '' then
-      action_items[#action_items + 1] = { preview_key, 'preview result' }
-    end
+    assert_non_empty_string(preview_key, 'preview key must be a non-empty string or false')
+    action_items[#action_items + 1] = { preview_key, 'preview result' }
   end
 
   return {
@@ -131,7 +137,7 @@ function M.lines(preview_key)
   local sections = M.sections(preview_key)
   for section_index, section in ipairs(sections) do
     section = assert_table(section, 'help section must be a table')
-    assert_string(section.title, 'help section title must be a string')
+    assert_non_empty_string(section.title, 'help section title must be a non-empty string')
     local items = assert_table(section.items, 'help section items must be a table')
     lines[#lines + 1] = section.title
     local width = keycap_width(items)
