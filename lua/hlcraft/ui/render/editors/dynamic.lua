@@ -16,6 +16,11 @@ local function phase_label(phase)
   return phase == 1 and '1.00' or ('%.2f'):format(phase)
 end
 
+local function append_line(lines, text)
+  lines[#lines + 1] = text
+  return #lines
+end
+
 function M.build(instance, geometry, result, field, width, line_offset, dynamic)
   local label = ui_fields.detail_labels[field] or field:upper()
   local fallback = field_values.fallback_value(result, field)
@@ -31,10 +36,10 @@ function M.build(instance, geometry, result, field, width, line_offset, dynamic)
   editor_rows.append(lines, geometry, 'dynamic_loop', ('Loop: %s'):format(dynamic.loop or 'repeat'))
   editor_rows.append(lines, geometry, 'dynamic_phase', ('Phase: %.2f'):format(dynamic.phase or 0))
 
-  lines[#lines + 1] = ('Swatch: %s'):format(swatch)
+  local swatch_line = append_line(lines, ('Swatch: %s'):format(swatch))
 
   dynamic_preview.register(instance, {
-    line = 8 + line_offset,
+    line = swatch_line + line_offset,
     col_start = 8,
     col_end = swatch_end_col(8, swatch),
     text = swatch,
