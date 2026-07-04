@@ -34,6 +34,7 @@ h.assert_equal(
 for _, loop in ipairs(constants.loops) do
   h.assert_equal(model.normalize_loop(loop), loop, ('loop %s was not accepted'):format(loop), scope)
 end
+h.assert_true(model.normalize_loop('bad') == nil, 'invalid loop helper fell back to default', scope)
 for _, interpolation in ipairs(constants.interpolations) do
   h.assert_equal(
     model.normalize_interpolation(interpolation),
@@ -42,6 +43,23 @@ for _, interpolation in ipairs(constants.interpolations) do
     scope
   )
 end
+h.assert_true(model.normalize_interpolation('bad') == nil, 'invalid interpolation helper fell back to default', scope)
+h.assert_equal(
+  model.normalize_duration(constants.min_duration - 1),
+  constants.min_duration,
+  'duration helper did not clamp low values',
+  scope
+)
+h.assert_equal(
+  model.normalize_duration(constants.max_duration + 1),
+  constants.max_duration,
+  'duration helper did not clamp high values',
+  scope
+)
+local invalid_duration_ok = pcall(model.normalize_duration, '1000')
+h.assert_true(not invalid_duration_ok, 'duration helper accepted a string value', scope)
+local non_finite_duration_ok = pcall(model.normalize_duration, 0 / 0)
+h.assert_true(not non_finite_duration_ok, 'duration helper accepted a non-finite value', scope)
 for _, transform_type in ipairs(constants.transform_types) do
   h.assert_true(model.normalize_transform({
     type = transform_type,
