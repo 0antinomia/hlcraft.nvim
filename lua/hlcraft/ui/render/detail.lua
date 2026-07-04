@@ -5,6 +5,7 @@ local dynamic_model = require('hlcraft.dynamic.model')
 local dynamic_preview = require('hlcraft.ui.dynamic_preview')
 local buffer = require('hlcraft.ui.render.buffer')
 local decorations = require('hlcraft.ui.render.decorations')
+local hints = require('hlcraft.ui.render.hints')
 local detail_scene = require('hlcraft.ui.scene.detail')
 local theme = require('hlcraft.ui.theme')
 
@@ -65,7 +66,7 @@ end
 function M.build(instance, geometry, result, width, line_offset)
   instance, geometry, result, width, line_offset = normalize_build_args(instance, geometry, result, width, line_offset)
   local lines = {
-    'Detail fields  (<CR> edit/toggle, s save, q back)',
+    'Detail fields',
   }
   local label_width = 0
   for _, key in ipairs(ui_fields.detail_order) do
@@ -103,7 +104,7 @@ function M.build(instance, geometry, result, width, line_offset)
     lines[#lines + 1] = render_util.truncate(line, width)
   end
 
-  lines[#lines + 1] = 'Keys: Enter edit/toggle, s save, q back, ? help'
+  lines[#lines + 1] = hints.detail()
 
   return lines
 end
@@ -129,6 +130,7 @@ function M.render(instance)
 
   buffer.set_lines(instance, lines)
   buffer.finish(instance, geometry)
+  decorations.apply_workbench_line_highlights(instance, lines, results_top)
 
   decorations.set_input_header(
     instance,

@@ -6,6 +6,9 @@ M.groups = {
   key = '@hlcraft.ui.key',
   label = '@hlcraft.ui.label',
   rule = '@hlcraft.ui.rule',
+  section = '@hlcraft.ui.section',
+  hint = '@hlcraft.ui.hint',
+  value = '@hlcraft.ui.value',
   header = '@hlcraft.ui.header',
   title = '@hlcraft.ui.title',
   dirty = '@hlcraft.ui.dirty',
@@ -18,6 +21,7 @@ local palettes = {
     accent = '#5fb3a5',
     rule = '#6c9bcf',
     header = '#b9c6d3',
+    value = '#d8dee9',
     dirty = '#d49a57',
   },
   light = {
@@ -26,6 +30,7 @@ local palettes = {
     accent = '#2f6f66',
     rule = '#496f9d',
     header = '#39414d',
+    value = '#1f2328',
     dirty = '#9a5d18',
   },
 }
@@ -51,6 +56,9 @@ function M.apply(ns)
   vim.api.nvim_set_hl(ns, groups.key, { fg = palette.accent, bold = true })
   vim.api.nvim_set_hl(ns, groups.label, { fg = palette.accent, bold = true })
   vim.api.nvim_set_hl(ns, groups.rule, { fg = palette.rule, bold = true })
+  vim.api.nvim_set_hl(ns, groups.section, { fg = palette.rule, bold = true })
+  vim.api.nvim_set_hl(ns, groups.hint, { fg = palette.muted })
+  vim.api.nvim_set_hl(ns, groups.value, { fg = palette.value })
   vim.api.nvim_set_hl(ns, groups.header, { fg = palette.header, bold = true })
   vim.api.nvim_set_hl(ns, groups.title, { fg = palette.header, bold = true })
   vim.api.nvim_set_hl(ns, groups.dirty, { fg = palette.dirty, bold = true })

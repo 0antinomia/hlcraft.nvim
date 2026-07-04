@@ -24,20 +24,40 @@ function M.lines()
     'q / Esc  back or close',
     '?        toggle this help',
     's        save current draft when available',
+    'Tab      next input',
+    'S-Tab    previous input',
     '',
     'Search',
     'Enter    open selected result or apply input',
-    'Tab      next input',
-    'S-Tab    previous input',
     'j/k      move',
     '',
     'Detail',
     'Enter    edit field or toggle boolean',
     '',
-    'Field editor',
+    'Static color editor',
     'i        input value',
-    '+/-      adjust current numeric/dynamic value',
-    'd        toggle dynamic color on color fields',
+    'r/R      decrease/increase red',
+    'g/G      decrease/increase green',
+    'b/B      decrease/increase blue',
+    'n        set NONE',
+    'd        switch to dynamic',
+    '',
+    'Dynamic color editor',
+    'i        edit selected row or raw JSON',
+    'm        cycle preset',
+    '+/-      adjust duration, or phase on the Phase row',
+    'e        edit raw JSON',
+    'd        switch to static',
+    '',
+    'Blend editor',
+    '-/+      small adjustment',
+    '</>      large adjustment',
+    'u        unset blend',
+    'i        input value',
+    '',
+    'Group editor',
+    'Enter    select group',
+    'i        input new group',
   }
 
   local preview_key = require('hlcraft.config').config.preview_key
@@ -129,6 +149,8 @@ function M.toggle(instance)
       local key = line:match('^(.-)%s%s+')
       if key then
         vim.api.nvim_buf_add_highlight(instance.state.help_buf, instance.ns, theme.groups.key, line_nr, 0, #key)
+      else
+        vim.api.nvim_buf_add_highlight(instance.state.help_buf, instance.ns, theme.groups.section, line_nr, 0, -1)
       end
     end
   end

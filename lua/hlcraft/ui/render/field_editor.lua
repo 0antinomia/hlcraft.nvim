@@ -82,6 +82,7 @@ function M.render(instance)
 
   buffer.set_lines(instance, lines)
   buffer.finish(instance, geometry)
+  decorations.apply_workbench_line_highlights(instance, lines, results_top)
 
   decorations.set_input_header(
     instance,

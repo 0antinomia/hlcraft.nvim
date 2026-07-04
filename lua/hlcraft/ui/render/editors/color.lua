@@ -1,19 +1,10 @@
 local ui_fields = require('hlcraft.ui.fields')
 local render_util = require('hlcraft.render.util')
 local session = require('hlcraft.ui.session')
+local hints = require('hlcraft.ui.render.hints')
 local detail_render = require('hlcraft.ui.render.detail')
 
 local M = {}
-
-local function append_editor_row(lines, geometry, key, text)
-  local row = {
-    line = #lines + 1,
-    key = key,
-  }
-  geometry.editor_rows[key] = row
-  lines[#lines + 1] = text
-  return row
-end
 
 function M.build(instance, geometry, result, field, width, line_offset)
   local label = ui_fields.detail_labels[field] or field:upper()
@@ -43,12 +34,8 @@ function M.build(instance, geometry, result, field, width, line_offset)
     value = value,
     field = field,
   }
-  append_editor_row(
-    lines,
-    geometry,
-    'color_keys',
-    'Keys: r/R g/G b/B adjust, n NONE, i input, d dynamic, s save, q back'
-  )
+  lines[#lines + 1] = hints.color_adjust()
+  lines[#lines + 1] = hints.color_global()
 
   for index, line in ipairs(lines) do
     lines[index] = render_util.truncate(line, width)
