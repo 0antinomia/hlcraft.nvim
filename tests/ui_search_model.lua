@@ -31,6 +31,7 @@ h.assert_equal(
 h.assert_true(model.valid_color_query('#abcdef'), 'valid hex color query was rejected', scope)
 h.assert_true(model.valid_color_query('NONE'), 'NONE color query was rejected', scope)
 h.assert_true(not model.valid_color_query('not-a-color'), 'invalid color query was accepted', scope)
+h.assert_true(not model.valid_color_query(123), 'numeric color query was accepted', scope)
 
 local intersection = model.intersect({
   { name = 'Gamma', fg = '#000000' },
@@ -73,6 +74,11 @@ provider_calls = {}
 local invalid = model.results('a', 'invalid', provider)
 h.assert_equal(#invalid, 0, 'invalid combined color query returned results', scope)
 h.assert_equal(#provider_calls, 0, 'invalid combined color query called providers', scope)
+
+provider_calls = {}
+local non_string = model.results(123, 456, provider)
+h.assert_equal(#non_string, 0, 'non-string query returned results', scope)
+h.assert_equal(#provider_calls, 0, 'non-string query called providers', scope)
 
 provider_calls = {}
 local color_only = model.results('', 'NONE', provider)
