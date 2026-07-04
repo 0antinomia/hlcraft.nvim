@@ -165,9 +165,28 @@ for _, case in ipairs({
     },
     message = 'codec decode accepted an entry before a section',
   },
+  {
+    lines = {
+      '["first"]',
+      '"Duplicate" = { fg = "#101010" }',
+      '["second"]',
+      '"Duplicate" = { fg = "#202020" }',
+    },
+    message = 'codec decode accepted a duplicate highlight',
+  },
 }) do
   local ok = pcall(codec.decode_lines, case.lines)
   h.assert_true(not ok, case.message, scope)
 end
+
+local duplicate_data = codec.decode_lines({
+  '["first"]',
+  '"CrossFileDuplicate" = { fg = "#101010" }',
+})
+local cross_file_duplicate_ok = pcall(codec.decode_lines, {
+  '["second"]',
+  '"CrossFileDuplicate" = { fg = "#202020" }',
+}, duplicate_data)
+h.assert_true(not cross_file_duplicate_ok, 'codec decode accepted a cross-file duplicate highlight', scope)
 
 print('hlcraft persistence codec: OK')

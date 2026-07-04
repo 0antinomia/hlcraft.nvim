@@ -56,6 +56,15 @@ local function ensure_section(data, section_name)
   return data.sections[section_name]
 end
 
+local function add_entry(data, section_name, highlight_name, entry, line_number)
+  if data.entries[highlight_name] ~= nil then
+    error(('Duplicate TOML highlight %s at line %d'):format(highlight_name, line_number), 3)
+  end
+  data.sections[section_name][highlight_name] = entry
+  data.entries[highlight_name] = entry
+  data.groups[highlight_name] = section_name
+end
+
 function M.decode_lines(lines, data)
   lines = assert_lines(lines)
   data = assert_data(data)
@@ -78,9 +87,7 @@ function M.decode_lines(lines, data)
         if not highlight_name or not entry then
           error(('Invalid TOML entry at line %d'):format(line_number), 2)
         end
-        data.sections[current_section][highlight_name] = entry
-        data.entries[highlight_name] = entry
-        data.groups[highlight_name] = current_section
+        add_entry(data, current_section, highlight_name, entry, line_number)
       end
     end
   end
