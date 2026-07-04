@@ -1,7 +1,6 @@
-local color = require('hlcraft.core.color')
 local buffer_fields = require('hlcraft.ui.input.buffer_fields')
 local navigation = require('hlcraft.ui.navigation')
-local search = require('hlcraft.core.search')
+local search_model = require('hlcraft.ui.search_model')
 local ui_fields = require('hlcraft.ui.fields')
 local lifecycle = require('hlcraft.ui.workspace.lifecycle')
 local window = require('hlcraft.ui.workspace.window')
@@ -26,78 +25,16 @@ end
 --- @param instance table The Instance object holding UI state
 --- @return string Human-readable message explaining why results are empty
 function M.empty_message(instance)
-  if instance.state.name_query == '' and instance.state.color_query == '' then
-    return 'Use Name and Color search together to narrow highlight groups'
-  end
-  if instance.state.name_query ~= '' and instance.state.color_query ~= '' then
-    return 'No highlight groups match both the name and color filters'
-  end
-  if instance.state.color_query ~= '' then
-    return 'No highlight groups match this color filter'
-  end
-  return 'No highlight groups match this name filter'
-end
-
---- Check if a color query string is a valid hex color or 'NONE'
---- @param query string Color query string
---- @return boolean True if query is valid for color search
-local function valid_color_query(query)
-  return query:upper() == 'NONE' or color.hex_to_int(query) ~= nil
-end
-
---- Intersect name search and color search results, sorted by color distance
---- @param name_results table[] Results from name search
---- @param color_results table[] Results from color search
---- @return table[] Intersection of results sorted by distance then name
-local function intersect_results(name_results, color_results)
-  local color_index = {}
-  local results = {}
-
-  for _, item in ipairs(color_results) do
-    color_index[item.name] = item
-  end
-
-  for _, item in ipairs(name_results) do
-    local color_match = color_index[item.name]
-    if color_match then
-      local entry = vim.deepcopy(item)
-      entry.distance = color_match.distance
-      results[#results + 1] = entry
-    end
-  end
-
-  table.sort(results, function(a, b)
-    if a.distance and b.distance and a.distance ~= b.distance then
-      return a.distance < b.distance
-    end
-    return a.name:lower() < b.name:lower()
-  end)
-
-  return results
+  return search_model.empty_message(instance.state.name_query, instance.state.color_query)
 end
 
 --- Run search queries and update instance.state.results with matching highlight groups
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.update_results(instance)
-  local results = {}
-
-  if instance.state.name_query ~= '' and instance.state.color_query ~= '' then
-    if valid_color_query(instance.state.color_query) then
-      results =
-        intersect_results(search.by_name(instance.state.name_query), search.by_color(instance.state.color_query))
-    end
-  elseif instance.state.name_query ~= '' then
-    results = search.by_name(instance.state.name_query)
-  elseif instance.state.color_query ~= '' then
-    if valid_color_query(instance.state.color_query) then
-      results = search.by_color(instance.state.color_query)
-    end
-  end
-
-  instance.state.results = results
+  instance.state.results = search_model.results(instance.state.name_query, instance.state.color_query)
   if instance.state.detail_index == nil then
-    instance.state.list_cursor = math.min(math.max(instance.state.list_cursor, 1), math.max(#results, 1))
+    instance.state.list_cursor = math.min(math.max(instance.state.list_cursor, 1), math.max(#instance.state.results, 1))
   end
 end
 
