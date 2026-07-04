@@ -5,7 +5,6 @@ local highlights = require('hlcraft.core.highlights')
 local color = require('hlcraft.core.color')
 local config = require('hlcraft.config')
 local numbers = require('hlcraft.core.number')
-local notify = require('hlcraft.notify')
 
 local function is_none_query(value)
   return type(value) == 'string' and value:upper() == 'NONE'
@@ -59,11 +58,22 @@ local function color_distance(hex1, hex2)
   return math.sqrt(dr * dr + dg * dg + db * db)
 end
 
+local function name_query(keyword)
+  if keyword == nil or keyword == '' then
+    return nil
+  end
+  if type(keyword) ~= 'string' then
+    error('Name search query must be a string or nil', 3)
+  end
+  return keyword
+end
+
 --- Search highlight groups by keyword in name (case-insensitive substring match)
 --- @param keyword string|nil The search keyword
 --- @return table[] Array of matching highlight groups, sorted alphabetically by name
 function M.by_name(keyword)
-  if type(keyword) ~= 'string' or keyword == '' then
+  keyword = name_query(keyword)
+  if not keyword then
     return {}
   end
 
@@ -126,23 +136,34 @@ local function color_threshold(value)
   return value
 end
 
+local function color_query(hex)
+  if hex == nil or hex == '' then
+    return nil
+  end
+  if type(hex) ~= 'string' then
+    error('Color search query must be a string or nil', 3)
+  end
+  if is_none_query(hex) then
+    return hex
+  end
+  if not color.hex_to_int(hex) then
+    error('Color search query must be #RRGGBB or NONE', 3)
+  end
+  return hex
+end
+
 --- Search highlight groups by color similarity (RGB Euclidean distance)
 --- @param hex string|nil Target color in #RRGGBB format
 --- @param threshold number|nil Optional distance threshold override (uses config default if nil)
 --- @return table[] Array of matching highlight groups with distance field, sorted by distance ascending
 function M.by_color(hex, threshold)
+  hex = color_query(hex)
   if not hex then
     return {}
   end
 
   if is_none_query(hex) then
     return by_none_color()
-  end
-
-  local target_int = color.hex_to_int(hex)
-  if not target_int then
-    notify.error('Invalid color format: ' .. tostring(hex) .. '. Use #RRGGBB or NONE.')
-    return {}
   end
 
   local max_dist = color_threshold(threshold)

@@ -33,7 +33,9 @@ highlights.invalidate_cache()
 local by_name = search.by_name('hlcraftsearch')
 h.assert_equal(by_name[1].name, names[1], 'name search did not sort by name', scope)
 h.assert_equal(by_name[2].name, names[2], 'name search skipped beta', scope)
-h.assert_equal(#search.by_name(123), 0, 'non-string name search did not fail safely', scope)
+h.assert_equal(#search.by_name(''), 0, 'empty name search did not return empty results', scope)
+local non_string_name_ok = pcall(search.by_name, 123)
+h.assert_true(not non_string_name_ok, 'name search accepted a non-string query', scope)
 
 config.setup({
   include_sp_in_color_search = false,
@@ -57,9 +59,11 @@ h.assert_equal(by_color[1].name, names[2], 'color search did not return closest 
 h.assert_equal(by_color[1].distance, 0, 'exact color match distance changed', scope)
 h.assert_true(by_color[2].distance > by_color[1].distance, 'color search did not sort by distance', scope)
 
-h.with_notify_stub(function()
-  h.assert_equal(#search.by_color(123, 64), 0, 'non-string color search did not fail safely', scope)
-end)
+h.assert_equal(#search.by_color('', 64), 0, 'empty color search did not return empty results', scope)
+local non_string_color_ok = pcall(search.by_color, 123, 64)
+h.assert_true(not non_string_color_ok, 'color search accepted a non-string query', scope)
+local invalid_color_ok = pcall(search.by_color, 'not-a-color', 64)
+h.assert_true(not invalid_color_ok, 'color search accepted an invalid color query', scope)
 local default_threshold = local_results(search.by_color('#202020'))
 h.assert_true(#default_threshold >= #by_color, 'missing threshold did not use config default', scope)
 local nan_threshold_ok = pcall(search.by_color, '#202020', 0 / 0)
