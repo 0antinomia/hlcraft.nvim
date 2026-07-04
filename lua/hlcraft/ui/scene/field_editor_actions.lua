@@ -8,6 +8,22 @@ local ui_fields = require('hlcraft.ui.fields')
 
 local M = {}
 
+local function action_context(instance, action, result, field)
+  if type(instance) ~= 'table' or type(instance.state) ~= 'table' then
+    error('field editor action requires an instance', 3)
+  end
+  if type(action) ~= 'string' or action == '' then
+    error('field editor action must be a non-empty string', 3)
+  end
+  if type(result) ~= 'table' or type(result.name) ~= 'string' or result.name == '' then
+    error('field editor action requires a highlight result', 3)
+  end
+  if type(field) ~= 'string' or field == '' then
+    error('field editor action field must be a non-empty string', 3)
+  end
+  return instance, action, result, field
+end
+
 local function finish_edit(instance, ok, err, preserve_field)
   if not ok then
     return false, err
@@ -73,6 +89,8 @@ local field_kind_actions = {
 }
 
 function M.handle(instance, action, result, field, ...)
+  instance, action, result, field = action_context(instance, action, result, field)
+
   if core_fields.color_set[field] and color_actions[action] then
     local ok, err = color_actions[action](instance, result, field, ...)
     return true, finish_edit(instance, ok, err, field)
