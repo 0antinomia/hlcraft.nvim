@@ -3,7 +3,7 @@ local scope = 'hlcraft ui scene rows'
 
 local rows = require('hlcraft.ui.scene.rows')
 
-local result = rows.find_by_line({
+local row_map = {
   fg = {
     line = 7,
     kind = 'color',
@@ -13,9 +13,12 @@ local result = rows.find_by_line({
     key = 'explicit',
     kind = 'color',
   },
-}, 7)
+}
+
+local result = rows.find_by_line(row_map, 7)
 h.assert_true(result ~= nil, 'row was not found by line', scope)
 h.assert_equal(result.key, 'fg', 'row helper did not backfill key from table key', scope)
+h.assert_true(row_map.fg.key == nil, 'row helper mutated the geometry row', scope)
 
 local explicit = rows.find_by_line({
   bg = {
