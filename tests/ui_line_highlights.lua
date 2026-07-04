@@ -57,4 +57,38 @@ h.with_temp_bufs(2, function(workspace_buf, help_buf)
   h.assert_true(not invalid_lines_ok, 'workbench highlighter accepted non-table lines', scope)
 end)
 
+local line_highlights_module = 'hlcraft.ui.render.line_highlights'
+local line_model_module = 'hlcraft.ui.render.line_model'
+local original_line_highlights = package.loaded[line_highlights_module]
+local original_line_model = package.loaded[line_model_module]
+
+h.with_temp_buf(function(buf)
+  local ok, err = xpcall(function()
+    package.loaded[line_highlights_module] = nil
+    package.loaded[line_model_module] = {
+      hint_spans = function()
+        return nil
+      end,
+      label_spans = function()
+        return {}
+      end,
+    }
+    local strict_line_highlights = require(line_highlights_module)
+    local nil_spans_ok = pcall(strict_line_highlights.apply_hint_line, {
+      ns = ns,
+      state = {
+        buf = buf,
+      },
+    }, 0, '[q] close')
+    h.assert_true(not nil_spans_ok, 'line highlighter accepted nil spans', scope)
+  end, debug.traceback)
+
+  package.loaded[line_highlights_module] = original_line_highlights
+  package.loaded[line_model_module] = original_line_model
+
+  if not ok then
+    error(err, 0)
+  end
+end)
+
 print('hlcraft ui line highlights: OK')

@@ -26,8 +26,29 @@ local function add_highlight(instance, buf, line_idx, hl, start_col, end_col)
   vim.api.nvim_buf_add_highlight(buf, instance.ns, hl, line_idx, start_col, end_col)
 end
 
+local function assert_span(span)
+  if type(span) ~= 'table' then
+    error('render span must be a table', 3)
+  end
+  if type(span.kind) ~= 'string' then
+    error('render span kind must be a string', 3)
+  end
+  if type(span.start_col) ~= 'number' or type(span.end_col) ~= 'number' then
+    error('render span range must be numeric', 3)
+  end
+  return span
+end
+
+local function assert_spans(spans)
+  if type(spans) ~= 'table' then
+    error('render spans must be a table', 3)
+  end
+  return spans
+end
+
 local function apply_spans(instance, buf, line_idx, spans)
-  for _, span in ipairs(spans or {}) do
+  for _, span in ipairs(assert_spans(spans)) do
+    span = assert_span(span)
     local group = span_groups[span.kind]
     if group then
       add_highlight(instance, buf, line_idx, group, span.start_col, span.end_col)
