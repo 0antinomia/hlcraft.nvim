@@ -25,6 +25,19 @@ end
 --- @param max number
 --- @return number
 function M.clamp(value, min, max)
+  if not M.is_finite(value) then
+    error('clamp value must be finite', 2)
+  end
+  if not M.is_finite(min) then
+    error('clamp min must be finite', 2)
+  end
+  if not M.is_finite(max) then
+    error('clamp max must be finite', 2)
+  end
+  if min > max then
+    error('clamp min must not exceed max', 2)
+  end
+
   if value < min then
     return min
   end
