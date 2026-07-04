@@ -27,8 +27,22 @@ local nil_decode_ok = pcall(codec.decode_lines, nil)
 h.assert_true(not nil_decode_ok, 'codec decode accepted nil lines', scope)
 local numeric_line_decode_ok = pcall(codec.decode_lines, { 1 })
 h.assert_true(not numeric_line_decode_ok, 'codec decode accepted a non-string line', scope)
+local invalid_data_decode_ok = pcall(codec.decode_lines, {}, {
+  entries = {},
+  groups = {},
+})
+h.assert_true(not invalid_data_decode_ok, 'codec decode accepted incomplete data container', scope)
 local numeric_load_ok = pcall(codec.load_file, 1)
 h.assert_true(not numeric_load_ok, 'codec load_file accepted a non-string path', scope)
+local invalid_data_load_ok = pcall(codec.load_file, 'missing.toml', false)
+h.assert_true(not invalid_data_load_ok, 'codec load_file accepted invalid data container', scope)
+local missing_file_data = codec.load_file('missing.toml')
+h.assert_true(type(missing_file_data.entries) == 'table', 'missing TOML file did not return data entries', scope)
+local decoded_into_data = codec.decode_lines({
+  '["extra"]',
+  '"Extra" = { fg = "#202020" }',
+}, codec.empty_data())
+h.assert_equal(decoded_into_data.groups.Extra, 'extra', 'codec did not decode into supplied data', scope)
 
 local encoded = codec.encode_section('dynamic.group', {
   Normal = {
