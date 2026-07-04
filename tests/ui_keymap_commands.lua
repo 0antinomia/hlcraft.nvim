@@ -50,7 +50,7 @@ h.assert_true(engine.get(result.name).dynamic.fg ~= nil, 'toggle_dynamic_color d
 
 h.assert_true(commands.adjust_dynamic_color(instance, 1), 'adjust_dynamic_color did not handle dynamic field', scope)
 h.assert_equal(engine.get(result.name).dynamic.fg.duration, 2250, 'adjust_dynamic_color did not update duration', scope)
-h.assert_true(commands.adjust_dynamic_color(instance, 0 / 0), 'adjust_dynamic_color did not handle NaN delta', scope)
+h.assert_true(not commands.adjust_dynamic_color(instance, 0 / 0), 'adjust_dynamic_color accepted NaN delta', scope)
 h.assert_equal(
   engine.get(result.name).dynamic.fg.duration,
   2250,
@@ -77,8 +77,8 @@ h.with_temp_buf(function(phase_buf)
   instance.state.geometry.editor_rows.dynamic_phase = { line = 1, key = 'dynamic_phase' }
   vim.api.nvim_win_set_cursor(0, { 1, 0 })
   h.assert_true(
-    commands.adjust_dynamic_color(instance, 0 / 0),
-    'phase row dynamic adjustment did not handle NaN delta',
+    not commands.adjust_dynamic_color(instance, 0 / 0),
+    'phase row dynamic adjustment accepted NaN delta',
     scope
   )
   h.assert_equal(engine.get(result.name).dynamic.fg.phase, 0, 'phase row NaN delta changed phase', scope)

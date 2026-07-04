@@ -60,7 +60,11 @@ function M.adjust_duration(instance, result, key, delta)
     return false, 'No dynamic color field is active'
   end
 
-  dynamic.duration = dynamic_model.normalize_duration(dynamic.duration + numbers.to_finite(delta, 0))
+  if not numbers.is_finite(delta) then
+    return false, 'Duration adjustment delta must be a finite number'
+  end
+
+  dynamic.duration = dynamic_model.normalize_duration(dynamic.duration + delta)
   return set_normalized(instance, result, key, dynamic)
 end
 
