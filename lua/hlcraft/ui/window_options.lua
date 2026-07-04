@@ -1,5 +1,7 @@
 local M = {}
 
+local handles = require('hlcraft.ui.handles')
+
 M.managed = {
   'number',
   'relativenumber',
@@ -15,7 +17,7 @@ M.workspace_values = {
 }
 
 function M.is_valid_win(win)
-  return win ~= nil and vim.api.nvim_win_is_valid(win)
+  return handles.is_valid_win(win)
 end
 
 function M.read(win)

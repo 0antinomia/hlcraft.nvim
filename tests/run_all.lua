@@ -5,6 +5,7 @@ local tests = {
   'tests/dynamic_effects.lua',
   'tests/dynamic_runtime.lua',
   'tests/ui_dynamic.lua',
+  'tests/ui_handles.lua',
   'tests/ui_state.lua',
   'tests/ui_timers.lua',
   'tests/ui_context.lua',

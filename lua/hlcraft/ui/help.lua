@@ -1,16 +1,9 @@
 local M = {}
 
+local handles = require('hlcraft.ui.handles')
 local help_model = require('hlcraft.ui.help_model')
 local line_highlights = require('hlcraft.ui.render.line_highlights')
 local theme = require('hlcraft.ui.theme')
-
-local function is_valid_buf(buf)
-  return buf ~= nil and vim.api.nvim_buf_is_valid(buf)
-end
-
-local function is_valid_win(win)
-  return win ~= nil and vim.api.nvim_win_is_valid(win)
-end
 
 local function refresh_buffer(buf)
   vim.bo[buf].modifiable = true
@@ -23,7 +16,7 @@ function M.lines()
 end
 
 function M.ensure_buffer(instance)
-  if is_valid_buf(instance.state.help_buf) then
+  if handles.is_valid_buf(instance.state.help_buf) then
     refresh_buffer(instance.state.help_buf)
     return instance.state.help_buf
   end
@@ -45,18 +38,18 @@ function M.ensure_buffer(instance)
 end
 
 function M.is_open(instance)
-  return is_valid_win(instance.state.help_win)
+  return handles.is_valid_win(instance.state.help_win)
 end
 
 function M.close(instance)
-  if is_valid_win(instance.state.help_win) then
+  if handles.is_valid_win(instance.state.help_win) then
     pcall(vim.api.nvim_win_close, instance.state.help_win, true)
   end
   instance.state.help_win = nil
 end
 
 function M.delete_buffer(instance)
-  if is_valid_buf(instance.state.help_buf) then
+  if handles.is_valid_buf(instance.state.help_buf) then
     pcall(vim.api.nvim_buf_delete, instance.state.help_buf, { force = true })
   end
   instance.state.help_buf = nil
