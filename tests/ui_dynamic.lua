@@ -87,48 +87,48 @@ h.assert_true(render_geometry.editor_rows.dynamic_loop ~= nil, 'loop row is not 
 h.assert_true(render_geometry.editor_rows.dynamic_phase ~= nil, 'phase row is not editable', scope)
 h.assert_true(render_geometry.editor_rows.dynamic_raw_json ~= nil, 'raw JSON row is not editable', scope)
 
-local preview_buf = vim.api.nvim_create_buf(false, true)
-vim.api.nvim_buf_set_lines(preview_buf, 0, -1, false, { 'XXXX' })
-local preview_ns = vim.api.nvim_create_namespace('hlcraft-ui-dynamic-test')
-local preview_instance = {
-  ns = preview_ns,
-  state = {
-    buf = preview_buf,
-  },
-}
-local preview_dynamic = {
-  version = 1,
-  duration = 1000,
-  loop = 'once',
-  timeline = {
-    { at = 0, color = 'base' },
-    { at = 1, color = '#ffffff' },
-  },
-}
-local preview_id = dynamic_preview.register(preview_instance, {
-  line = 1,
-  col_start = 0,
-  col_end = 4,
-  text = 'XXXX',
-  base = '#000000',
-  dynamic = preview_dynamic,
-  now_ms = 500,
-})
-h.assert_equal(preview_id, 1, 'preview item was not registered', scope)
-dynamic_preview.tick(preview_instance, 0)
-local preview_hl_name = ('HlcraftDynamicPreview_%s_%d'):format(
-  tostring(preview_instance.state.dynamic_preview_instance_id),
-  preview_id
-)
-local first_preview_hl = vim.api.nvim_get_hl(preview_ns, { name = preview_hl_name })
-h.assert_equal(first_preview_hl.fg, 0x808080, 'fixed preview did not sample requested phase', scope)
-dynamic_preview.tick(preview_instance, 1000)
-local second_preview_hl = vim.api.nvim_get_hl(preview_ns, { name = preview_hl_name })
-h.assert_equal(second_preview_hl.fg, 0x808080, 'fixed preview changed with live time', scope)
-dynamic_preview.clear(preview_instance)
-vim.api.nvim_buf_delete(preview_buf, { force = true })
+h.with_temp_buf(function(preview_buf)
+  vim.api.nvim_buf_set_lines(preview_buf, 0, -1, false, { 'XXXX' })
+  local preview_ns = vim.api.nvim_create_namespace('hlcraft-ui-dynamic-test')
+  local preview_instance = {
+    ns = preview_ns,
+    state = {
+      buf = preview_buf,
+    },
+  }
+  local preview_dynamic = {
+    version = 1,
+    duration = 1000,
+    loop = 'once',
+    timeline = {
+      { at = 0, color = 'base' },
+      { at = 1, color = '#ffffff' },
+    },
+  }
+  local preview_id = dynamic_preview.register(preview_instance, {
+    line = 1,
+    col_start = 0,
+    col_end = 4,
+    text = 'XXXX',
+    base = '#000000',
+    dynamic = preview_dynamic,
+    now_ms = 500,
+  })
+  h.assert_equal(preview_id, 1, 'preview item was not registered', scope)
+  dynamic_preview.tick(preview_instance, 0)
+  local preview_hl_name = ('HlcraftDynamicPreview_%s_%d'):format(
+    tostring(preview_instance.state.dynamic_preview_instance_id),
+    preview_id
+  )
+  local first_preview_hl = vim.api.nvim_get_hl(preview_ns, { name = preview_hl_name })
+  h.assert_equal(first_preview_hl.fg, 0x808080, 'fixed preview did not sample requested phase', scope)
+  dynamic_preview.tick(preview_instance, 1000)
+  local second_preview_hl = vim.api.nvim_get_hl(preview_ns, { name = preview_hl_name })
+  h.assert_equal(second_preview_hl.fg, 0x808080, 'fixed preview changed with live time', scope)
+  dynamic_preview.clear(preview_instance)
+end)
 
-vim.fn.delete(persist_dir, 'rf')
+h.cleanup_dir(persist_dir)
 config.setup({})
 
 print('hlcraft ui dynamic: OK')
