@@ -67,6 +67,17 @@ h.assert_equal(
 h.assert_equal(dynamic_hint_lines[3], 'Global  [d] static  [s] save', 'dynamic global hint first row changed', scope)
 h.assert_equal(dynamic_hint_lines[4], '        [q] back  [?] help', 'dynamic global hint continuation changed', scope)
 
+local narrow_color_hint_lines = hints.color(20)
+h.assert_equal(narrow_color_hint_lines[1], 'Adjust  [r/R] red', 'narrow color hint first row changed', scope)
+h.assert_equal(narrow_color_hint_lines[2], '        [g/G] green', 'narrow color hint did not wrap actions', scope)
+for _, line in ipairs(narrow_color_hint_lines) do
+  h.assert_true(vim.fn.strdisplaywidth(line) <= 20, 'narrow color hint exceeded target width', scope)
+end
+
+for _, line in ipairs(hints.dynamic(24)) do
+  h.assert_true(vim.fn.strdisplaywidth(line) <= 24, 'narrow dynamic hint exceeded target width', scope)
+end
+
 local help_lines = help_model.lines('z')
 h.assert_equal(help_lines[1], 'hlcraft help', 'help title changed', scope)
 h.assert_true(vim.tbl_contains(help_lines, 'Global'), 'help global section missing', scope)

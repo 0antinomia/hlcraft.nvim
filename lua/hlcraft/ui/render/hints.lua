@@ -82,6 +82,13 @@ local function slice(items, first, last)
   return result
 end
 
+local function normalize_options(options)
+  if type(options) == 'table' then
+    return options
+  end
+  return { max_items = options }
+end
+
 function M.format(items)
   local parts = {}
   for _, item in ipairs(items or {}) do
@@ -94,15 +101,33 @@ function M.format(items)
   return table.concat(parts, separator)
 end
 
-function M.section_lines(label, group, max_items)
+local function line_display_width(label, items)
+  return vim.fn.strdisplaywidth(pad_label(label) .. M.format(items))
+end
+
+function M.section_lines(label, group, options)
+  options = normalize_options(options)
   local items = M.groups[group] or {}
-  local chunk_size = math.max(1, max_items or default_max_items)
+  local max_items = math.max(1, options.max_items or default_max_items)
+  local width = options.width
   local lines = {}
 
-  for first = 1, #items, chunk_size do
-    local last = math.min(#items, first + chunk_size - 1)
+  local first = 1
+  while first <= #items do
+    local chunk_size = math.min(max_items, #items - first + 1)
     local line_label = first == 1 and label or ''
+
+    while
+      width
+      and chunk_size > 1
+      and line_display_width(line_label, slice(items, first, first + chunk_size - 1)) > width
+    do
+      chunk_size = chunk_size - 1
+    end
+
+    local last = math.min(#items, first + chunk_size - 1)
     lines[#lines + 1] = pad_label(line_label) .. M.format(slice(items, first, last))
+    first = last + 1
   end
 
   if #lines == 0 then
@@ -115,10 +140,13 @@ local function section(label, group)
   return M.section_lines(label, group)[1]
 end
 
-local function block(spec)
+local function block(spec, width)
   local lines = {}
   for _, item in ipairs(spec) do
-    local section_lines = M.section_lines(item[1], item[2], item.max_items)
+    local section_lines = M.section_lines(item[1], item[2], {
+      max_items = item.max_items,
+      width = width,
+    })
     for _, line in ipairs(section_lines) do
       lines[#lines + 1] = line
     end
@@ -134,34 +162,34 @@ function M.detail()
   return section('Action', 'detail')
 end
 
-function M.color()
+function M.color(width)
   return block({
     { 'Adjust', 'color_adjust', max_items = relaxed_max_items },
     { 'Set', 'color_set', max_items = relaxed_max_items },
     { 'Global', 'color_global', max_items = relaxed_max_items },
-  })
+  }, width)
 end
 
-function M.dynamic()
+function M.dynamic(width)
   return block({
     { 'Edit', 'dynamic_edit', max_items = 2 },
     { 'Global', 'dynamic_global', max_items = 2 },
-  })
+  }, width)
 end
 
-function M.blend()
+function M.blend(width)
   return block({
     { 'Adjust', 'blend_adjust', max_items = relaxed_max_items },
     { 'Set', 'blend_set', max_items = relaxed_max_items },
     { 'Global', 'blend_global', max_items = relaxed_max_items },
-  })
+  }, width)
 end
 
-function M.group()
+function M.group(width)
   return block({
     { 'Action', 'group_action' },
     { 'Global', 'group_global' },
-  })
+  }, width)
 end
 
 return M
