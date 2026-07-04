@@ -10,6 +10,13 @@ local M = {}
 
 local state = store.data
 
+local function assert_table(value, label)
+  if type(value) ~= 'table' then
+    error(('%s must be a table'):format(label), 3)
+  end
+  return value
+end
+
 function M.build_preset_overrides()
   if not config.from_none_enabled() then
     return {}
@@ -89,7 +96,7 @@ function M.install_pending_hook()
       return
     end
 
-    state.base_specs[name] = vim.deepcopy(spec or {})
+    state.base_specs[name] = vim.deepcopy(assert_table(spec, 'pending highlight spec'))
     M.apply_group(name)
 
     if next(state.pending) == nil then
@@ -111,7 +118,7 @@ function M.register_reapply_events(replay)
     return
   end
 
-  for index, hook in ipairs(config.config.reapply_events.events or {}) do
+  for index, hook in ipairs(assert_table(config.config.reapply_events.events, 'reapply events')) do
     local event = hook
     local opts = {}
 
