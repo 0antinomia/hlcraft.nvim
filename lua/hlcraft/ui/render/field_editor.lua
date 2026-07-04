@@ -9,7 +9,6 @@ local dynamic_renderer = require('hlcraft.ui.render.editors.dynamic')
 local group_renderer = require('hlcraft.ui.render.editors.group')
 local blend_renderer = require('hlcraft.ui.render.editors.blend')
 local detail_scene = require('hlcraft.ui.scene.detail')
-local theme = require('hlcraft.ui.theme')
 
 local M = {}
 
@@ -89,23 +88,12 @@ function M.render(instance)
   decorations.set_input_header(instance, geometry.color, ui_fields.search_prefixes.color)
 
   if detail_result then
-    local detail_virt_lines = select(1, decorations.detail_info_virt_lines(instance, detail_result))
-    instance.state.input_marks.detail_menu_header =
-      vim.api.nvim_buf_set_extmark(instance.state.buf, instance.ns, results_top - 1, 0, {
-        id = instance.state.input_marks.detail_menu_header,
-        virt_lines = detail_virt_lines,
-        virt_lines_leftcol = true,
-        virt_lines_above = true,
-        right_gravity = false,
-      })
-
+    decorations.set_detail_menu_header(instance, results_top, detail_result)
     apply_color_marker(instance, lines, geometry, 'color_sample')
     apply_color_marker(instance, lines, geometry, 'color_swatch')
 
     if session.is_dirty(detail_result.name) then
-      for _, row in pairs(geometry.detail_menu or {}) do
-        vim.api.nvim_buf_add_highlight(instance.state.buf, instance.ns, theme.groups.dirty, row.line - 1, 0, 1)
-      end
+      decorations.apply_dirty_marks(instance, geometry.detail_menu)
     end
   end
 

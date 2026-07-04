@@ -91,6 +91,24 @@ function M.set_results_header(instance, row1, width)
     })
 end
 
+function M.set_detail_menu_header(instance, row1, result)
+  local detail_virt_lines = select(1, M.detail_info_virt_lines(instance, result))
+  instance.state.input_marks.detail_menu_header =
+    vim.api.nvim_buf_set_extmark(instance.state.buf, instance.ns, row1 - 1, 0, {
+      id = instance.state.input_marks.detail_menu_header,
+      virt_lines = detail_virt_lines,
+      virt_lines_leftcol = true,
+      virt_lines_above = true,
+      right_gravity = false,
+    })
+end
+
+function M.apply_dirty_marks(instance, detail_menu)
+  for _, row in pairs(detail_menu or {}) do
+    vim.api.nvim_buf_add_highlight(instance.state.buf, instance.ns, theme.groups.dirty, row.line - 1, 0, 1)
+  end
+end
+
 --- Apply a color cell highlight to a text range in the buffer
 --- @param instance table The Instance object holding UI state
 --- @param buf number Buffer handle
