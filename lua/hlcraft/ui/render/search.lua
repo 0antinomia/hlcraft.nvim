@@ -3,6 +3,7 @@ local ui_fields = require('hlcraft.ui.fields')
 local dynamic_preview = require('hlcraft.ui.dynamic_preview')
 local buffer = require('hlcraft.ui.render.buffer')
 local decorations = require('hlcraft.ui.render.decorations')
+local hints = require('hlcraft.ui.render.hints')
 local list = require('hlcraft.ui.render.list')
 local theme = require('hlcraft.ui.theme')
 
@@ -22,7 +23,7 @@ function M.render(instance)
   for _, line in ipairs(result_lines) do
     lines[#lines + 1] = line
   end
-  lines[#lines + 1] = 'Keys: Enter open/apply, Tab input, j/k move, ? help, q close'
+  lines[#lines + 1] = hints.search()
   for index, result_index in pairs(selectable) do
     geometry.result_lines[results_top + index - 1] = result_index
   end
@@ -44,6 +45,7 @@ function M.render(instance)
   if lines[results_top + 1] then
     vim.api.nvim_buf_add_highlight(instance.state.buf, instance.ns, theme.groups.rule, results_top, 0, -1)
   end
+  decorations.apply_hint_line(instance, #lines - 1, lines[#lines])
   for line_nr, result_index in pairs(geometry.result_lines) do
     local result = instance.state.results[result_index]
     local line = lines[line_nr] or ''

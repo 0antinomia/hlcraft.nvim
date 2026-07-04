@@ -1,6 +1,7 @@
 local ui_fields = require('hlcraft.ui.fields')
 local render_util = require('hlcraft.render.util')
 local dynamic_preview = require('hlcraft.ui.dynamic_preview')
+local hints = require('hlcraft.ui.render.hints')
 local detail_render = require('hlcraft.ui.render.detail')
 
 local M = {}
@@ -77,19 +78,11 @@ function M.build(instance, geometry, result, field, width, line_offset, dynamic)
     })
   end
 
-  append_editor_row(
-    lines,
-    geometry,
-    'dynamic_keys',
-    'Keys: i edit row, m preset, -/+ duration/phase, e raw JSON, d static, s save, q back'
-  )
+  lines[#lines + 1] = hints.dynamic_edit()
+  lines[#lines + 1] = hints.dynamic_global()
 
   for index, line in ipairs(lines) do
-    if geometry.editor_rows.dynamic_keys and geometry.editor_rows.dynamic_keys.line == index then
-      lines[index] = line
-    else
-      lines[index] = render_util.truncate(line, width)
-    end
+    lines[index] = render_util.truncate(line, width)
   end
   return lines
 end

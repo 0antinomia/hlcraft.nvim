@@ -1,5 +1,6 @@
 local render_util = require('hlcraft.render.util')
 local group_editor = require('hlcraft.ui.editor.group')
+local hints = require('hlcraft.ui.render.hints')
 
 local M = {}
 
@@ -22,7 +23,7 @@ function M.build(geometry, result, width)
     append_editor_row(lines, geometry, 'group:' .. group_name, group_name)
   end
   append_editor_row(lines, geometry, 'new_group', '+ New group (i)')
-  lines[#lines + 1] = 'Keys: Enter select, i input, s save, q back'
+  lines[#lines + 1] = hints.group()
   for index, line in ipairs(lines) do
     lines[index] = render_util.truncate(line, width)
   end

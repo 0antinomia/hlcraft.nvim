@@ -57,17 +57,11 @@ end
 --- @return table[] Array of {text, hl_group} pairs for virtual text
 function M.help_virt_line()
   local tokens = {
-    { text = 'Enter ', hl = theme.groups.key },
-    { text = 'confirm/apply', hl = theme.groups.muted },
-    { text = '   ' },
     { text = '? ', hl = theme.groups.key },
     { text = 'help', hl = theme.groups.muted },
     { text = '   ' },
     { text = 'q ', hl = theme.groups.key },
     { text = 'close', hl = theme.groups.muted },
-    { text = '   ' },
-    { text = 'Tab ', hl = theme.groups.key },
-    { text = 'next input', hl = theme.groups.muted },
   }
 
   local virt = {}
@@ -75,6 +69,76 @@ function M.help_virt_line()
     virt[#virt + 1] = { token.text, token.hl or theme.groups.text }
   end
   return virt
+end
+
+function M.apply_hint_line(instance, line_idx, line)
+  if not window.is_valid_buf(instance.state.buf) then
+    return
+  end
+  line = tostring(line or '')
+  if line == '' then
+    return
+  end
+
+  vim.api.nvim_buf_add_highlight(instance.state.buf, instance.ns, theme.groups.hint, line_idx, 0, -1)
+
+  local search_start = 1
+  local prefix_start, prefix_end = line:find(': ', 1, true)
+  if prefix_start then
+    vim.api.nvim_buf_add_highlight(instance.state.buf, instance.ns, theme.groups.section, line_idx, 0, prefix_start)
+    search_start = prefix_end + 1
+  end
+
+  while search_start <= #line do
+    local separator_start = line:find('|', search_start, true)
+    local segment_end = separator_start and (separator_start - 1) or #line
+    local segment = line:sub(search_start, segment_end)
+    local leading_spaces, key = segment:match('^(%s*)(%S+)')
+    if key then
+      local start_col = search_start + #leading_spaces - 1
+      vim.api.nvim_buf_add_highlight(
+        instance.state.buf,
+        instance.ns,
+        theme.groups.key,
+        line_idx,
+        start_col,
+        start_col + #key
+      )
+    end
+    if not separator_start then
+      break
+    end
+    search_start = separator_start + 1
+  end
+end
+
+function M.apply_label_line(instance, line_idx, line)
+  if not window.is_valid_buf(instance.state.buf) then
+    return
+  end
+  line = tostring(line or '')
+  local colon = line:find(':', 1, true)
+  if not colon then
+    return
+  end
+  vim.api.nvim_buf_add_highlight(instance.state.buf, instance.ns, theme.groups.section, line_idx, 0, colon)
+  if colon < #line then
+    vim.api.nvim_buf_add_highlight(instance.state.buf, instance.ns, theme.groups.value, line_idx, colon + 1, -1)
+  end
+end
+
+function M.apply_workbench_line_highlights(instance, lines, start_line)
+  start_line = start_line or 1
+  for index, line in ipairs(lines or {}) do
+    if index >= start_line then
+      local line_idx = index - 1
+      if line:find(' | ', 1, true) then
+        M.apply_hint_line(instance, line_idx, line)
+      elseif line:find(':', 1, true) then
+        M.apply_label_line(instance, line_idx, line)
+      end
+    end
+  end
 end
 
 --- Set the virtual text header (label and optional extra text) above an input field
