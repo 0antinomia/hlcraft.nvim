@@ -23,15 +23,13 @@ local function compact(spans)
   return result
 end
 
-h.assert_equal(line_model.hint_label('Action  Enter open/apply'), 'Action', 'action label not detected', scope)
 h.assert_equal(line_model.hint_label('Action  [Enter] open/apply'), 'Action', 'keycap action label not detected', scope)
-h.assert_equal(line_model.hint_label('Adjust: r/R red'), 'Adjust', 'colon hint label not detected', scope)
 h.assert_true(line_model.hint_label('Current: #ffffff') == nil, 'value label was treated as hint', scope)
 
 h.assert_equal(line_model.line_kind('Detail fields'), 'title', 'detail title not classified', scope)
 h.assert_equal(line_model.line_kind('Color editor: FG'), 'title', 'color editor title not classified', scope)
 h.assert_equal(line_model.line_kind('────────'), 'rule', 'rule line not classified', scope)
-h.assert_equal(line_model.line_kind('Action  Enter open/apply'), 'hint', 'hint line not classified', scope)
+h.assert_equal(line_model.line_kind('Action  [Enter] open/apply'), 'hint', 'hint line not classified', scope)
 h.assert_equal(
   line_model.line_kind('        [+/-] time/phase  [e] JSON'),
   'hint',
@@ -50,19 +48,12 @@ assert_deep_equal(compact(line_model.hint_spans('Action  [Enter] open/apply  [Ta
   { 'action', 34, 39 },
 }, 'keycap hint spans changed')
 
-assert_deep_equal(compact(line_model.hint_spans('q / Esc  back or close')), {
-  { 'key', 0, 7 },
-  { 'action', 9, 22 },
-}, 'legacy padded hint spans changed')
-
-assert_deep_equal(compact(line_model.hint_spans('Adjust: r/R red | g/G green')), {
-  { 'section', 0, 7 },
-  { 'key', 8, 11 },
-  { 'action', 12, 15 },
-  { 'separator', 16, 17 },
-  { 'key', 18, 21 },
-  { 'action', 22, 27 },
-}, 'pipe-separated hint spans changed')
+assert_deep_equal(compact(line_model.hint_spans('        [+/-] time/phase  [e] JSON')), {
+  { 'key', 8, 13 },
+  { 'action', 14, 24 },
+  { 'key', 26, 29 },
+  { 'action', 30, 34 },
+}, 'continuation hint spans changed')
 
 assert_deep_equal(compact(line_model.label_spans('Current: #ffffff')), {
   { 'section', 0, 8 },

@@ -8,7 +8,6 @@ local span_groups = {
   action = theme.groups.hint_action,
   key = theme.groups.key,
   section = theme.groups.section,
-  separator = theme.groups.hint_separator,
   value = theme.groups.value,
 }
 
