@@ -146,101 +146,123 @@ local compacted_once = model.compact_channel({
 })
 h.assert_equal(compacted_once.loop, 'once', 'compact dynamic spec dropped non-default loop', scope)
 
-h.assert_true(
-  model.normalize_channel({ version = 2, timeline = { { at = 0, color = 'base' } } }) == nil,
-  'unsupported version was accepted',
-  scope
-)
-h.assert_true(model.normalize_channel({ version = 1, timeline = {} }) == nil, 'empty timeline was accepted', scope)
-h.assert_true(
-  model.normalize_channel({ version = 1, timeline = { { at = 0, color = 'bad-color' } } }) == nil,
-  'invalid color reference was accepted',
-  scope
-)
-h.assert_true(
-  model.normalize_channel({ version = 1, timeline = { { color = 'base' } } }) == nil,
-  'missing color stop at was accepted',
-  scope
-)
-h.assert_true(
-  model.normalize_channel({ version = 1, timeline = { { at = 'bad', color = 'base' } } }) == nil,
-  'invalid color stop at was accepted',
-  scope
-)
-h.assert_true(model.normalize_channel({
-  version = 1,
-  timeline = { { at = 0, color = 'base' } },
-  transforms = {
-    {
-      type = 'brightness',
-      timeline = {
-        { value = 1 },
+local function channel_spec(extra)
+  return vim.tbl_extend('force', {
+    version = 1,
+    timeline = { { at = 0, color = 'base' } },
+  }, extra or {})
+end
+
+local function brightness_transform(extra)
+  return vim.tbl_extend('force', {
+    type = 'brightness',
+    timeline = { { at = 0, value = 1 } },
+  }, extra or {})
+end
+
+for _, case in ipairs({
+  {
+    message = 'unsupported version was accepted',
+    spec = channel_spec({ version = 2 }),
+  },
+  {
+    message = 'empty timeline was accepted',
+    spec = channel_spec({ timeline = {} }),
+  },
+  {
+    message = 'invalid color reference was accepted',
+    spec = channel_spec({ timeline = { { at = 0, color = 'bad-color' } } }),
+  },
+  {
+    message = 'missing color stop at was accepted',
+    spec = channel_spec({ timeline = { { color = 'base' } } }),
+  },
+  {
+    message = 'invalid color stop at was accepted',
+    spec = channel_spec({ timeline = { { at = 'bad', color = 'base' } } }),
+  },
+  {
+    message = 'missing transform stop at was accepted',
+    spec = channel_spec({
+      transforms = {
+        brightness_transform({ timeline = { { value = 1 } } }),
       },
-    },
+    }),
   },
-}) == nil, 'missing transform stop at was accepted', scope)
-h.assert_true(model.normalize_channel({
-  version = 1,
-  timeline = { { at = 0, color = 'base' } },
-  transforms = {
-    {
-      type = 'brightness',
-      timeline = {
-        { at = 'bad', value = 1 },
+  {
+    message = 'invalid transform stop at was accepted',
+    spec = channel_spec({
+      transforms = {
+        brightness_transform({ timeline = { { at = 'bad', value = 1 } } }),
       },
-    },
+    }),
   },
-}) == nil, 'invalid transform stop at was accepted', scope)
-h.assert_true(model.normalize_channel({
-  version = 1,
-  timeline = {
-    { at = 0, color = 'base' },
-    named = { at = 1, color = '#ffffff' },
-  },
-}) == nil, 'non-sequence color timeline was accepted', scope)
-h.assert_true(model.normalize_channel({
-  version = 1,
-  timeline = { { at = 0, color = 'base' } },
-  transforms = {
-    {
-      type = 'brightness',
+  {
+    message = 'non-sequence color timeline was accepted',
+    spec = channel_spec({
       timeline = {
-        { at = 0, value = 1 },
-        named = { at = 1, value = 0.5 },
+        { at = 0, color = 'base' },
+        named = { at = 1, color = '#ffffff' },
       },
-    },
+    }),
   },
-}) == nil, 'non-sequence transform timeline was accepted', scope)
-h.assert_true(model.normalize_channel({
-  version = 1,
-  unknown = true,
-  timeline = { { at = 0, color = 'base' } },
-}) == nil, 'unknown dynamic channel key was accepted', scope)
-h.assert_true(model.normalize_channel({
-  version = 1,
-  timeline = { { at = 0, color = 'base', unknown = true } },
-}) == nil, 'unknown color stop key was accepted', scope)
-h.assert_true(model.normalize_channel({
-  version = 1,
-  timeline = { { at = 0, color = 'base' } },
-  transforms = {
-    {
-      type = 'brightness',
-      unknown = true,
-      timeline = { { at = 0, value = 1 } },
-    },
+  {
+    message = 'non-sequence transform timeline was accepted',
+    spec = channel_spec({
+      transforms = {
+        brightness_transform({
+          timeline = {
+            { at = 0, value = 1 },
+            named = { at = 1, value = 0.5 },
+          },
+        }),
+      },
+    }),
   },
-}) == nil, 'unknown transform key was accepted', scope)
-h.assert_true(model.normalize_channel({
-  version = 1,
-  timeline = { { at = 0, color = 'base' } },
-  transforms = {
-    {
-      type = 'brightness',
-      timeline = { { at = 0, value = 1, unknown = true } },
-    },
+  {
+    message = 'unknown dynamic channel key was accepted',
+    spec = channel_spec({ unknown = true }),
   },
-}) == nil, 'unknown transform stop key was accepted', scope)
+  {
+    message = 'unknown color stop key was accepted',
+    spec = channel_spec({
+      timeline = { { at = 0, color = 'base', unknown = true } },
+    }),
+  },
+  {
+    message = 'unknown transform key was accepted',
+    spec = channel_spec({
+      transforms = {
+        brightness_transform({ unknown = true }),
+      },
+    }),
+  },
+  {
+    message = 'unknown transform stop key was accepted',
+    spec = channel_spec({
+      transforms = {
+        brightness_transform({
+          timeline = { { at = 0, value = 1, unknown = true } },
+        }),
+      },
+    }),
+  },
+  {
+    message = 'non-array transforms table was accepted',
+    spec = channel_spec({
+      transforms = {
+        brightness = brightness_transform(),
+      },
+    }),
+  },
+  {
+    message = 'missing version was accepted',
+    spec = { timeline = { { at = 0, color = 'base' } } },
+  },
+}) do
+  h.assert_true(model.normalize_channel(case.spec) == nil, case.message, scope)
+end
+
 h.assert_true(model.normalize_dynamic({
   fg = {
     version = 1,
@@ -251,23 +273,6 @@ h.assert_true(model.normalize_dynamic({
     timeline = { { at = 0, color = 'base' } },
   },
 }) == nil, 'unknown dynamic root key was accepted', scope)
-h.assert_true(model.normalize_channel({
-  version = 1,
-  timeline = { { at = 0, color = 'base' } },
-  transforms = {
-    brightness = {
-      type = 'brightness',
-      timeline = {
-        { at = 0, value = 1 },
-      },
-    },
-  },
-}) == nil, 'non-array transforms table was accepted', scope)
-h.assert_true(
-  model.normalize_channel({ timeline = { { at = 0, color = 'base' } } }) == nil,
-  'missing version was accepted',
-  scope
-)
 
 local normalized_entry = model.normalize_entry({
   fg = '#101010',
