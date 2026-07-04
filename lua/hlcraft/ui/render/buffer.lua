@@ -19,6 +19,27 @@ local function optional_table(value, label)
   return value
 end
 
+local function non_empty_string(value, label)
+  if type(value) ~= 'string' or value == '' then
+    error(('%s must be a non-empty string'):format(label), 3)
+  end
+  return value
+end
+
+local function positive_integer(value, label)
+  if type(value) ~= 'number' or math.floor(value) ~= value or value < 1 then
+    error(('%s must be a positive integer'):format(label), 3)
+  end
+  return value
+end
+
+local function input_width(extra)
+  if type(extra) ~= 'table' or extra.width == nil then
+    error('input field width is required', 3)
+  end
+  return extra.width
+end
+
 function M.set_lines(instance, lines)
   instance.state.rendering = true
   local ok, err = pcall(function()
@@ -62,9 +83,9 @@ end
 function M.new_input_field(name, kind, line, extra)
   extra = optional_table(extra, 'input field extra')
   return vim.tbl_extend('force', {
-    name = name,
-    kind = kind,
-    line = line,
+    name = non_empty_string(name, 'input field name'),
+    kind = non_empty_string(kind, 'input field kind'),
+    line = positive_integer(line, 'input field line'),
   }, extra)
 end
 
@@ -77,11 +98,11 @@ end
 --- @param extra table|nil Additional properties (key, label, width)
 --- @return table The created field descriptor
 function M.append_input(lines, geometry, name, kind, value, extra)
+  local width = input_width(extra)
   local field = M.new_input_field(name, kind, #lines + 1, extra)
   geometry[name] = field
   geometry.inputs[#geometry.inputs + 1] = field
-  assert(extra and extra.width ~= nil, 'input field width is required')
-  lines[#lines + 1] = render_util.truncate(buffer_fields.normalize_single_line(value), extra.width)
+  lines[#lines + 1] = render_util.truncate(buffer_fields.normalize_single_line(value), width)
   return field
 end
 

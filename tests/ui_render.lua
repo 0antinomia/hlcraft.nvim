@@ -55,6 +55,14 @@ h.assert_equal(editor_geometry.editor_rows.sample_row, editor_row, 'editor row h
 h.assert_equal(editor_lines[1], 'Sample', 'editor row helper did not append line', scope)
 local invalid_input_extra_ok = pcall(render_buffer.new_input_field, 'name', 'name', 1, false)
 h.assert_true(not invalid_input_extra_ok, 'input field helper accepted non-table extra options', scope)
+local invalid_input_name_ok = pcall(render_buffer.new_input_field, '', 'name', 1)
+h.assert_true(not invalid_input_name_ok, 'input field helper accepted an empty name', scope)
+local invalid_input_kind_ok = pcall(render_buffer.new_input_field, 'name', false, 1)
+h.assert_true(not invalid_input_kind_ok, 'input field helper accepted a non-string kind', scope)
+local invalid_input_line_ok = pcall(render_buffer.new_input_field, 'name', 'name', 0)
+h.assert_true(not invalid_input_line_ok, 'input field helper accepted an invalid line', scope)
+local missing_input_width_ok = pcall(render_buffer.append_input, {}, { inputs = {} }, 'name', 'name', 'value', {})
+h.assert_true(not missing_input_width_ok, 'input append helper accepted missing width', scope)
 h.assert_equal(render_util.truncate('abcdef', 4), 'abc…', 'render truncate lost ellipsis budget', scope)
 h.assert_equal(
   render_util.truncate('你好世界', 5),
