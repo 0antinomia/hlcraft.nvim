@@ -92,8 +92,30 @@ M.groups = {
 }
 
 local function assert_table(value, message)
-  assert(type(value) == 'table', message)
+  if type(value) ~= 'table' then
+    error(message, 3)
+  end
   return value
+end
+
+local function assert_positive_integer(value, message)
+  if type(value) ~= 'number' or math.floor(value) ~= value or value < 1 then
+    error(message, 3)
+  end
+  return value
+end
+
+local function section_options(options)
+  options = options == nil and {} or assert_table(options, 'hint section options must be a table')
+  local max_items = default_max_items
+  if options.max_items ~= nil then
+    max_items = assert_positive_integer(options.max_items, 'hint max_items must be a positive integer')
+  end
+  local width = nil
+  if options.width ~= nil then
+    width = assert_positive_integer(options.width, 'hint width must be a positive integer')
+  end
+  return max_items, width
 end
 
 local function format_item(item)
@@ -126,11 +148,9 @@ local function line_display_width(label, items, first, last)
 end
 
 function M.section_lines(label, group, options)
-  options = options == nil and {} or assert_table(options, 'hint section options must be a table')
+  local max_items, width = section_options(options)
   local items = M.groups[group]
   assert(items ~= nil, ('unknown hint group: %s'):format(tostring(group)))
-  local max_items = math.max(1, options.max_items or default_max_items)
-  local width = options.width
   local lines = {}
 
   local first = 1
