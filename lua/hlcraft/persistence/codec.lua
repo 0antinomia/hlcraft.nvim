@@ -7,6 +7,25 @@ local M = {}
 M.normalize_group_name = util.normalize_group_name
 M.encode_inline_table = encoder.inline_table
 
+local function assert_string(value, label)
+  if type(value) ~= 'string' then
+    error(('%s must be a string'):format(label), 3)
+  end
+  return value
+end
+
+local function assert_lines(value)
+  if type(value) ~= 'table' then
+    error('TOML lines must be a table', 3)
+  end
+  for index, line in ipairs(value) do
+    if type(line) ~= 'string' then
+      error(('TOML line %d must be a string'):format(index), 3)
+    end
+  end
+  return value
+end
+
 function M.empty_data()
   return {
     entries = {},
@@ -16,10 +35,11 @@ function M.empty_data()
 end
 
 function M.decode_lines(lines, data)
+  lines = assert_lines(lines)
   data = data or M.empty_data()
   local current_section = nil
 
-  for _, line in ipairs(lines or {}) do
+  for _, line in ipairs(lines) do
     local text = vim.trim(line)
     if text ~= '' and not text:match('^#') then
       local section_name = parser.section_header(text)
@@ -41,6 +61,7 @@ function M.decode_lines(lines, data)
 end
 
 function M.load_file(target, data)
+  target = assert_string(target, 'TOML file path')
   local file = io.open(target, 'r')
   if not file then
     return data
