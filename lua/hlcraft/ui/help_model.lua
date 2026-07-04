@@ -1,7 +1,21 @@
 local M = {}
 
-local function item_line(item)
-  return ('[%s] %s'):format(item[1], item[2])
+local function keycap(item)
+  return ('[%s]'):format(item[1])
+end
+
+local function keycap_width(items)
+  local width = 0
+  for _, item in ipairs(items or {}) do
+    width = math.max(width, vim.fn.strdisplaywidth(keycap(item)))
+  end
+  return width
+end
+
+local function item_line(item, width)
+  local key = keycap(item)
+  local padding = math.max(2, (width or 0) - vim.fn.strdisplaywidth(key) + 2)
+  return key .. string.rep(' ', padding) .. item[2]
 end
 
 function M.sections(preview_key)
@@ -84,8 +98,9 @@ function M.lines(preview_key)
   local sections = M.sections(preview_key)
   for section_index, section in ipairs(sections) do
     lines[#lines + 1] = section.title
+    local width = keycap_width(section.items)
     for _, item in ipairs(section.items) do
-      lines[#lines + 1] = item_line(item)
+      lines[#lines + 1] = item_line(item, width)
     end
     if section_index < #sections then
       lines[#lines + 1] = ''
