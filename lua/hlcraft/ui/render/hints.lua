@@ -1,7 +1,8 @@
 local M = {}
 
-local separator = '   '
+local separator = '  |  '
 local label_width = 8
+local default_max_items = 3
 
 local function pad_label(label)
   local display_width = vim.fn.strdisplaywidth(label)
@@ -11,7 +12,7 @@ local function pad_label(label)
   return label .. string.rep(' ', label_width - display_width)
 end
 
-local groups = {
+M.groups = {
   search = {
     { 'Enter', 'open/apply' },
     { 'Tab', 'input' },
@@ -72,6 +73,14 @@ local groups = {
   },
 }
 
+local function slice(items, first, last)
+  local result = {}
+  for index = first, last do
+    result[#result + 1] = items[index]
+  end
+  return result
+end
+
 function M.format(items)
   local parts = {}
   for _, item in ipairs(items or {}) do
@@ -84,14 +93,34 @@ function M.format(items)
   return table.concat(parts, separator)
 end
 
+function M.section_lines(label, group, max_items)
+  local items = M.groups[group] or {}
+  local chunk_size = math.max(1, max_items or default_max_items)
+  local lines = {}
+
+  for first = 1, #items, chunk_size do
+    local last = math.min(#items, first + chunk_size - 1)
+    local line_label = first == 1 and label or ''
+    lines[#lines + 1] = pad_label(line_label) .. M.format(slice(items, first, last))
+  end
+
+  if #lines == 0 then
+    lines[#lines + 1] = pad_label(label)
+  end
+  return lines
+end
+
 local function section(label, group)
-  return pad_label(label) .. M.format(groups[group])
+  return M.section_lines(label, group)[1]
 end
 
 local function block(spec)
   local lines = {}
   for _, item in ipairs(spec) do
-    lines[#lines + 1] = section(item[1], item[2])
+    local section_lines = M.section_lines(item[1], item[2], item.max_items)
+    for _, line in ipairs(section_lines) do
+      lines[#lines + 1] = line
+    end
   end
   return lines
 end
@@ -114,8 +143,8 @@ end
 
 function M.dynamic()
   return block({
-    { 'Edit', 'dynamic_edit' },
-    { 'Global', 'dynamic_global' },
+    { 'Edit', 'dynamic_edit', max_items = 2 },
+    { 'Global', 'dynamic_global', max_items = 2 },
   })
 end
 

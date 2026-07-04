@@ -47,13 +47,24 @@ h.assert_equal(
     { 'Tab', 'input' },
     { '?', 'more' },
   }),
-  'Enter open/apply   Tab input   ? more',
+  'Enter open/apply  |  Tab input  |  ? more',
   'compact hint formatter changed unexpectedly',
   scope
 )
-h.assert_equal(hints.search(), 'Action  Enter open/apply   Tab input   ? help', 'search hint is too verbose', scope)
+h.assert_equal(hints.search(), 'Action  Enter open/apply  |  Tab input  |  ? help', 'search hint is too verbose', scope)
 h.assert_true(not hints.search():find('Keys:', 1, true), 'search hint kept the crowded Keys prefix', scope)
-h.assert_equal(hints.detail(), 'Action  Enter edit/toggle   s save   ? help', 'detail hint is too verbose', scope)
+h.assert_equal(hints.detail(), 'Action  Enter edit/toggle  |  s save  |  ? help', 'detail hint is too verbose', scope)
+
+local dynamic_hint_lines = hints.dynamic()
+h.assert_equal(dynamic_hint_lines[1], 'Edit    i row  |  m preset', 'dynamic edit hint first row changed', scope)
+h.assert_equal(
+  dynamic_hint_lines[2],
+  '        +/- time/phase  |  e JSON',
+  'dynamic edit hint continuation changed',
+  scope
+)
+h.assert_equal(dynamic_hint_lines[3], 'Global  d static  |  s save', 'dynamic global hint first row changed', scope)
+h.assert_equal(dynamic_hint_lines[4], '        q back  |  ? help', 'dynamic global hint continuation changed', scope)
 
 local editor_geometry = { editor_rows = {} }
 local editor_lines = {}
@@ -81,6 +92,8 @@ theme.apply(ns)
 for _, group_name in ipairs({
   theme.groups.section,
   theme.groups.hint,
+  theme.groups.hint_action,
+  theme.groups.hint_separator,
   theme.groups.value,
   theme.groups.key,
   theme.groups.title,
