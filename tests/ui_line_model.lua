@@ -45,7 +45,7 @@ h.assert_equal(
   'hint continuation not classified',
   scope
 )
-h.assert_equal(line_model.line_kind('[q / Esc] back or close'), 'hint', 'keycap help item not classified', scope)
+h.assert_equal(line_model.line_kind('[q / Esc] back/close'), 'hint', 'keycap help item not classified', scope)
 h.assert_equal(line_model.line_kind('Current: #ffffff'), 'label', 'label line not classified', scope)
 h.assert_true(line_model.line_kind('plain text') == nil, 'plain line was classified', scope)
 
