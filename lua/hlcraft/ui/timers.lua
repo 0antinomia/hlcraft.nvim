@@ -7,7 +7,10 @@ function M.stop(timer)
 end
 
 function M.stop_debounce(instance)
-  local timer = instance and instance.state and instance.state.debounce_timer or nil
+  if not instance or not instance.state then
+    error('debounce timer stop requires an instance', 2)
+  end
+  local timer = instance.state.debounce_timer
   if not timer then
     return
   end
