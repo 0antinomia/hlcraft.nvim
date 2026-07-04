@@ -98,7 +98,10 @@ function M.toggle_style(name, key)
   end
 
   local ok, err = M.apply_patch(name, { [key] = next_value })
-  return ok, ok and next_value or nil, err
+  if not ok then
+    return false, nil, err
+  end
+  return true, next_value, nil
 end
 
 return M
