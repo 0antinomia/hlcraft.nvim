@@ -11,6 +11,12 @@ h.assert_equal(line_highlights.line_kind('Detail fields'), 'title', 'detail titl
 h.assert_equal(line_highlights.line_kind('Color editor: FG'), 'title', 'color editor title not classified', scope)
 h.assert_equal(line_highlights.line_kind('────────'), 'rule', 'rule line not classified', scope)
 h.assert_equal(line_highlights.line_kind('Action  Enter open/apply'), 'hint', 'hint line not classified', scope)
+h.assert_equal(
+  line_highlights.line_kind('        +/- time/phase  |  e JSON'),
+  'hint',
+  'hint continuation not classified',
+  scope
+)
 h.assert_equal(line_highlights.line_kind('Current: #ffffff'), 'label', 'label line not classified', scope)
 h.assert_true(line_highlights.line_kind('plain text') == nil, 'plain line was classified', scope)
 

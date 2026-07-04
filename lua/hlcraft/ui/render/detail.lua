@@ -99,6 +99,7 @@ function M.build(instance, geometry, result, width, line_offset)
     lines[#lines + 1] = render_util.truncate(line, width)
   end
 
+  lines[#lines + 1] = ''
   lines[#lines + 1] = hints.detail()
 
   return lines

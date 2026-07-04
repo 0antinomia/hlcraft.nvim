@@ -13,6 +13,7 @@ function M.build(geometry, result, width)
     string.rep('─', math.max(20, math.min(width, 36))),
     ('Current: %s'):format(detail_render.display_text(value)),
   }
+  lines[#lines + 1] = ''
   for _, line in ipairs(hints.blend()) do
     lines[#lines + 1] = line
   end

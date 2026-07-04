@@ -34,6 +34,7 @@ function M.build(instance, geometry, result, field, width, line_offset)
     value = value,
     field = field,
   }
+  lines[#lines + 1] = ''
   for _, line in ipairs(hints.color()) do
     lines[#lines + 1] = line
   end

@@ -21,7 +21,7 @@ function M.build(instance, geometry, result, field, width, line_offset, dynamic)
   local swatch = ui_fields.dynamic_preview_swatch
   local lines = {
     ('Color editor: %s'):format(label),
-    string.rep('-', math.max(20, math.min(width, 36))),
+    string.rep('─', math.max(20, math.min(width, 36))),
     'Mode: dynamic',
     ('Preset: %s'):format(dynamic.preset or 'custom'),
     ('Duration: %dms'):format(dynamic.duration or 0),
@@ -69,6 +69,7 @@ function M.build(instance, geometry, result, field, width, line_offset, dynamic)
     })
   end
 
+  lines[#lines + 1] = ''
   for _, line in ipairs(hints.dynamic()) do
     lines[#lines + 1] = line
   end

@@ -23,6 +23,7 @@ function M.render(instance)
   for _, line in ipairs(result_lines) do
     lines[#lines + 1] = line
   end
+  lines[#lines + 1] = ''
   lines[#lines + 1] = hints.search()
   for index, result_index in pairs(selectable) do
     geometry.result_lines[results_top + index - 1] = result_index
