@@ -33,9 +33,15 @@ h.with_temp_buf(function(buf)
 
   assert_mapping('x', 'p')
   assert_mapping('x', 'P')
+  for _, lhs in ipairs({ '<BS>', '<C-H>', '<C-W>', '<C-U>', '<Del>' }) do
+    assert_mapping('i', lhs)
+  end
+  for _, lhs in ipairs({ 'X', 'S', 'D', 'c', 'C', 'I', 'A', 'O' }) do
+    assert_mapping('n', lhs)
+  end
+
   h.assert_true(not enabled(assert_mapping('n', 'g'), 'nowait'), 'g mapping must wait for gg/gr', scope)
   h.assert_true(enabled(assert_mapping('n', '<CR>'), 'expr'), '<CR> mapping must stay expr', scope)
-  h.assert_true(#vim.api.nvim_buf_get_keymap(buf, 'i') >= 5, 'input boundary mappings were not installed', scope)
 end)
 
 print('hlcraft ui keymaps: OK')
