@@ -104,6 +104,8 @@ threshold = 100
 
 Color search uses RGB Euclidean distance. Lower values are stricter. Higher values return broader matches.
 
+Must be a finite number between `0` and `1000`.
+
 #### `include_sp_in_color_search`
 
 Controls whether the `sp` field participates in color matching.
@@ -155,6 +157,8 @@ Structured entries support:
 - `pattern`: optional autocmd pattern
 - `once`: whether the autocmd should run only once
 
+`events` must be a sequence. Event names must be non-empty strings.
+
 Set `enabled = false` to disable automatic replay entirely.
 
 #### `dynamic`
@@ -170,6 +174,8 @@ dynamic = {
 
 - `enabled`: when `false`, dynamic configuration is loaded and saved but does not animate.
 - `interval_ms`: animation tick interval in milliseconds. Lower values feel smoother but write highlights more often.
+
+`interval_ms` must be a finite number between `16` and `1000`.
 
 Dynamic color configuration is edited from the existing `FG`, `BG`, and `SP` editors:
 
@@ -196,6 +202,8 @@ debounce_ms = 100
 - `0`: disable debounce and update immediately
 - `> 0`: wait the given milliseconds before recomputing results during typing
 
+Must be a finite number greater than or equal to `0`.
+
 #### `preview_key`
 
 Temporary flash key used to identify the currently selected highlight group.
@@ -207,6 +215,8 @@ preview_key = 'z'
 This key is installed as a temporary global normal-mode mapping while the hlcraft workspace is open, so it still works after switching to another window. Once the workspace closes, the mapping is removed.
 
 Set it to `false` to disable the feature entirely.
+
+When enabled, it must be a non-empty string.
 
 ## Usage
 
