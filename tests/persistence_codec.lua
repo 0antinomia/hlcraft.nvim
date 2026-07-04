@@ -3,6 +3,7 @@ local scope = 'hlcraft persistence codec'
 
 local codec = require('hlcraft.persistence.codec')
 local parser = require('hlcraft.persistence.codec.parser')
+local util = require('hlcraft.persistence.codec.util')
 
 local function assert_invalid_entry(line)
   local name, entry = parser.entry_line(line)
@@ -50,6 +51,27 @@ h.assert_equal(
   'nested dynamic table did not encode deterministically',
   scope
 )
+
+local numeric_escape_ok = pcall(util.escape_string, 1)
+h.assert_true(not numeric_escape_ok, 'codec string escape accepted a non-string value', scope)
+local numeric_section_ok = pcall(codec.encode_section, 1, {})
+h.assert_true(not numeric_section_ok, 'codec section accepted a non-string section name', scope)
+local numeric_highlight_ok = pcall(codec.encode_section, 'group', {
+  [1] = {},
+})
+h.assert_true(not numeric_highlight_ok, 'codec section accepted a non-string highlight name', scope)
+local numeric_field_ok = pcall(codec.encode_inline_table, {
+  [1] = '#101010',
+})
+h.assert_true(not numeric_field_ok, 'codec inline table accepted a non-string field name', scope)
+local unsupported_value_ok = pcall(codec.encode_inline_table, {
+  fg = function() end,
+})
+h.assert_true(not unsupported_value_ok, 'codec inline table silently dropped unsupported values', scope)
+local non_finite_value_ok = pcall(codec.encode_inline_table, {
+  blend = 0 / 0,
+})
+h.assert_true(not non_finite_value_ok, 'codec inline table accepted non-finite numbers', scope)
 
 local escaped_name, escaped_entry = parser.entry_line([["Escaped" = { label = "quote \" and slash \\" }]])
 h.assert_equal(escaped_name, 'Escaped', 'escaped string entry name did not parse', scope)
