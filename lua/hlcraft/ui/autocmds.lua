@@ -1,27 +1,10 @@
 local buffer_fields = require('hlcraft.ui.input.buffer_fields')
 local navigation = require('hlcraft.ui.navigation')
+local timers = require('hlcraft.ui.timers')
 local window = require('hlcraft.ui.workspace.window')
 local config = require('hlcraft.config')
 
 local M = {}
-
-local function stop_debounce_timer(instance)
-  local timer = instance.state.debounce_timer
-  if not timer then
-    return
-  end
-
-  if timer.stop then
-    timer:stop()
-  end
-  if timer.close then
-    pcall(function()
-      timer:close()
-    end)
-  end
-
-  instance.state.debounce_timer = nil
-end
 
 --- Register all autocmds for the workspace lifecycle (text change, cursor, resize, wipeout)
 --- @param instance table The Instance object holding UI state
@@ -48,7 +31,7 @@ function M.setup(instance)
         instance:rerender()
         return
       end
-      stop_debounce_timer(instance)
+      timers.stop_debounce(instance)
       instance.state.debounce_timer = vim.defer_fn(function()
         instance.state.debounce_timer = nil
         buffer_fields.sync_queries(instance)

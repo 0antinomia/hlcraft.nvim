@@ -1,28 +1,11 @@
 local help = require('hlcraft.ui.help')
 local ui_state = require('hlcraft.ui.state')
+local timers = require('hlcraft.ui.timers')
 local window_options = require('hlcraft.ui.window_options')
 local buffer = require('hlcraft.ui.workspace.buffer')
 local window = require('hlcraft.ui.workspace.window')
 
 local M = {}
-
-local function stop_debounce_timer(instance)
-  local timer = instance.state.debounce_timer
-  if not timer then
-    return
-  end
-
-  if timer.stop then
-    timer:stop()
-  end
-  if timer.close then
-    pcall(function()
-      timer:close()
-    end)
-  end
-
-  instance.state.debounce_timer = nil
-end
 
 local function cleanup_preview(instance)
   require('hlcraft.ui.preview').cleanup(instance)
@@ -131,7 +114,7 @@ function M.cleanup(instance)
       pcall(vim.api.nvim_del_augroup_by_id, instance.group)
     end
 
-    stop_debounce_timer(instance)
+    timers.stop_debounce(instance)
     if window.is_valid_buf(workspace_buf) and not is_wiping_buffer(workspace_buf) then
       pcall(vim.api.nvim_buf_delete, workspace_buf, { force = true })
     end
