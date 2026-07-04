@@ -18,6 +18,7 @@ local tests = {
   'tests/ui_render.lua',
   'tests/persistence_codec.lua',
   'tests/storage.lua',
+  'tests/engine_patch_values.lua',
   'tests/engine_patch.lua',
   'tests/engine_base_specs.lua',
   'tests/engine.lua',
