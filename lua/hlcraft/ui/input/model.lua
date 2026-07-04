@@ -166,7 +166,11 @@ function M.fill_input(instance, name, value, clear_old)
   end
 
   local old_num_lines = #M.get_input_lines(instance, name)
-  local new_lines = vim.split(value or '', '\n')
+  local next_value = value
+  if next_value == nil then
+    next_value = ''
+  end
+  local new_lines = vim.split(next_value, '\n')
   vim.api.nvim_buf_set_lines(instance.state.buf, start_row, start_row + old_num_lines - 1, true, new_lines)
   vim.api.nvim_buf_set_lines(instance.state.buf, start_row + #new_lines, start_row + #new_lines + 1, true, {})
   return true
