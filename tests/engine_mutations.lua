@@ -34,4 +34,14 @@ with_draft_state(function()
   )
 end)
 
+with_draft_state(function()
+  local name = 'HlcraftEngineMutationsToggleFalse'
+  vim.api.nvim_set_hl(0, name, { bold = true })
+
+  local ok, value, err = mutations.toggle_style(name, 'bold')
+  h.assert_true(ok, err or 'toggle_style failed', scope)
+  h.assert_equal(value, false, 'toggle_style hid a successful false value', scope)
+  h.assert_equal(store.data.draft[name].bold, false, 'toggle_style did not persist false override', scope)
+end)
+
 print('hlcraft engine mutations: OK')
