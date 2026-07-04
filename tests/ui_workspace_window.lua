@@ -1,0 +1,75 @@
+local h = require('tests.helpers')
+local scope = 'hlcraft ui workspace window'
+
+local window = require('hlcraft.ui.workspace.window')
+local window_options = require('hlcraft.ui.window_options')
+
+local win = vim.api.nvim_get_current_win()
+local original = window_options.snapshot(win)
+
+local function restore_original()
+  window_options.restore(original)
+end
+
+local ok, err = xpcall(function()
+  vim.wo[win].number = true
+  vim.wo[win].relativenumber = true
+  vim.wo[win].signcolumn = 'yes'
+  vim.wo[win].foldcolumn = '1'
+
+  local instance = {
+    ns = vim.api.nvim_create_namespace('hlcraft-ui-workspace-window-test'),
+    state = {
+      workspace_win_options = {},
+      last_workspace_win = nil,
+    },
+  }
+
+  window.capture_workspace_window(instance, win)
+  h.assert_true(
+    window_options.matches_workspace(window_options.read(win)),
+    'workspace capture did not apply workspace window options',
+    scope
+  )
+  h.assert_true(instance.state.workspace_win_options[win] ~= nil, 'workspace capture did not snapshot window', scope)
+  h.assert_equal(instance.state.last_workspace_win, win, 'workspace capture did not remember last window', scope)
+
+  window.release_workspace_window(instance, win)
+  h.assert_true(vim.wo[win].number, 'workspace release did not restore number', scope)
+  h.assert_true(vim.wo[win].relativenumber, 'workspace release did not restore relativenumber', scope)
+  h.assert_equal(vim.wo[win].signcolumn, 'yes', 'workspace release did not restore signcolumn', scope)
+  h.assert_equal(vim.wo[win].foldcolumn, '1', 'workspace release did not restore foldcolumn', scope)
+  h.assert_true(instance.state.workspace_win_options[win] == nil, 'workspace release kept window snapshot', scope)
+  h.assert_true(instance.state.last_workspace_win == nil, 'workspace release kept last window', scope)
+
+  vim.wo[win].number = true
+  vim.wo[win].relativenumber = true
+  vim.wo[win].signcolumn = 'yes'
+  vim.wo[win].foldcolumn = '1'
+  instance.state.origin_win = win
+  instance.state.origin_win_options = window_options.snapshot(win)
+
+  window.capture_workspace_window(instance, win)
+  h.assert_true(
+    window_options.matches_workspace(window_options.read(win)),
+    'origin capture did not apply workspace window options',
+    scope
+  )
+  h.assert_true(
+    instance.state.workspace_win_options[win] == nil,
+    'origin capture should not create workspace snapshot',
+    scope
+  )
+
+  window.release_workspace_window(instance, win)
+  h.assert_true(vim.wo[win].number, 'origin release did not restore number', scope)
+  h.assert_true(instance.state.origin_win_options ~= nil, 'origin release cleared reusable origin snapshot', scope)
+end, debug.traceback)
+
+restore_original()
+
+if not ok then
+  error(err, 0)
+end
+
+print('hlcraft ui workspace window: OK')
