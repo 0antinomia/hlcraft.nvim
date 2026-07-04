@@ -2,6 +2,13 @@ local M = {}
 
 local hint_labels = require('hlcraft.ui.render.hints').section_label_set
 
+local function assert_line(line)
+  if type(line) ~= 'string' then
+    error('render line must be a string', 3)
+  end
+  return line
+end
+
 local function trim_bounds(line, first, last)
   while first <= last and line:sub(first, first) == ' ' do
     first = first + 1
@@ -60,7 +67,6 @@ local function hint_segment_spans(line, first, last, spans)
 end
 
 local function hint_prefix(line)
-  line = tostring(line or '')
   local label = line:match('^(%S+)%s%s+')
   if label and hint_labels[label] then
     return label, #label, #label + 1
@@ -70,20 +76,18 @@ local function hint_prefix(line)
 end
 
 function M.hint_label(line)
-  return hint_prefix(line)
+  return hint_prefix(assert_line(line))
 end
 
 local function is_hint_line(line)
-  line = tostring(line or '')
   return M.hint_label(line) ~= nil or line:find('^%s*%b[]%s+') ~= nil
 end
 
 local function is_rule_line(line)
-  return tostring(line or ''):match('^[─%-]+$') ~= nil
+  return line:match('^[─%-]+$') ~= nil
 end
 
 local function is_title_line(line)
-  line = tostring(line or '')
   return line == 'Detail fields'
     or line == 'Blend editor'
     or line:find('^Color editor:', 1) ~= nil
@@ -91,6 +95,7 @@ local function is_title_line(line)
 end
 
 function M.line_kind(line)
+  line = assert_line(line)
   if is_rule_line(line) then
     return 'rule'
   end
@@ -100,14 +105,14 @@ function M.line_kind(line)
   if is_hint_line(line) then
     return 'hint'
   end
-  if tostring(line or ''):find(':', 1, true) then
+  if line:find(':', 1, true) then
     return 'label'
   end
   return nil
 end
 
 function M.hint_spans(line)
-  line = tostring(line or '')
+  line = assert_line(line)
   local spans = {}
   if line == '' then
     return spans
@@ -124,7 +129,7 @@ function M.hint_spans(line)
 end
 
 function M.label_spans(line)
-  line = tostring(line or '')
+  line = assert_line(line)
   local colon = line:find(':', 1, true)
   if not colon then
     return {}
