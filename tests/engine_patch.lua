@@ -105,6 +105,19 @@ h.assert_equal(entry.dynamic.fg.preset, 'pulse', 'dynamic channel was not applie
 h.assert_true(entry.dynamic.sp == nil, 'unset dynamic channel was not cleared', scope)
 h.assert_true(entry.dynamic.bg ~= nil, 'unpatched dynamic channel was removed', scope)
 
+local nil_entry_ok = pcall(patch.apply_entry, nil, normalized)
+h.assert_true(not nil_entry_ok, 'patch apply accepted nil entry', scope)
+local nil_patch_ok = pcall(patch.apply_entry, entry, nil)
+h.assert_true(not nil_patch_ok, 'patch apply accepted nil patch', scope)
+local invalid_dynamic_entry_ok = pcall(patch.apply_entry, {
+  dynamic = 'broken',
+}, {
+  dynamic = {
+    fg = dynamic_spec,
+  },
+})
+h.assert_true(not invalid_dynamic_entry_ok, 'patch apply replaced invalid entry dynamic value', scope)
+
 patch.apply_entry(entry, { dynamic = { fg = vim.NIL, bg = vim.NIL } })
 h.assert_true(entry.dynamic == nil, 'clearing all dynamic channels left an empty dynamic table', scope)
 
