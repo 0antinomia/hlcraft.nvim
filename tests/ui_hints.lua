@@ -23,6 +23,14 @@ local keyed_item_shape_ok = pcall(hints.format, {
   { key = 'x', action = 'invalid-shape' },
 })
 h.assert_true(not keyed_item_shape_ok, 'hint formatter accepted keyed item shape', scope)
+local empty_item_key_ok = pcall(hints.format, {
+  { '', 'action' },
+})
+h.assert_true(not empty_item_key_ok, 'hint formatter accepted empty item key', scope)
+local empty_item_action_ok = pcall(hints.format, {
+  { 'x', '' },
+})
+h.assert_true(not empty_item_action_ok, 'hint formatter accepted empty item action', scope)
 local nil_items_ok = pcall(hints.format, nil)
 h.assert_true(not nil_items_ok, 'hint formatter accepted nil items', scope)
 local false_options_ok = pcall(hints.section_lines, 'Action', 'search', false)
@@ -100,6 +108,18 @@ help_model.sections = function()
 end
 local invalid_help_key_ok = pcall(help_model.lines)
 h.assert_true(not invalid_help_key_ok, 'help model accepted a non-string help item key', scope)
+help_model.sections = function()
+  return {
+    {
+      title = 'Broken',
+      items = {
+        { 'x', false },
+      },
+    },
+  }
+end
+local invalid_help_action_ok = pcall(help_model.lines)
+h.assert_true(not invalid_help_action_ok, 'help model accepted a non-string help item action', scope)
 help_model.sections = original_sections
 for _, line in ipairs(help_lines) do
   h.assert_true(vim.fn.strdisplaywidth(line) <= 38, 'help line exceeded compact width', scope)
