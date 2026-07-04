@@ -1,4 +1,5 @@
 local color = require('hlcraft.core.color')
+local numbers = require('hlcraft.core.number')
 local session = require('hlcraft.ui.session')
 
 local M = {}
@@ -11,10 +12,6 @@ local channel_shifts = {
   b = 0,
   blue = 0,
 }
-
-local function clamp(value, min, max)
-  return math.max(min, math.min(max, value))
-end
 
 local function fallback_color(result, key)
   if key == 'fg' then
@@ -50,9 +47,9 @@ function M.adjust(instance, result, key, channel, delta)
   if not rgb then
     return false, ('Cannot adjust invalid color: %s'):format(tostring(current))
   end
-  local amount = tonumber(delta) or 0
+  local amount = numbers.to_finite(delta, 0)
   local component = math.floor(rgb / (2 ^ shift)) % 256
-  local adjusted = clamp(component + amount, 0, 255)
+  local adjusted = numbers.clamp(component + amount, 0, 255)
   local next_rgb = rgb + ((adjusted - component) * (2 ^ shift))
   return M.set(instance, result, key, color.int_to_hex(next_rgb))
 end

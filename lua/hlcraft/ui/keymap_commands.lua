@@ -1,5 +1,6 @@
 local actions = require('hlcraft.ui.actions')
 local context = require('hlcraft.ui.context')
+local numbers = require('hlcraft.core.number')
 local buffer_fields = require('hlcraft.ui.input.buffer_fields')
 local navigation = require('hlcraft.ui.navigation')
 local scene = require('hlcraft.ui.scene')
@@ -59,7 +60,11 @@ function M.adjust_dynamic_color(instance, delta)
 
   if context.current_dynamic_editor_row_key(instance) == 'dynamic_phase' then
     local dynamic = context.current_color_dynamic(instance)
-    M.run_action(instance, 'set_dynamic_phase', (tonumber(dynamic.phase) or 0) + (delta * ui_fields.dynamic_phase_step))
+    M.run_action(
+      instance,
+      'set_dynamic_phase',
+      numbers.to_finite(dynamic.phase, 0) + (delta * ui_fields.dynamic_phase_step)
+    )
   else
     M.run_action(instance, 'adjust_dynamic_duration', delta * ui_fields.dynamic_duration_step)
   end

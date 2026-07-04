@@ -1,10 +1,7 @@
 local defaults = require('hlcraft.config.defaults')
+local numbers = require('hlcraft.core.number')
 
 local M = {}
-
-local function is_finite_number(value)
-  return type(value) == 'number' and value == value and value ~= math.huge and value ~= -math.huge
-end
 
 local function add(errors, message)
   errors[#errors + 1] = message
@@ -25,7 +22,7 @@ local function validate_number(errors, path, value, opts)
     add(errors, ('%s: must be a number, got %s'):format(path, type(value)))
     return
   end
-  if not is_finite_number(value) then
+  if not numbers.is_finite(value) then
     add(errors, ('%s: must be finite'):format(path))
     return
   end

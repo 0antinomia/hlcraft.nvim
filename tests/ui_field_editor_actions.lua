@@ -58,6 +58,11 @@ h.assert_true(matched_blend, 'set_blend action was not matched', scope)
 h.assert_true(blend_ok, blend_err or 'set_blend failed', scope)
 h.assert_equal(engine.get(result.name).blend, 12, 'set_blend did not update draft', scope)
 
+local matched_blend_nan, blend_nan_ok, blend_nan_err = actions.handle(instance, 'adjust_blend', result, 'blend', 0 / 0)
+h.assert_true(matched_blend_nan, 'adjust_blend action was not matched', scope)
+h.assert_true(blend_nan_ok, blend_nan_err or 'adjust_blend with NaN failed', scope)
+h.assert_equal(engine.get(result.name).blend, 12, 'adjust_blend with NaN changed draft', scope)
+
 local matched_group, group_ok, group_err = actions.handle(instance, 'set_group', result, 'group', 'next-group')
 h.assert_true(matched_group, 'set_group action was not matched', scope)
 h.assert_true(group_ok, group_err or 'set_group failed', scope)

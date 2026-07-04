@@ -1,10 +1,7 @@
+local numbers = require('hlcraft.core.number')
 local session = require('hlcraft.ui.session')
 
 local M = {}
-
-local function clamp(value, min, max)
-  return math.max(min, math.min(max, value))
-end
 
 function M.set(instance, result, value)
   local normalized = nil
@@ -20,8 +17,8 @@ end
 
 function M.adjust(instance, result, delta)
   local draft_value = session.field_value(result.name, 'blend')
-  local current = tonumber(draft_value ~= nil and draft_value or result.blend) or 0
-  return M.set(instance, result, clamp(current + (tonumber(delta) or 0), 0, 100))
+  local current = numbers.to_finite(draft_value ~= nil and draft_value or result.blend, 0)
+  return M.set(instance, result, numbers.clamp(current + numbers.to_finite(delta, 0), 0, 100))
 end
 
 return M

@@ -40,6 +40,13 @@ h.assert_true(engine.get(result.name).dynamic.fg ~= nil, 'toggle_dynamic_color d
 
 h.assert_true(commands.adjust_dynamic_color(instance, 1), 'adjust_dynamic_color did not handle dynamic field', scope)
 h.assert_equal(engine.get(result.name).dynamic.fg.duration, 2250, 'adjust_dynamic_color did not update duration', scope)
+h.assert_true(commands.adjust_dynamic_color(instance, 0 / 0), 'adjust_dynamic_color did not handle NaN delta', scope)
+h.assert_equal(
+  engine.get(result.name).dynamic.fg.duration,
+  2250,
+  'adjust_dynamic_color NaN delta changed duration',
+  scope
+)
 
 h.assert_true(commands.cycle_dynamic_preset(instance), 'cycle_dynamic_preset did not handle dynamic field', scope)
 h.assert_equal(engine.get(result.name).dynamic.fg.preset, 'breath', 'cycle_dynamic_preset did not update preset', scope)

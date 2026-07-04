@@ -22,6 +22,8 @@ h.assert_equal(timeline.phase(1250, 1000, 0, 'repeat'), 0.25, 'repeat wrapped ph
 h.assert_equal(timeline.phase(1250, 1000, 0, 'pingpong'), 0.75, 'pingpong phase changed', scope)
 h.assert_equal(timeline.phase(1250, 1000, 0, 'once'), 1, 'once phase changed', scope)
 h.assert_equal(timeline.phase(250, 1000, 0.25, 'repeat'), 0.5, 'phase offset changed', scope)
+h.assert_equal(timeline.phase(0 / 0, 1000, 0, 'repeat'), 0, 'NaN phase time did not fall back', scope)
+h.assert_equal(timeline.sample_numeric(numeric_stops, 0 / 0, 'linear'), 0, 'NaN sample phase did not fall back', scope)
 
 h.assert_equal(
   transforms.apply('#808080', { type = 'brightness', value = 0.5 }),
@@ -33,6 +35,12 @@ h.assert_equal(
   transforms.apply('#202020', { type = 'brightness', value = 3 }),
   transforms.apply('#202020', { type = 'brightness', value = 2 }),
   'brightness transform was not clamped',
+  scope
+)
+h.assert_equal(
+  transforms.apply('#202020', { type = 'brightness', value = 0 / 0 }),
+  '#202020',
+  'NaN brightness should not change color',
   scope
 )
 h.assert_equal(
