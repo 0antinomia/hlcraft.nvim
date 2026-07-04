@@ -68,6 +68,21 @@ h.assert_equal(linked.link_chain[2], 'Target', 'link chain changed', scope)
 h.assert_equal(linked.resolved_fg, '#abcdef', 'linked resolved fg changed', scope)
 h.assert_equal(linked.resolved_bg, '#010203', 'linked resolved bg changed', scope)
 
+local default_linked = entry.from_attrs('DefaultLinked', { link = 'DefaultTarget' }, {
+  resolve_attrs = function(name)
+    h.assert_equal(name, 'DefaultTarget', 'default link terminal name changed', scope)
+    return {
+      fg = tonumber('123456', 16),
+    }
+  end,
+})
+h.assert_equal(default_linked.link_chain[1], 'DefaultLinked', 'default link chain source changed', scope)
+h.assert_equal(default_linked.link_chain[2], 'DefaultTarget', 'default link chain target changed', scope)
+h.assert_equal(default_linked.resolved_fg, '#123456', 'default linked resolved fg changed', scope)
+
+local default_circular = entry.from_attrs('DefaultCircular', { link = 'DefaultCircular' })
+h.assert_equal(default_circular.link_chain[2], 'DefaultCircular (circular)', 'default circular marker changed', scope)
+
 local invalid_chain_result_ok = pcall(entry.from_attrs, 'InvalidLinked', { link = 'Target' }, {
   resolve_chain = function()
     return 'Target'

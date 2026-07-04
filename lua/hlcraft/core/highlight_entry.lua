@@ -61,6 +61,13 @@ local function link_chain(value)
   return value
 end
 
+local function default_link_chain(name, target)
+  if target == name then
+    return { name, target .. ' (circular)' }
+  end
+  return { name, target }
+end
+
 local function resolved_attrs(value)
   if value ~= nil and type(value) ~= 'table' then
     error('highlight attrs resolver must return a table or nil', 3)
@@ -91,8 +98,16 @@ function M.from_attrs(name, attrs, opts)
   end
 
   if attrs.link then
-    entry.link_chain = opts.resolve_chain and link_chain(opts.resolve_chain(name)) or { name }
-    local resolved = opts.resolve_attrs and resolved_attrs(opts.resolve_attrs(terminal_name(entry.link_chain))) or nil
+    if opts.resolve_chain then
+      entry.link_chain = link_chain(opts.resolve_chain(name))
+    else
+      entry.link_chain = default_link_chain(name, attrs.link)
+    end
+
+    local resolved
+    if opts.resolve_attrs then
+      resolved = resolved_attrs(opts.resolve_attrs(terminal_name(entry.link_chain)))
+    end
     if resolved then
       entry.resolved_fg = color.int_to_hex(resolved.fg)
       entry.resolved_bg = color.int_to_hex(resolved.bg)
