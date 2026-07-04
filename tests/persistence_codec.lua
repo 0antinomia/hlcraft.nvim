@@ -76,14 +76,24 @@ local numeric_escape_ok = pcall(util.escape_string, 1)
 h.assert_true(not numeric_escape_ok, 'codec string escape accepted a non-string value', scope)
 local numeric_section_ok = pcall(codec.encode_section, 1, {})
 h.assert_true(not numeric_section_ok, 'codec section accepted a non-string section name', scope)
+local empty_section_ok = pcall(codec.encode_section, '', {})
+h.assert_true(not empty_section_ok, 'codec section accepted an empty section name', scope)
 local numeric_highlight_ok = pcall(codec.encode_section, 'group', {
   [1] = {},
 })
 h.assert_true(not numeric_highlight_ok, 'codec section accepted a non-string highlight name', scope)
+local empty_highlight_ok = pcall(codec.encode_section, 'group', {
+  [''] = {},
+})
+h.assert_true(not empty_highlight_ok, 'codec section accepted an empty highlight name', scope)
 local numeric_field_ok = pcall(codec.encode_inline_table, {
   [1] = '#101010',
 })
 h.assert_true(not numeric_field_ok, 'codec inline table accepted a non-string field name', scope)
+local invalid_field_key_ok = pcall(codec.encode_inline_table, {
+  ['bad-key'] = '#101010',
+})
+h.assert_true(not invalid_field_key_ok, 'codec inline table accepted an unsupported field key', scope)
 local unsupported_value_ok = pcall(codec.encode_inline_table, {
   fg = function() end,
 })
