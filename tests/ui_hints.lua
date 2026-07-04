@@ -72,6 +72,29 @@ local numeric_preview_ok = pcall(help_model.lines, 1)
 h.assert_true(not numeric_preview_ok, 'help model accepted numeric preview key', scope)
 local numeric_line_ok = pcall(help_model.is_item_line, 1)
 h.assert_true(not numeric_line_ok, 'help item detector accepted a non-string line', scope)
+local original_sections = help_model.sections
+help_model.sections = function()
+  return {
+    {
+      title = 'Broken',
+    },
+  }
+end
+local invalid_help_items_ok = pcall(help_model.lines)
+h.assert_true(not invalid_help_items_ok, 'help model accepted a section without items', scope)
+help_model.sections = function()
+  return {
+    {
+      title = 'Broken',
+      items = {
+        { 1, 'action' },
+      },
+    },
+  }
+end
+local invalid_help_key_ok = pcall(help_model.lines)
+h.assert_true(not invalid_help_key_ok, 'help model accepted a non-string help item key', scope)
+help_model.sections = original_sections
 for _, line in ipairs(help_lines) do
   h.assert_true(vim.fn.strdisplaywidth(line) <= 38, 'help line exceeded compact width', scope)
 end

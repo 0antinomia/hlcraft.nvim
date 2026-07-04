@@ -4,21 +4,34 @@ local function assert_string(value, message)
   if type(value) ~= 'string' then
     error(message, 3)
   end
+  return value
+end
+
+local function assert_table(value, message)
+  if type(value) ~= 'table' then
+    error(message, 3)
+  end
+  return value
 end
 
 local function keycap(item)
+  item = assert_table(item, 'help item must be a table')
+  assert_string(item[1], 'help item key must be a string')
   return ('[%s]'):format(item[1])
 end
 
 local function keycap_width(items)
+  items = assert_table(items, 'help items must be a table')
   local width = 0
-  for _, item in ipairs(items or {}) do
+  for _, item in ipairs(items) do
     width = math.max(width, vim.fn.strdisplaywidth(keycap(item)))
   end
   return width
 end
 
 local function item_line(item, width)
+  item = assert_table(item, 'help item must be a table')
+  assert_string(item[2], 'help item action must be a string')
   local key = keycap(item)
   local padding = math.max(2, (width or 0) - vim.fn.strdisplaywidth(key) + 2)
   return '  ' .. key .. string.rep(' ', padding) .. item[2]
@@ -114,9 +127,12 @@ function M.lines(preview_key)
 
   local sections = M.sections(preview_key)
   for section_index, section in ipairs(sections) do
+    section = assert_table(section, 'help section must be a table')
+    assert_string(section.title, 'help section title must be a string')
+    local items = assert_table(section.items, 'help section items must be a table')
     lines[#lines + 1] = section.title
-    local width = keycap_width(section.items)
-    for _, item in ipairs(section.items) do
+    local width = keycap_width(items)
+    for _, item in ipairs(items) do
       lines[#lines + 1] = item_line(item, width)
     end
     if section_index < #sections then
