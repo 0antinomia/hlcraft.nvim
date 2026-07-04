@@ -174,6 +174,26 @@ for _, case in ipairs({
     spec = channel_spec({ timeline = { { at = 0, color = 'bad-color' } } }),
   },
   {
+    message = 'invalid duration type was accepted',
+    spec = channel_spec({ duration = '1000' }),
+  },
+  {
+    message = 'invalid loop was accepted',
+    spec = channel_spec({ loop = 'bad' }),
+  },
+  {
+    message = 'invalid phase was accepted',
+    spec = channel_spec({ phase = '0.5' }),
+  },
+  {
+    message = 'invalid interpolation was accepted',
+    spec = channel_spec({ interpolation = 'bad' }),
+  },
+  {
+    message = 'invalid preset was accepted',
+    spec = channel_spec({ preset = '' }),
+  },
+  {
     message = 'missing color stop at was accepted',
     spec = channel_spec({ timeline = { { color = 'base' } } }),
   },
@@ -234,6 +254,14 @@ for _, case in ipairs({
     spec = channel_spec({
       transforms = {
         brightness_transform({ unknown = true }),
+      },
+    }),
+  },
+  {
+    message = 'invalid transform interpolation was accepted',
+    spec = channel_spec({
+      transforms = {
+        brightness_transform({ interpolation = 'bad' }),
       },
     }),
   },
