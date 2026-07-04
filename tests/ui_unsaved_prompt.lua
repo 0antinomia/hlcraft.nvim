@@ -4,6 +4,7 @@ local scope = 'hlcraft ui unsaved prompt'
 local prompt = require('hlcraft.ui.scene.unsaved_prompt')
 
 local instance = {
+  ns = vim.api.nvim_create_namespace('hlcraft-ui-unsaved-prompt-test'),
   state = {
     unsaved_prompt = {},
   },
@@ -21,6 +22,8 @@ h.assert_equal(
   'prompt lines changed',
   scope
 )
+h.assert_true(vim.tbl_contains(prompt.lines, '[s] save draft'), 'prompt save keycap line missing', scope)
+h.assert_true(vim.tbl_contains(prompt.lines, '[c/q/Esc] cancel'), 'prompt cancel keycap line missing', scope)
 
 local mappings = {}
 for _, item in ipairs(vim.api.nvim_buf_get_keymap(buf, 'n')) do
@@ -29,6 +32,9 @@ end
 for _, lhs in ipairs({ 's', 'd', 'c', 'q', '<Esc>' }) do
   h.assert_true(mappings[lhs], ('missing prompt mapping %s'):format(lhs), scope)
 end
+
+local marks = vim.api.nvim_buf_get_extmarks(buf, instance.ns, 0, -1, { details = true })
+h.assert_true(#marks > 0, 'prompt did not apply visual hierarchy highlights', scope)
 
 prompt.close(instance)
 h.assert_true(instance.state.unsaved_prompt.buf == nil, 'prompt buffer handle was not cleared', scope)
