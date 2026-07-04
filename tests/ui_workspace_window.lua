@@ -11,6 +11,10 @@ local function restore_original()
   window_options.restore(original)
 end
 
+local function assert_fails(fn, message)
+  h.assert_true(not pcall(fn), message, scope)
+end
+
 local ok, err = xpcall(function()
   vim.wo[win].number = true
   vim.wo[win].relativenumber = true
@@ -24,6 +28,20 @@ local ok, err = xpcall(function()
       last_workspace_win = nil,
     },
   }
+
+  h.assert_true(window.get_win(instance) == nil, 'workspace get_win returned a missing buffer window', scope)
+  assert_fails(function()
+    window.get_win(nil)
+  end, 'workspace get_win accepted missing instance')
+  assert_fails(function()
+    window.is_open({ state = false })
+  end, 'workspace is_open accepted invalid state')
+  assert_fails(function()
+    window.apply_window_options(nil, win)
+  end, 'workspace option apply accepted missing instance')
+  assert_fails(function()
+    window.apply_window_options(instance, nil)
+  end, 'workspace option apply accepted invalid window')
 
   window.capture_workspace_window(instance, win)
   h.assert_true(
@@ -76,6 +94,28 @@ local ok, err = xpcall(function()
     state = {},
   })
   h.assert_true(not missing_snapshot_store_ok, 'workspace restore accepted missing snapshot store', scope)
+  assert_fails(function()
+    window.restore_all_workspace_windows(nil)
+  end, 'workspace restore accepted missing instance')
+  assert_fails(function()
+    window.restore_origin(nil)
+  end, 'workspace origin restore accepted missing instance')
+  assert_fails(function()
+    window.capture_workspace_window(nil, win)
+  end, 'workspace capture accepted missing instance')
+  assert_fails(function()
+    window.release_workspace_window(nil, win)
+  end, 'workspace release accepted missing instance')
+  h.assert_true(
+    pcall(window.capture_workspace_window, instance, nil),
+    'workspace capture should ignore invalid window handles',
+    scope
+  )
+  h.assert_true(
+    pcall(window.release_workspace_window, instance, nil),
+    'workspace release should ignore invalid window handles',
+    scope
+  )
 
   window_options.apply(win, instance.ns)
   local invalid_origin_snapshot_ok = pcall(window.capture_workspace_window, {
