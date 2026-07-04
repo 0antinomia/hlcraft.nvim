@@ -1,6 +1,7 @@
 local base_specs = require('hlcraft.engine.base_specs')
 local config = require('hlcraft.config')
 local dynamic_runtime = require('hlcraft.dynamic.runtime')
+local notify = require('hlcraft.notify')
 local presets = require('hlcraft.core.presets')
 local snapshot = require('hlcraft.engine.snapshot')
 local store = require('hlcraft.engine.store')
@@ -62,7 +63,7 @@ function M.apply_group(name)
   state.applying = false
 
   if not ok then
-    vim.notify(('hlcraft: failed to apply highlight %s: %s'):format(name, tostring(err)), vim.log.levels.WARN)
+    notify.warn(('failed to apply highlight %s: %s'):format(name, tostring(err)))
     return
   end
 

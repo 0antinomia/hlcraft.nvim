@@ -4,6 +4,7 @@ local M = {}
 local highlights = require('hlcraft.core.highlights')
 local color = require('hlcraft.core.color')
 local config = require('hlcraft.config')
+local notify = require('hlcraft.notify')
 
 local function is_none_query(value)
   return type(value) == 'string' and value:upper() == 'NONE'
@@ -94,7 +95,7 @@ function M.by_color(hex, threshold)
 
   local target_int = color.hex_to_int(hex)
   if not target_int then
-    vim.notify('Invalid color format: ' .. tostring(hex) .. '. Use #RRGGBB or NONE.', vim.log.levels.ERROR)
+    notify.error('Invalid color format: ' .. tostring(hex) .. '. Use #RRGGBB or NONE.')
     return {}
   end
 
