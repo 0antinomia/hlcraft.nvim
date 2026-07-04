@@ -3,6 +3,7 @@ local session = require('hlcraft.ui.session')
 local style_editor = require('hlcraft.ui.editor.style')
 local ui_fields = require('hlcraft.ui.fields')
 local rows = require('hlcraft.ui.scene.rows')
+local unsaved_prompt = require('hlcraft.ui.scene.unsaved_prompt')
 local window = require('hlcraft.ui.workspace.window')
 
 local M = {}
@@ -69,14 +70,7 @@ end
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.close_unsaved_prompt(instance)
-  local prompt = instance.state.unsaved_prompt or {}
-  if window.is_valid_win(prompt.win) then
-    pcall(vim.api.nvim_win_close, prompt.win, true)
-  end
-  if window.is_valid_buf(prompt.buf) then
-    pcall(vim.api.nvim_buf_delete, prompt.buf, { force = true })
-  end
-  instance.state.unsaved_prompt = { win = nil, buf = nil }
+  unsaved_prompt.close(instance)
 end
 
 --- Close the detail view without checking for unsaved changes
@@ -105,57 +99,9 @@ end
 --- @param name string Highlight group name
 --- @return nil
 function M.open_unsaved_prompt(instance, name)
-  M.close_unsaved_prompt(instance)
-
-  local lines = {
-    'Unsaved highlight changes',
-    's: save   d: discard   c/q: cancel',
-  }
-  local width = 38
-  local height = #lines
-  local buf = vim.api.nvim_create_buf(false, true)
-  vim.bo[buf].bufhidden = 'wipe'
-  vim.bo[buf].buftype = 'nofile'
-  vim.bo[buf].swapfile = false
-  vim.bo[buf].modifiable = true
-  vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-  vim.bo[buf].modifiable = false
-
-  local win = vim.api.nvim_open_win(buf, true, {
-    relative = 'editor',
-    style = 'minimal',
-    border = 'rounded',
-    width = width,
-    height = height,
-    row = math.max(1, math.floor((vim.o.lines - height) / 2) - 1),
-    col = math.max(1, math.floor((vim.o.columns - width) / 2)),
-    zindex = 90,
-  })
-
-  instance.state.unsaved_prompt = { win = win, buf = buf }
-  vim.wo[win].wrap = false
-  vim.wo[win].cursorline = false
-  vim.wo[win].number = false
-  vim.wo[win].relativenumber = false
-
-  local opts = { buffer = buf, silent = true, nowait = true }
-  vim.keymap.set('n', 's', function()
-    local ok, err = session.save(instance, name)
-    if ok then
-      M.force_close(instance)
-    elseif err then
-      vim.notify(('hlcraft: %s'):format(err), vim.log.levels.ERROR)
-    end
-  end, opts)
-  vim.keymap.set('n', 'd', function()
-    session.discard(instance, name)
+  unsaved_prompt.open(instance, name, function()
     M.force_close(instance)
-  end, opts)
-  for _, key in ipairs({ 'c', 'q', '<Esc>' }) do
-    vim.keymap.set('n', key, function()
-      M.close_unsaved_prompt(instance)
-    end, opts)
-  end
+  end)
 end
 
 --- Close the detail view and return to the result list, restoring cursor position
