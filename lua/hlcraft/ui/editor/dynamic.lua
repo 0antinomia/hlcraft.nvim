@@ -38,8 +38,10 @@ local function set_normalized(instance, result, key, spec)
 end
 
 function M.toggle(instance, result, key)
-  local next_value = session.dynamic_value(result.name, key) and nil or presets.default()
-  return session.set_dynamic(instance, result.name, key, next_value)
+  if session.dynamic_value(result.name, key) then
+    return session.set_dynamic(instance, result.name, key, nil)
+  end
+  return session.set_dynamic(instance, result.name, key, presets.default())
 end
 
 function M.cycle_preset(instance, result, key)
