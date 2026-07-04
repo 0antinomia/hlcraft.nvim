@@ -181,7 +181,9 @@ dynamic = {
 
 动态颜色行会以动画色块作为主要预览。类似 `pulse 2000ms` 的紧凑文本仍会显示，作为元数据，也作为无法播放动画时的 fallback。
 
-每个动态通道都会保存为包含 `version`、`preset`、`duration`、`loop` 和 `timeline` 字段的 JSON 模型。Preset 提供常见动画形状，原始 JSON 编辑器则可以保存自定义 timeline 和 transform。运行时动画只会随时间更新高亮组级别的 `fg`、`bg`、`sp` 值；它不是逐字符或空间位置相关的终端动画。
+每个动态通道都会保存为和原始 JSON 编辑器一致的声明式模型。必填字段是 `version = 1` 和非空 `timeline`；`preset`、`duration`、`loop`、`phase`、`interpolation`、`transforms` 都是可选字段，省略时会使用默认值。Preset 提供常见动画形状，原始 JSON 编辑器则可以保存自定义 timeline 和 transform。运行时动画只会随时间更新高亮组级别的 `fg`、`bg`、`sp` 值；它不是逐字符或空间位置相关的终端动画。
+
+Timeline stop 使用 `{ at, color }`，其中 `at` 必须在 `0` 到 `1` 之间。`color` 可以是 `base`、其他通道引用（`fg`、`bg`、`sp`），也可以是类似 `#ff6699` 的具体颜色。Transform 使用 `{ type, timeline, interpolation? }`，`type` 可选 `brightness`、`hue_shift` 或 `saturation`。
 
 #### `debounce_ms`
 
@@ -262,3 +264,4 @@ vim.fn.stdpath('config') .. '/hlcraft'
 - Neovim 版本是否兼容
 - 持久化目录是否可用
 - 持久化目录是否可写
+- TOML 解析完整性
