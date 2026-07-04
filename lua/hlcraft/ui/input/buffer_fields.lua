@@ -5,7 +5,6 @@ local M = {}
 
 M.current_area = model.current_area
 M.normalize_single_line = model.normalize_single_line
-M.get_field_at_row = model.get_input_field_at_row
 M.set_extmarks = model.set_input_extmarks
 M.get_pos = model.get_input_pos
 M.get_lines = model.get_input_lines

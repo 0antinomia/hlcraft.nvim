@@ -5,6 +5,7 @@ local commands = require('hlcraft.ui.keymap_commands')
 local config = require('hlcraft.config')
 local engine = require('hlcraft.engine.service')
 local hlcraft = require('hlcraft')
+local ui_state = require('hlcraft.ui.state')
 
 local persist_dir = h.temp_dir('hlcraft-ui-keymap-commands')
 hlcraft.setup({
@@ -83,6 +84,50 @@ h.assert_true(engine.get(result.name).blend == nil, 'unset_blend did not clear b
 instance.state.field_editor.field = 'group'
 h.assert_true(not commands.toggle_dynamic_color(instance), 'toggle_dynamic_color handled non-color field', scope)
 h.assert_true(not commands.adjust_dynamic_color(instance, 1), 'adjust_dynamic_color handled non-dynamic field', scope)
+
+h.with_temp_buf(function(buf)
+  local previous_buf = instance.state.buf
+  local previous_extmarks = instance.state.extmark_ids
+  local previous_geometry = instance.state.geometry
+  local previous_last_win = instance.state.last_workspace_win
+  local previous_ns = instance.ns
+
+  instance.ns = vim.api.nvim_create_namespace('hlcraft-ui-keymap-commands-input-test')
+  instance.state.buf = buf
+  instance.state.extmark_ids = {}
+  instance.state.geometry = ui_state.geometry()
+  instance.state.last_workspace_win = vim.api.nvim_get_current_win()
+  instance.state.geometry.inputs = {
+    { name = 'name', kind = 'name', line = 1 },
+  }
+
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, { 'alpha', 'beta', 'gamma', 'after' })
+  instance.state.extmark_ids['name:start'] = vim.api.nvim_buf_set_extmark(buf, instance.ns, 0, 0, {
+    right_gravity = false,
+  })
+  instance.state.extmark_ids['name:end'] = vim.api.nvim_buf_set_extmark(buf, instance.ns, 3, 0, {
+    right_gravity = false,
+  })
+
+  vim.api.nvim_win_set_cursor(0, { 2, 0 })
+  h.assert_true(
+    commands.jump_to_input_at_cursor(instance, false),
+    'jump_to_input_at_cursor did not handle multiline input interior',
+    scope
+  )
+  h.assert_equal(
+    vim.api.nvim_win_get_cursor(0)[1],
+    1,
+    'jump_to_input_at_cursor did not jump to tracked input start',
+    scope
+  )
+
+  instance.state.buf = previous_buf
+  instance.state.extmark_ids = previous_extmarks
+  instance.state.geometry = previous_geometry
+  instance.state.last_workspace_win = previous_last_win
+  instance.ns = previous_ns
+end, { current = true })
 
 h.cleanup_dir(persist_dir)
 config.setup({})
