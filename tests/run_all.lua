@@ -44,6 +44,7 @@ local tests = {
   'tests/storage.lua',
   'tests/override_values.lua',
   'tests/engine_patch.lua',
+  'tests/engine_snapshot.lua',
   'tests/engine_base_specs.lua',
   'tests/engine.lua',
   'tests/overrides.lua',
