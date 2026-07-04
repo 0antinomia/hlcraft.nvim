@@ -175,23 +175,22 @@ function M.section_header(text)
   return util.normalize_group_name(section_name)
 end
 
-function M.entry_line(text)
-  local trimmed = vim.trim(text)
-  local key_part = nil
-  local value_part = nil
-
+local function entry_parts(trimmed)
   if trimmed:sub(1, 1) == '"' then
-    local next_index
-    key_part, next_index = parse_quoted_token(trimmed, 1)
+    local key_part, next_index = parse_quoted_token(trimmed, 1)
     if not key_part then
       return nil, nil
     end
 
     local rest = vim.trim(trimmed:sub(next_index))
-    value_part = rest:match('^=%s*(%b{})%s*$')
-  else
-    key_part, value_part = trimmed:match('^([%w_%-.@]+)%s*=%s*(%b{})%s*$')
+    return key_part, rest:match('^=%s*(%b{})%s*$')
   end
+
+  return trimmed:match('^([%w_%-.@]+)%s*=%s*(%b{})%s*$')
+end
+
+function M.entry_line(text)
+  local key_part, value_part = entry_parts(vim.trim(text))
 
   if not key_part or not value_part then
     return nil, nil
