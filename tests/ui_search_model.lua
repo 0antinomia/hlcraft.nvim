@@ -46,6 +46,8 @@ h.assert_equal(intersection[1].name, 'Gamma', 'intersection did not sort by dist
 h.assert_equal(intersection[2].name, 'Alpha', 'intersection did not tie-break by name', scope)
 h.assert_equal(intersection[3].name, 'Beta', 'intersection omitted a shared result', scope)
 h.assert_equal(intersection[2].distance, 5, 'intersection did not carry color distance', scope)
+local nil_intersect_ok = pcall(model.intersect, nil, {})
+h.assert_true(not nil_intersect_ok, 'search model accepted nil name results', scope)
 
 local provider_calls = {}
 local provider = {
@@ -75,20 +77,27 @@ local invalid = model.results('a', 'invalid', provider)
 h.assert_equal(#invalid, 0, 'invalid combined color query returned results', scope)
 h.assert_equal(#provider_calls, 0, 'invalid combined color query called providers', scope)
 
-provider_calls = {}
-local non_string = model.results(123, 456, provider)
-h.assert_equal(#non_string, 0, 'non-string query returned results', scope)
-h.assert_equal(#provider_calls, 0, 'non-string query called providers', scope)
-
-provider_calls = {}
-local non_string_name = model.results(123, 'NONE', provider)
-h.assert_equal(#non_string_name, 0, 'non-string name query returned results', scope)
-h.assert_equal(#provider_calls, 0, 'non-string name query called providers', scope)
-
-provider_calls = {}
-local non_string_color = model.results('Alpha', 456, provider)
-h.assert_equal(#non_string_color, 0, 'non-string color query returned results', scope)
-h.assert_equal(#provider_calls, 0, 'non-string color query called providers', scope)
+local non_string_ok = pcall(model.results, 123, 456, provider)
+h.assert_true(not non_string_ok, 'search model accepted non-string queries', scope)
+local non_string_empty_message_ok = pcall(model.empty_message, 123, '')
+h.assert_true(not non_string_empty_message_ok, 'search empty message accepted non-string query', scope)
+local invalid_provider_ok = pcall(model.results, '', '', false)
+h.assert_true(not invalid_provider_ok, 'search model accepted invalid provider', scope)
+local incomplete_provider_ok = pcall(model.results, '', '', {
+  by_name = function()
+    return {}
+  end,
+})
+h.assert_true(not incomplete_provider_ok, 'search model accepted incomplete provider', scope)
+local invalid_provider_result_ok = pcall(model.results, 'Alpha', '', {
+  by_name = function()
+    return nil
+  end,
+  by_color = function()
+    return {}
+  end,
+})
+h.assert_true(not invalid_provider_result_ok, 'search model accepted invalid provider results', scope)
 
 provider_calls = {}
 local color_only = model.results('', 'NONE', provider)
