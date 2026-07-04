@@ -11,6 +11,7 @@ local tests = {
   'tests/dynamic_model.lua',
   'tests/dynamic_effects.lua',
   'tests/dynamic_runtime.lua',
+  'tests/ui_session.lua',
   'tests/ui_dynamic.lua',
   'tests/ui_field_values.lua',
   'tests/ui_handles.lua',
