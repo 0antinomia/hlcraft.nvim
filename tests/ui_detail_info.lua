@@ -23,16 +23,25 @@ local result = {
 }
 
 local function virt_line_text(line)
+  if type(line) ~= 'table' then
+    error('detail info virtual line must be a table', 2)
+  end
   local text = ''
-  for _, chunk in ipairs(line or {}) do
-    text = text .. tostring(chunk[1] or '')
+  for _, chunk in ipairs(line) do
+    if type(chunk) ~= 'table' or type(chunk[1]) ~= 'string' then
+      error('detail info virtual line chunk text must be a string', 2)
+    end
+    text = text .. chunk[1]
   end
   return text
 end
 
 local function virt_line_with_label(lines, label)
+  if type(lines) ~= 'table' then
+    error('detail info virtual lines must be a table', 2)
+  end
   local prefix = label .. ':'
-  for _, line in ipairs(lines or {}) do
+  for _, line in ipairs(lines) do
     if virt_line_text(line):find(prefix, 1, true) == 1 then
       return line
     end

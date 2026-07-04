@@ -147,17 +147,23 @@ local compacted_once = model.compact_channel({
 h.assert_equal(compacted_once.loop, 'once', 'compact dynamic spec dropped non-default loop', scope)
 
 local function channel_spec(extra)
+  if extra == nil then
+    extra = {}
+  end
   return vim.tbl_extend('force', {
     version = 1,
     timeline = { { at = 0, color = 'base' } },
-  }, extra or {})
+  }, extra)
 end
 
 local function brightness_transform(extra)
+  if extra == nil then
+    extra = {}
+  end
   return vim.tbl_extend('force', {
     type = 'brightness',
     timeline = { { at = 0, value = 1 } },
-  }, extra or {})
+  }, extra)
 end
 
 for _, case in ipairs({
