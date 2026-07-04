@@ -5,11 +5,13 @@ local snapshot = require('hlcraft.engine.snapshot')
 local store = require('hlcraft.engine.store')
 
 local function with_group_state(fn)
+  local original_draft = vim.deepcopy(store.data.draft)
   local original_draft_groups = vim.deepcopy(store.data.draft_groups)
   local original_persisted_groups = vim.deepcopy(store.data.persisted_groups)
 
   local ok, err = xpcall(fn, debug.traceback)
 
+  store.data.draft = original_draft
   store.data.draft_groups = original_draft_groups
   store.data.persisted_groups = original_persisted_groups
 
@@ -46,6 +48,51 @@ with_group_state(function()
   store.data.persisted_groups.BadPersisted = 1
   local bad_persisted_ok = pcall(snapshot.ensure_draft_group, 'BadPersisted')
   h.assert_true(not bad_persisted_ok, 'snapshot accepted numeric persisted group', scope)
+end)
+
+local dynamic_spec = {
+  version = 1,
+  preset = 'pulse',
+  timeline = {
+    { at = 0, color = 'base' },
+    { at = 1, color = '#ffffff' },
+  },
+}
+
+local raw_entry = {
+  fg = '#ABCDEF',
+  dynamic = {
+    fg = dynamic_spec,
+  },
+}
+local normalized_entry = snapshot.normalize_draft_entry(raw_entry)
+h.assert_equal(normalized_entry.fg, '#abcdef', 'draft entry color was not normalized', scope)
+h.assert_equal(normalized_entry.dynamic.fg.preset, 'pulse', 'draft entry dynamic was not normalized', scope)
+h.assert_equal(raw_entry.fg, '#ABCDEF', 'draft entry normalization mutated input', scope)
+h.assert_true(snapshot.normalize_draft_entry(nil) == nil, 'nil draft entry did not normalize to nil', scope)
+h.assert_true(snapshot.normalize_draft_entry({}) == nil, 'empty draft entry did not normalize to nil', scope)
+
+local invalid_entry_ok = pcall(snapshot.normalize_draft_entry, false)
+h.assert_true(not invalid_entry_ok, 'snapshot accepted a non-table draft entry', scope)
+local unknown_field_ok = pcall(snapshot.normalize_draft_entry, { unknown = true })
+h.assert_true(not unknown_field_ok, 'snapshot accepted an unknown draft entry field', scope)
+local invalid_dynamic_ok = pcall(snapshot.normalize_draft_entry, {
+  dynamic = {
+    fg = {
+      version = 1,
+      timeline = {},
+    },
+  },
+})
+h.assert_true(not invalid_dynamic_ok, 'snapshot accepted an invalid draft dynamic override', scope)
+
+with_group_state(function()
+  store.data.draft.EmptyDraftEntry = {}
+  store.data.draft_groups.EmptyDraftEntry = 'draft'
+
+  snapshot.remove_empty_draft_entry('EmptyDraftEntry')
+  h.assert_true(store.data.draft.EmptyDraftEntry == nil, 'empty draft entry was not removed', scope)
+  h.assert_true(store.data.draft_groups.EmptyDraftEntry == nil, 'empty draft entry group was not removed', scope)
 end)
 
 print('hlcraft engine snapshot: OK')

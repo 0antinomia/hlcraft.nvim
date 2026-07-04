@@ -1,4 +1,4 @@
-local dynamic_model = require('hlcraft.dynamic.model')
+local override_entries = require('hlcraft.core.override_entries')
 local store = require('hlcraft.engine.store')
 local tables = require('hlcraft.core.tables')
 
@@ -18,17 +18,21 @@ function M.refresh_base_specs()
   data.base_specs = {}
 end
 
-function M.compact_entry(entry)
-  if type(entry) ~= 'table' then
+function M.normalize_draft_entry(entry)
+  if entry == nil then
     return nil
   end
 
-  entry.dynamic = dynamic_model.normalize_dynamic(entry.dynamic)
-  if next(entry) == nil then
+  local normalized, err = override_entries.normalize(entry, { label = 'draft entry' })
+  if err then
+    error(err, 2)
+  end
+
+  if next(normalized) == nil then
     return nil
   end
 
-  return entry
+  return normalized
 end
 
 local function assert_group_name(value, label)
@@ -69,7 +73,7 @@ function M.known_groups()
 end
 
 function M.remove_empty_draft_entry(name)
-  data.draft[name] = M.compact_entry(data.draft[name])
+  data.draft[name] = M.normalize_draft_entry(data.draft[name])
   if data.draft[name] == nil then
     data.draft[name] = nil
     data.draft_groups[name] = nil
