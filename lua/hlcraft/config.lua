@@ -14,7 +14,11 @@ function M.setup(user_config)
     error(err, 2)
   end
 
-  local merged = vim.tbl_deep_extend('force', vim.deepcopy(schema.defaults), user_config or {})
+  local source = user_config
+  if source == nil then
+    source = {}
+  end
+  local merged = vim.tbl_deep_extend('force', vim.deepcopy(schema.defaults), source)
   M.config = schema.normalize(merged)
   return M.config
 end
