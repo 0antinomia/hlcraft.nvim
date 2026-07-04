@@ -20,6 +20,7 @@ local tests = {
   'tests/ui_json.lua',
   'tests/ui_prompt.lua',
   'tests/ui_input_sequence.lua',
+  'tests/ui_input_actions.lua',
   'tests/ui_input_paste_plan.lua',
   'tests/ui_style_editor.lua',
   'tests/ui_hints.lua',
