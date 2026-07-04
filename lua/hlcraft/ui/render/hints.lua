@@ -142,7 +142,10 @@ end
 
 local function block(spec, width)
   local lines = {}
-  for _, item in ipairs(spec) do
+  for index, item in ipairs(spec) do
+    if index > 1 then
+      lines[#lines + 1] = ''
+    end
     local section_lines = M.section_lines(item[1], item[2], {
       max_items = item.max_items,
       width = width,

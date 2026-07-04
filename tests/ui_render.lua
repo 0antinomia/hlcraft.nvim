@@ -42,6 +42,24 @@ local result = {
   sp = '#333333',
 }
 
+local function virt_line_text(line)
+  local text = ''
+  for _, chunk in ipairs(line or {}) do
+    text = text .. tostring(chunk[1] or '')
+  end
+  return text
+end
+
+local function virt_line_with_label(lines, label)
+  local prefix = label .. ':'
+  for _, line in ipairs(lines or {}) do
+    if virt_line_text(line):find(prefix, 1, true) == 1 then
+      return line
+    end
+  end
+  return nil
+end
+
 h.assert_equal(
   hints.format({
     { 'Enter', 'open/apply' },
@@ -64,12 +82,14 @@ h.assert_equal(
   'dynamic edit hint continuation changed',
   scope
 )
-h.assert_equal(dynamic_hint_lines[3], 'Global  [d] static  [s] save', 'dynamic global hint first row changed', scope)
-h.assert_equal(dynamic_hint_lines[4], '        [q] back  [?] help', 'dynamic global hint continuation changed', scope)
+h.assert_equal(dynamic_hint_lines[3], '', 'dynamic hint groups should be visually separated', scope)
+h.assert_equal(dynamic_hint_lines[4], 'Global  [d] static  [s] save', 'dynamic global hint first row changed', scope)
+h.assert_equal(dynamic_hint_lines[5], '        [q] back  [?] help', 'dynamic global hint continuation changed', scope)
 
 local narrow_color_hint_lines = hints.color(20)
 h.assert_equal(narrow_color_hint_lines[1], 'Adjust  [r/R] red', 'narrow color hint first row changed', scope)
 h.assert_equal(narrow_color_hint_lines[2], '        [g/G] green', 'narrow color hint did not wrap actions', scope)
+h.assert_true(vim.tbl_contains(narrow_color_hint_lines, ''), 'narrow color hints lack group spacing', scope)
 for _, line in ipairs(narrow_color_hint_lines) do
   h.assert_true(vim.fn.strdisplaywidth(line) <= 20, 'narrow color hint exceeded target width', scope)
 end
@@ -81,7 +101,8 @@ end
 local help_lines = help_model.lines('z')
 h.assert_equal(help_lines[1], 'hlcraft help', 'help title changed', scope)
 h.assert_true(vim.tbl_contains(help_lines, 'Global'), 'help global section missing', scope)
-h.assert_true(vim.tbl_contains(help_lines, '[z]        flash current result'), 'preview key help line missing', scope)
+h.assert_true(vim.tbl_contains(help_lines, '  [z]        flash current result'), 'preview key help line missing', scope)
+h.assert_true(help_model.is_item_line('  [q / Esc] back or close'), 'indented help item line was not detected', scope)
 h.assert_true(help_model.is_item_line('[q / Esc] back or close'), 'help item line was not detected', scope)
 h.assert_true(not help_model.is_item_line('Global'), 'help section was treated as item line', scope)
 
@@ -139,6 +160,9 @@ for _, group_name in ipairs({
   local applied = vim.api.nvim_get_hl(ns, { name = group_name })
   h.assert_true(applied.fg ~= nil, ('theme group %s has no foreground'):format(group_name), scope)
 end
+local hint_hl = vim.api.nvim_get_hl(ns, { name = theme.groups.hint })
+local action_hl = vim.api.nvim_get_hl(ns, { name = theme.groups.hint_action })
+h.assert_true(action_hl.fg ~= hint_hl.fg, 'hint actions should contrast with muted hint text', scope)
 
 local detail_info_lines = detail_info.build_virt_lines(result, function()
   return theme.groups.value
@@ -146,7 +170,12 @@ end, 80)
 h.assert_equal(detail_info_lines[2][1][2], theme.groups.section, 'detail info label lacks contrast', scope)
 h.assert_equal(detail_info_lines[2][2][2], theme.groups.title, 'detail info name lacks title contrast', scope)
 h.assert_equal(detail_info_lines[3][1][2], theme.groups.section, 'detail color label lacks contrast', scope)
-h.assert_equal(detail_info_lines[4][3][2], theme.groups.muted, 'detail attr metadata lacks muted contrast', scope)
+local style_line = virt_line_with_label(detail_info_lines, 'Style')
+h.assert_true(style_line ~= nil, 'detail style line missing', scope)
+h.assert_equal(style_line[1][2], theme.groups.section, 'detail style label lacks contrast', scope)
+local metrics_line = virt_line_with_label(detail_info_lines, 'Metrics')
+h.assert_true(metrics_line ~= nil, 'detail metrics line missing', scope)
+h.assert_equal(metrics_line[2][2], theme.groups.muted, 'detail metrics label lacks muted contrast', scope)
 
 local narrow_detail_info_lines = detail_info.build_virt_lines({
   name = 'HlcraftUiRenderNarrowInfo',
@@ -163,7 +192,7 @@ local narrow_detail_info_lines = detail_info.build_virt_lines({
   return theme.groups.value
 end, 40)
 h.assert_true(
-  vim.fn.strdisplaywidth(narrow_detail_info_lines[6][2][1]) <= 32,
+  vim.fn.strdisplaywidth(virt_line_with_label(narrow_detail_info_lines, 'Links')[2][1]) <= 32,
   'detail info link value ignored narrow width',
   scope
 )

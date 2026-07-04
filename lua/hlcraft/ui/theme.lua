@@ -20,6 +20,7 @@ local palettes = {
     text = '#c9d1d9',
     muted = '#8a94a6',
     accent = '#5fb3a5',
+    action = '#d8b46a',
     key_bg = '#1f4b45',
     key_fg = '#d8fff8',
     rule = '#6c9bcf',
@@ -31,6 +32,7 @@ local palettes = {
     text = '#25272b',
     muted = '#6a7280',
     accent = '#2f6f66',
+    action = '#7a541f',
     key_bg = '#d9ece8',
     key_fg = '#174943',
     rule = '#496f9d',
@@ -63,7 +65,7 @@ function M.apply(ns)
   vim.api.nvim_set_hl(ns, groups.rule, { fg = palette.rule, bold = true })
   vim.api.nvim_set_hl(ns, groups.section, { fg = palette.rule, bold = true })
   vim.api.nvim_set_hl(ns, groups.hint, { fg = palette.muted })
-  vim.api.nvim_set_hl(ns, groups.hint_action, { fg = palette.value })
+  vim.api.nvim_set_hl(ns, groups.hint_action, { fg = palette.action })
   vim.api.nvim_set_hl(ns, groups.value, { fg = palette.value })
   vim.api.nvim_set_hl(ns, groups.header, { fg = palette.header, bold = true })
   vim.api.nvim_set_hl(ns, groups.title, { fg = palette.header, bold = true })

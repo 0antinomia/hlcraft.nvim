@@ -56,10 +56,10 @@ function M.build_virt_lines(result, get_color_hl, width)
       { '  SP ', theme.groups.muted },
       { sp_text, get_color_hl(result.sp, 'sp') },
     },
+    info_line('Style', attrs_text ~= '' and attrs_text or '-'),
     {
-      label_token('Attrs'),
-      value_token(attrs_text),
-      { '  Blend ', theme.groups.muted },
+      label_token('Metrics'),
+      { 'Blend ', theme.groups.muted },
       value_token(blend_text),
       { '  Dist ', theme.groups.muted },
       value_token(dist_text),
