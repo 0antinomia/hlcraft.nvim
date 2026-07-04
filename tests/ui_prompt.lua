@@ -43,6 +43,13 @@ end, function(message)
 end)
 h.assert_equal(#notifications, 1, 'quiet prompt failure still notified', scope)
 
+local invalid_input_opts_ok = pcall(prompt.input, nil, function() end)
+h.assert_true(not invalid_input_opts_ok, 'prompt accepted missing vim input options', scope)
+local invalid_submit_ok = pcall(prompt.input, {}, nil)
+h.assert_true(not invalid_submit_ok, 'prompt accepted missing submit callback', scope)
+local invalid_prompt_opts_ok = pcall(prompt.input, {}, function() end, false)
+h.assert_true(not invalid_prompt_opts_ok, 'prompt accepted non-table options', scope)
+
 vim.ui.input = original_input
 
 print('hlcraft ui prompt: OK')
