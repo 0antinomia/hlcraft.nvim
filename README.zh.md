@@ -240,11 +240,11 @@ vim.fn.stdpath('config') .. '/hlcraft'
 
 每个文件保存一个顶层 TOML section。section 名称来自你在详情页里明确选择或新建的 group。如果某个 override 没有 group，hlcraft 会要求你先选择或新建一个 group，再进行保存。
 
-动态颜色会保存为 hlcraft 专属的扁平键，例如 `dyn_fg`、`dyn_bg` 和 `dyn_sp`。每个值都是一个 JSON 字符串，包含完整的通道模型：
+动态颜色会直接保存在每个高亮条目的 `dynamic` 表中。每个通道（`fg`、`bg` 或 `sp`）都使用和原始 JSON 编辑器一致的声明式模型：
 
 ```toml
 ["demo.group"]
-"Normal" = { fg = "#d7d7ff", dyn_fg = "{\"version\":1,\"preset\":\"pulse\",\"duration\":2000,\"loop\":\"pingpong\",\"timeline\":[{\"at\":0,\"color\":\"base\"},{\"at\":1,\"color\":\"#ff6699\"}]}" }
+"Normal" = { fg = "#d7d7ff", dynamic = { fg = { version = 1, preset = "pulse", duration = 2000, loop = "pingpong", interpolation = "smooth", timeline = [{ at = 0, color = "base" }, { at = 1, color = "#ff6699" }] } } }
 ```
 
 持久化 override 会在 `setup()` 时加载，并在配置的 `reapply_events` 上再次应用。

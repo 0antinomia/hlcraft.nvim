@@ -130,7 +130,7 @@ h.assert_true(
   'saved TOML omitted dynamic transforms',
   scope
 )
-h.assert_true(dynamic_content:find('dyn_', 1, true) == nil, 'saved TOML wrote legacy dynamic key', scope)
+h.assert_true(dynamic_content:find('dyn_', 1, true) == nil, 'saved TOML wrote non-declarative dynamic key', scope)
 h.assert_true(dynamic_content:find('unknown = ', 1, true) == nil, 'saved TOML wrote unknown field', scope)
 
 vim.fn.delete(persist_dir, 'rf')
