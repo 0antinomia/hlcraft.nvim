@@ -7,6 +7,12 @@ local function field_name(field)
   return input_sequence.name(field)
 end
 
+local function assert_input_value(value)
+  if type(value) ~= 'string' then
+    error('input value must be a string', 3)
+  end
+end
+
 local function find_input_field(instance, name)
   for _, input in ipairs(instance.state.geometry.inputs or {}) do
     if field_name(input) == name then
@@ -36,11 +42,11 @@ function M.current_area(instance, row1)
 end
 
 --- Collapse newlines and carriage returns into a single space
---- @param value any Value to normalize
+--- @param value string Value to normalize
 --- @return string Single-line string
 function M.normalize_single_line(value)
-  local text = tostring(value or ''):gsub('[\r\n]+', ' ')
-  return text
+  assert_input_value(value)
+  return value:gsub('[\r\n]+', ' ')
 end
 
 --- Set extmarks for all input fields to track their boundaries across re-renders
@@ -138,21 +144,25 @@ end
 --- @param name string Input field name
 --- @param value string|nil New value to set
 --- @param clear_old boolean Whether to clear and proceed even if value is nil
---- @return nil
+--- @return boolean changed Whether the buffer was changed
 function M.fill_input(instance, name, value, clear_old)
   if value == nil and not clear_old then
-    return
+    return false
+  end
+  if value ~= nil then
+    assert_input_value(value)
   end
 
   local start_row, _, field = M.get_input_pos(instance, name)
   if not (start_row and field) then
-    return
+    return false
   end
 
   local old_num_lines = #M.get_input_lines(instance, name)
   local new_lines = vim.split(value or '', '\n')
   vim.api.nvim_buf_set_lines(instance.state.buf, start_row, start_row + old_num_lines - 1, true, new_lines)
   vim.api.nvim_buf_set_lines(instance.state.buf, start_row + #new_lines, start_row + #new_lines + 1, true, {})
+  return true
 end
 
 --- Get the input field data at a given 0-based row, including value and boundary info

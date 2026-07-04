@@ -79,6 +79,26 @@ h.with_temp_buf(function(buf)
     'single physical input line was removed',
     scope
   )
+
+  local normalize_ok, normalize_err = pcall(input_model.normalize_single_line, 123)
+  h.assert_true(not normalize_ok, 'single-line normalization accepted a non-string value', scope)
+  h.assert_true(
+    tostring(normalize_err):find('input value must be a string', 1, true) ~= nil,
+    'single-line normalization error changed',
+    scope
+  )
+
+  local fill_ok, fill_err = pcall(input_model.fill_input, instance, 'name', 123, true)
+  h.assert_true(not fill_ok, 'fill_input accepted a non-string value', scope)
+  h.assert_true(
+    tostring(fill_err):find('input value must be a string', 1, true) ~= nil,
+    'fill_input type error changed',
+    scope
+  )
+
+  h.assert_true(not input_model.fill_input(instance, 'name', nil, false), 'nil fill without clear changed input', scope)
+  h.assert_true(input_model.fill_input(instance, 'name', nil, true), 'nil fill with clear did not report change', scope)
+  h.assert_equal(input_model.get_input_value(instance, 'name'), '', 'nil fill with clear did not empty input', scope)
 end, { current = true })
 
 print('hlcraft ui input actions: OK')
