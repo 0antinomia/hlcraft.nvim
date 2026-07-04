@@ -6,7 +6,6 @@ M.channels = { 'fg', 'bg', 'sp' }
 M.channel_set = { fg = true, bg = true, sp = true }
 
 M.version = 1
-M.presets = { 'pulse', 'breath', 'hue', 'gradient', 'blink', 'duotone' }
 M.default_duration = 2000
 
 local min_duration = 250
