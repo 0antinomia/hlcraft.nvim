@@ -1,17 +1,7 @@
 local M = {}
 
 local color = require('hlcraft.core.color')
-
-local style_keys = {
-  'bold',
-  'italic',
-  'underline',
-  'undercurl',
-  'strikethrough',
-  'underdouble',
-  'underdotted',
-  'underdashed',
-}
+local fields = require('hlcraft.core.fields')
 
 local function terminal_name(chain)
   local terminal = chain and chain[#chain] or nil
@@ -31,7 +21,7 @@ function M.from_attrs(name, attrs, opts)
     resolved_bg = 'NONE',
   }
 
-  for _, key in ipairs(style_keys) do
+  for _, key in ipairs(fields.style_keys) do
     entry[key] = attrs[key] or false
   end
 

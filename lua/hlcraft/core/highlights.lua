@@ -1,6 +1,7 @@
 --- @type table
 local M = {}
 
+local fields = require('hlcraft.core.fields')
 local highlight_entry = require('hlcraft.core.highlight_entry')
 
 --- Module-level cache for highlight group enumeration.
@@ -140,7 +141,7 @@ end
 --- @return string Comma-separated attribute names, or '-' if none are set
 function M.bool_attrs(result)
   local attrs = {}
-  for _, attr in ipairs({ 'bold', 'italic', 'underline', 'undercurl', 'strikethrough' }) do
+  for _, attr in ipairs(fields.style_keys) do
     if result[attr] then
       attrs[#attrs + 1] = attr
     end

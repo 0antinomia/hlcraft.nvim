@@ -1,8 +1,16 @@
 local h = require('tests.helpers')
 local scope = 'hlcraft dynamic model'
 
+local fields = require('hlcraft.core.fields')
 local model = require('hlcraft.dynamic.model')
 local presets = require('hlcraft.dynamic.presets')
+
+h.assert_true(vim.deep_equal(model.channels, fields.color_keys), 'dynamic channels drifted from color fields', scope)
+h.assert_true(
+  vim.deep_equal(model.channel_set, fields.color_set),
+  'dynamic channel set drifted from color fields',
+  scope
+)
 
 local default_spec = model.default_spec('pulse')
 h.assert_equal(default_spec.version, 1, 'default dynamic version changed', scope)

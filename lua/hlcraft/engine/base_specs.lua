@@ -10,20 +10,20 @@ function M.normalized_set_hl_spec(name)
     return {}
   end
 
-  return {
+  local spec = {
     fg = group.resolved_fg ~= 'NONE' and group.resolved_fg or 'NONE',
     bg = group.resolved_bg ~= 'NONE' and group.resolved_bg or 'NONE',
     sp = group.sp ~= 'NONE' and group.sp or 'NONE',
-    bold = group.bold or nil,
-    italic = group.italic or nil,
-    underline = group.underline or nil,
-    undercurl = group.undercurl or nil,
-    strikethrough = group.strikethrough or nil,
-    underdouble = group.underdouble or nil,
-    underdotted = group.underdotted or nil,
-    underdashed = group.underdashed or nil,
-    blend = group.blend,
   }
+
+  for _, key in ipairs(store.style_keys) do
+    spec[key] = group[key] or nil
+  end
+  for _, key in ipairs(store.numeric_keys) do
+    spec[key] = group[key]
+  end
+
+  return spec
 end
 
 function M.group_exists(name)
