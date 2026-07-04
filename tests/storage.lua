@@ -12,8 +12,7 @@ config.setup({ persist_dir = persist_dir })
 h.write_file(persist_dir .. '/manual.toml', {
   '# comment',
   '["ui.group"]',
-  '"Normal Float" = { bg = "NONE", blend = 12, bold = true, fg = "#AABBCC", unknown = "drop" }',
-  '"InvalidManual" = { fg = 123, blend = "bad", bold = "yes", dynamic = { fg = { version = 1, timeline = [] } } }',
+  '"Normal Float" = { bg = "NONE", blend = 12, bold = true, fg = "#AABBCC" }',
 })
 
 local decoded = storage.load(persist_dir)
@@ -22,10 +21,21 @@ h.assert_equal(decoded.entries['Normal Float'].fg, '#aabbcc', 'manual TOML fg di
 h.assert_equal(decoded.entries['Normal Float'].bg, 'NONE', 'manual TOML NONE did not load', scope)
 h.assert_equal(decoded.entries['Normal Float'].blend, 12, 'manual TOML number did not load', scope)
 h.assert_equal(decoded.entries['Normal Float'].bold, true, 'manual TOML boolean did not load', scope)
-h.assert_true(decoded.entries['Normal Float'].unknown == nil, 'unknown manual TOML field leaked after load', scope)
-h.assert_true(decoded.entries.InvalidManual ~= nil, 'invalid manual TOML entry did not keep group membership', scope)
-h.assert_equal(decoded.groups.InvalidManual, 'ui.group', 'invalid manual TOML group did not load', scope)
-h.assert_equal(next(decoded.entries.InvalidManual), nil, 'invalid manual TOML fields leaked after load', scope)
+
+local invalid_persist_dir = h.temp_dir('hlcraft-storage-invalid')
+vim.fn.mkdir(invalid_persist_dir, 'p')
+h.write_file(invalid_persist_dir .. '/manual.toml', {
+  '["ui.group"]',
+  '"UnknownManual" = { fg = "#AABBCC", unknown = "reject" }',
+})
+local invalid_manual_ok, invalid_manual_err = pcall(storage.load, invalid_persist_dir)
+h.assert_true(not invalid_manual_ok, 'storage.load accepted an unknown manual TOML field', scope)
+h.assert_true(
+  tostring(invalid_manual_err):find('Highlight UnknownManual has unsupported field: unknown', 1, true) ~= nil,
+  'unknown manual TOML error changed',
+  scope
+)
+h.cleanup_dir(invalid_persist_dir)
 
 local symlink_target = persist_dir .. '-linked-target.toml'
 h.cleanup_dir(symlink_target)
@@ -42,8 +52,6 @@ h.assert_equal(symlink_decoded.entries.LinkedNormal.fg, '#123456', 'symlinked TO
 h.write_file(persist_dir .. '/dynamic.toml', {
   '["dynamic.group"]',
   '"DynamicNormal" = { fg = "#101010", dynamic = { fg = { version = 1, preset = "pulse", duration = 1500, loop = "pingpong", timeline = [{ at = 0, color = "base" }, { at = 1, color = "#ffffff" }] } } }',
-  '"InvalidDynamic" = { fg = "#202020", dynamic = { fg = { version = 1, timeline = [] } } }',
-  '"UnknownDynamicKey" = { fg = "#303030", dynamic = { fg = { version = 1, timeline = [{ at = 0, color = "base" }] }, unknown = { version = 1, timeline = [{ at = 0, color = "base" }] } } }',
 })
 
 local dynamic_decoded = storage.load(persist_dir)
@@ -61,14 +69,21 @@ h.assert_equal(
   'dynamic default interpolation did not normalize on load',
   scope
 )
-h.assert_true(dynamic_decoded.entries.InvalidDynamic ~= nil, 'invalid dynamic entry did not load', scope)
-h.assert_true(dynamic_decoded.entries.InvalidDynamic.dynamic == nil, 'invalid dynamic config should not load', scope)
-h.assert_equal(dynamic_decoded.entries.UnknownDynamicKey.fg, '#303030', 'unknown dynamic key entry did not load', scope)
+
+local invalid_dynamic_dir = h.temp_dir('hlcraft-storage-invalid-dynamic')
+vim.fn.mkdir(invalid_dynamic_dir, 'p')
+h.write_file(invalid_dynamic_dir .. '/dynamic.toml', {
+  '["dynamic.group"]',
+  '"InvalidDynamic" = { fg = "#202020", dynamic = { fg = { version = 1, timeline = [] } } }',
+})
+local invalid_dynamic_ok, invalid_dynamic_err = pcall(storage.load, invalid_dynamic_dir)
+h.assert_true(not invalid_dynamic_ok, 'storage.load accepted an invalid dynamic entry', scope)
 h.assert_true(
-  dynamic_decoded.entries.UnknownDynamicKey.dynamic == nil,
-  'unknown dynamic root key should invalidate dynamic config',
+  tostring(invalid_dynamic_err):find('Highlight InvalidDynamic has invalid dynamic override', 1, true) ~= nil,
+  'invalid dynamic load error changed',
   scope
 )
+h.cleanup_dir(invalid_dynamic_dir)
 
 h.write_file(persist_dir .. '/stale.toml', {
   '["stale"]',

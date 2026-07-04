@@ -11,6 +11,13 @@ local function assert_table(value, label)
   return value
 end
 
+local function assert_non_empty_string(value, label)
+  if type(value) ~= 'string' or vim.trim(value) == '' then
+    error(('%s must be a non-empty string'):format(label), 3)
+  end
+  return value
+end
+
 local function normalize_entry_options(opts)
   if opts == nil then
     return {}
@@ -36,44 +43,10 @@ local function set_normalized(entry, key, value)
   end
 end
 
-local function normalize_override_fields(entry, normalized)
-  for _, key in ipairs(fields.override_keys) do
-    if entry[key] ~= nil then
-      local value = override_values.normalize_field(key, entry[key])
-      set_normalized(normalized, key, value)
-    end
-  end
-end
-
-local function normalize_dynamic_fields(entry, normalized, opts)
-  local dynamic = dynamic_model.normalize_dynamic(entry.dynamic)
-  if not dynamic then
-    return
-  end
-
-  if opts.compact_dynamic then
-    normalized.dynamic = dynamic_model.compact_dynamic(dynamic)
-  else
-    normalized.dynamic = dynamic
-  end
-end
-
-function M.normalize_entry(entry, opts)
-  entry = assert_table(entry, 'persistence entry')
+function M.normalize_entry(name, entry, opts)
+  entry = assert_table(entry, ('persistence entry %s'):format(tostring(name)))
   opts = normalize_entry_options(opts)
-  local normalized = {}
 
-  normalize_override_fields(entry, normalized)
-  normalize_dynamic_fields(entry, normalized, opts)
-
-  return normalized
-end
-
-function M.compact_entry(entry)
-  return M.normalize_entry(entry, { compact_dynamic = true })
-end
-
-function M.compact_entry_strict(name, entry)
   for key, _ in pairs(entry) do
     if not entry_keys[key] then
       return nil, ('Highlight %s has unsupported field: %s'):format(name, key)
@@ -96,7 +69,11 @@ function M.compact_entry_strict(name, entry)
     if not dynamic then
       return nil, ('Highlight %s has invalid dynamic override'):format(name)
     end
-    normalized.dynamic = dynamic_model.compact_dynamic(dynamic)
+    if opts.compact_dynamic then
+      normalized.dynamic = dynamic_model.compact_dynamic(dynamic)
+    else
+      normalized.dynamic = dynamic
+    end
   end
 
   return normalized, nil
@@ -108,37 +85,56 @@ function M.normalize_loaded_data(data)
   data.sections = assert_table(data.sections, 'loaded persistence sections')
   data.groups = assert_table(data.groups, 'loaded persistence groups')
 
+  local normalized_data = {
+    entries = {},
+    groups = {},
+    sections = {},
+  }
+
+  for name, group_name in pairs(data.groups) do
+    assert_non_empty_string(name, 'loaded persistence highlight name')
+    assert_non_empty_string(group_name, ('loaded persistence group for %s'):format(name))
+    normalized_data.groups[name] = group_name
+  end
+
   local normalized_by_name = {}
   for name, entry in pairs(data.entries) do
-    local normalized = M.normalize_entry(entry)
-    data.entries[name] = normalized
+    assert_non_empty_string(name, 'loaded persistence highlight name')
+    local normalized, err = M.normalize_entry(name, entry)
+    if err then
+      error(err, 2)
+    end
+    normalized_data.entries[name] = normalized
     normalized_by_name[name] = normalized
   end
 
-  for _, entries in pairs(data.sections) do
+  for section_name, entries in pairs(data.sections) do
+    assert_non_empty_string(section_name, 'loaded persistence section name')
     entries = assert_table(entries, 'loaded persistence section entries')
+    local section = {}
     for name, entry in pairs(entries) do
-      entries[name] = normalized_by_name[name] or M.normalize_entry(entry)
+      assert_non_empty_string(name, 'loaded persistence highlight name')
+      if normalized_by_name[name] then
+        section[name] = normalized_by_name[name]
+      else
+        local normalized, err = M.normalize_entry(name, entry)
+        if err then
+          error(err, 2)
+        end
+        section[name] = normalized
+      end
     end
+    normalized_data.sections[section_name] = section
   end
 
-  return data
+  return normalized_data
 end
 
 function M.normalize_entries(entries)
   entries = assert_table(entries, 'persistence entries')
   local normalized = {}
   for name, entry in pairs(entries) do
-    normalized[name] = M.compact_entry(entry)
-  end
-  return normalized
-end
-
-function M.normalize_entries_strict(entries)
-  entries = assert_table(entries, 'persistence entries')
-  local normalized = {}
-  for name, entry in pairs(entries) do
-    local compacted, err = M.compact_entry_strict(name, entry)
+    local compacted, err = M.normalize_entry(name, entry, { compact_dynamic = true })
     if err then
       return nil, err
     end

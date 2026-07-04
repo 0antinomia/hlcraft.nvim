@@ -199,17 +199,13 @@ function M.section_header(text)
 end
 
 local function entry_parts(trimmed)
-  if trimmed:sub(1, 1) == '"' then
-    local key_part, next_index = parse_quoted_token(trimmed, 1)
-    if not key_part then
-      return nil, nil
-    end
-
-    local rest = vim.trim(trimmed:sub(next_index))
-    return key_part, rest:match('^=%s*(%b{})%s*$')
+  local key_part, next_index = parse_quoted_token(trimmed, 1)
+  if not key_part or vim.trim(key_part) == '' then
+    return nil, nil
   end
 
-  return trimmed:match('^([%w_%-.@]+)%s*=%s*(%b{})%s*$')
+  local rest = vim.trim(trimmed:sub(next_index))
+  return key_part, rest:match('^=%s*(%b{})%s*$')
 end
 
 function M.entry_line(text)

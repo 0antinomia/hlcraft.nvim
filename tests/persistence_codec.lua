@@ -126,6 +126,9 @@ for _, line in ipairs({
 end
 
 for _, line in ipairs({
+  [[BareKey = { fg = "#101010" }]],
+  [["" = { fg = "#101010" }]],
+  [["   " = { fg = "#101010" }]],
   [["BareColor" = { fg = #ffffff }]],
   [["BareDynamic" = { dynamic = { fg = { preset = pulse } } }]],
   [["BadEscape" = { label = "\n" }]],
@@ -139,9 +142,32 @@ end
 local strict_decoded = codec.decode_lines({
   '["strict.group"]',
   '"Quoted" = { fg = "#101010" }',
-  '"Bare" = { fg = #202020 }',
 })
 h.assert_equal(strict_decoded.groups.Quoted, 'strict.group', 'quoted strict entry did not decode', scope)
-h.assert_true(strict_decoded.entries.Bare == nil, 'bare string entry should not decode', scope)
+
+for _, case in ipairs({
+  {
+    lines = {
+      '["strict.group"]',
+      '"Bare" = { fg = #202020 }',
+    },
+    message = 'codec decode accepted an invalid entry value',
+  },
+  {
+    lines = {
+      '[bare]',
+    },
+    message = 'codec decode accepted an invalid section',
+  },
+  {
+    lines = {
+      '"BeforeSection" = { fg = "#101010" }',
+    },
+    message = 'codec decode accepted an entry before a section',
+  },
+}) do
+  local ok = pcall(codec.decode_lines, case.lines)
+  h.assert_true(not ok, case.message, scope)
+end
 
 print('hlcraft persistence codec: OK')
