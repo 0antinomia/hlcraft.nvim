@@ -69,20 +69,30 @@ local function split_top_level(text, separator)
       current[#current + 1] = char
       table_depth = table_depth + 1
     elseif not in_string and char == '}' then
+      if table_depth == 0 then
+        return nil
+      end
       current[#current + 1] = char
-      table_depth = math.max(0, table_depth - 1)
+      table_depth = table_depth - 1
     elseif not in_string and char == '[' then
       current[#current + 1] = char
       array_depth = array_depth + 1
     elseif not in_string and char == ']' then
+      if array_depth == 0 then
+        return nil
+      end
       current[#current + 1] = char
-      array_depth = math.max(0, array_depth - 1)
+      array_depth = array_depth - 1
     elseif char == separator and not in_string and table_depth == 0 and array_depth == 0 then
       parts[#parts + 1] = table.concat(current)
       current = {}
     else
       current[#current + 1] = char
     end
+  end
+
+  if in_string or escaped or table_depth ~= 0 or array_depth ~= 0 then
+    return nil
   end
 
   parts[#parts + 1] = table.concat(current)
@@ -98,7 +108,12 @@ local function parse_array(text)
     return result
   end
 
-  for _, raw_item in ipairs(split_top_level(body, ',')) do
+  local items = split_top_level(body, ',')
+  if not items then
+    return nil
+  end
+
+  for _, raw_item in ipairs(items) do
     local value = parse_value(raw_item)
     if value == nil then
       return nil
@@ -116,7 +131,12 @@ local function parse_inline_table(text)
     return entry
   end
 
-  for _, field in ipairs(split_top_level(body, ',')) do
+  local fields = split_top_level(body, ',')
+  if not fields then
+    return nil
+  end
+
+  for _, field in ipairs(fields) do
     local key, raw = vim.trim(field):match('^([%w_]+)%s*=%s*(.+)$')
     if not key or not raw then
       return nil

@@ -24,6 +24,18 @@ local invalid_dynamic_ok, invalid_dynamic_err = patch.validate({ dynamic = { unk
 h.assert_true(not invalid_dynamic_ok, 'unknown dynamic key was accepted', scope)
 h.assert_equal(invalid_dynamic_err, 'Unsupported dynamic key: unknown', 'unknown dynamic key error changed', scope)
 
+local invalid_group_type, invalid_group_type_err = patch.normalize({ group = 42 })
+h.assert_true(invalid_group_type == nil, 'numeric group was normalized', scope)
+h.assert_equal(invalid_group_type_err, 'Group name must be a string', 'group type error changed', scope)
+
+local invalid_group_empty, invalid_group_empty_err = patch.normalize({ group = '  ' })
+h.assert_true(invalid_group_empty == nil, 'empty group was normalized', scope)
+h.assert_equal(invalid_group_empty_err, 'Group name is required', 'empty group error changed', scope)
+
+local clear_group, clear_group_err = patch.normalize({ group = vim.NIL })
+h.assert_true(clear_group ~= nil, clear_group_err or 'explicit group clear did not normalize', scope)
+h.assert_equal(clear_group.group, vim.NIL, 'explicit group clear did not keep sentinel', scope)
+
 local invalid_blend, invalid_blend_err = patch.normalize({ blend = 101 })
 h.assert_true(invalid_blend == nil, 'out-of-range blend was normalized', scope)
 h.assert_equal(invalid_blend_err, 'Blend override must be between 0 and 100', 'blend range error changed', scope)

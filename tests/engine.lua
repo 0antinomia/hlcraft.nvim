@@ -19,6 +19,11 @@ vim.api.nvim_set_hl(0, 'HlcraftEngineNormal', { fg = '#010203' })
 local group_ok, group_err = engine.set_group('HlcraftEngineNormal', 'engine')
 h.assert_true(group_ok, group_err or 'set_group failed', scope)
 
+local bad_group_ok, bad_group_err = engine.set_group('HlcraftEngineBadGroup', 42)
+h.assert_true(not bad_group_ok, 'numeric group was accepted', scope)
+h.assert_equal(bad_group_err, 'Group name must be a string', 'numeric group reported wrong error', scope)
+h.assert_true(engine.get_draft_group('HlcraftEngineBadGroup') == nil, 'invalid group created draft group', scope)
+
 local color_ok, color_err = engine.set_color('HlcraftEngineNormal', 'fg', '#abcdef')
 h.assert_true(color_ok, color_err or 'set_color failed', scope)
 h.assert_equal(engine.get('HlcraftEngineNormal').fg, '#abcdef', 'draft fg was not set', scope)
