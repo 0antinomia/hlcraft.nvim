@@ -1,0 +1,31 @@
+local h = require('tests.helpers')
+local scope = 'hlcraft ui scene rows'
+
+local rows = require('hlcraft.ui.scene.rows')
+
+local result = rows.find_by_line({
+  fg = {
+    line = 7,
+    kind = 'color',
+  },
+  bg = {
+    line = 9,
+    key = 'explicit',
+    kind = 'color',
+  },
+}, 7)
+h.assert_true(result ~= nil, 'row was not found by line', scope)
+h.assert_equal(result.key, 'fg', 'row helper did not backfill key from table key', scope)
+
+local explicit = rows.find_by_line({
+  bg = {
+    line = 9,
+    key = 'explicit',
+  },
+}, 9)
+h.assert_equal(explicit.key, 'explicit', 'row helper overwrote explicit row key', scope)
+h.assert_true(rows.find_by_line({ fg = { line = 7 } }, 8) == nil, 'row helper returned a non-matching row', scope)
+h.assert_true(rows.find_by_line(nil, 8) == nil, 'row helper did not handle nil rows', scope)
+h.assert_true(rows.find_by_line({ fg = { line = 7 } }, nil) == nil, 'row helper did not handle nil line', scope)
+
+print('hlcraft ui scene rows: OK')

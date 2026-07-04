@@ -2,6 +2,7 @@ local search_scene = require('hlcraft.ui.scene.search')
 local session = require('hlcraft.ui.session')
 local style_editor = require('hlcraft.ui.editor.style')
 local ui_fields = require('hlcraft.ui.fields')
+local rows = require('hlcraft.ui.scene.rows')
 local window = require('hlcraft.ui.workspace.window')
 
 local M = {}
@@ -173,16 +174,7 @@ function M.close(instance)
 end
 
 function M.row_at_cursor(instance)
-  local win = require('hlcraft.ui.workspace.window').get_win(instance)
-  if not require('hlcraft.ui.workspace.window').is_valid_win(win) then
-    return nil
-  end
-  local cursor_line = vim.api.nvim_win_get_cursor(win)[1]
-  for _, row in pairs(instance.state.geometry.detail_menu or {}) do
-    if row.line == cursor_line then
-      return row
-    end
-  end
+  return rows.detail_menu_at_cursor(instance)
 end
 
 function M.activate(instance)
