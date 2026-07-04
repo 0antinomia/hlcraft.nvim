@@ -13,17 +13,13 @@ local theme = require('hlcraft.ui.theme')
 
 local M = {}
 
-local function normalize_build_args(instance, geometry, result, field, width, line_offset)
-  if line_offset ~= nil or width ~= nil then
-    return instance, geometry, result, field, width, line_offset or 0
-  end
-
-  return nil, instance, geometry, result, field, 0
-end
-
 function M.build(instance, geometry, result, field, width, line_offset)
-  instance, geometry, result, field, width, line_offset =
-    normalize_build_args(instance, geometry, result, field, width, line_offset)
+  assert(instance and instance.state, 'field editor renderer requires an instance')
+  assert(geometry and geometry.editor_rows, 'field editor renderer requires editor geometry')
+  assert(result and result.name, 'field editor renderer requires a highlight result')
+  assert(type(field) == 'string', 'field editor renderer requires a field')
+  line_offset = line_offset or 0
+
   if field == 'fg' or field == 'bg' or field == 'sp' then
     local dynamic = dynamic_model.channel_set[field] and session.dynamic_value(result.name, field) or nil
     if dynamic then

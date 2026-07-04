@@ -1,19 +1,11 @@
+local fields = require('hlcraft.core.fields')
+
 local M = {}
 
-M.color_keys = { 'fg', 'bg', 'sp' }
-M.style_keys = {
-  'bold',
-  'italic',
-  'underline',
-  'undercurl',
-  'strikethrough',
-  'underdouble',
-  'underdotted',
-  'underdashed',
-}
-M.numeric_keys = { 'blend' }
-M.override_keys =
-  vim.list_extend(vim.list_extend(vim.deepcopy(M.color_keys), vim.deepcopy(M.style_keys)), M.numeric_keys)
+M.color_keys = vim.deepcopy(fields.color_keys)
+M.style_keys = vim.deepcopy(fields.style_keys)
+M.numeric_keys = vim.deepcopy(fields.numeric_keys)
+M.override_keys = vim.deepcopy(fields.override_keys)
 
 M.data = {
   applying = false,

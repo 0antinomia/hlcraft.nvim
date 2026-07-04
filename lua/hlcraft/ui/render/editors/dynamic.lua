@@ -1,6 +1,7 @@
 local ui_fields = require('hlcraft.ui.fields')
 local render_util = require('hlcraft.render.util')
 local dynamic_preview = require('hlcraft.ui.dynamic_preview')
+local editor_rows = require('hlcraft.ui.render.editor_rows')
 local hints = require('hlcraft.ui.render.hints')
 local detail_render = require('hlcraft.ui.render.detail')
 
@@ -8,16 +9,6 @@ local M = {}
 
 local function swatch_end_col(col_start, swatch)
   return col_start + vim.fn.strdisplaywidth(swatch)
-end
-
-local function append_editor_row(lines, geometry, key, text)
-  local row = {
-    line = #lines + 1,
-    key = key,
-  }
-  geometry.editor_rows[key] = row
-  lines[#lines + 1] = text
-  return row
 end
 
 local function phase_label(phase)
@@ -36,8 +27,8 @@ function M.build(instance, geometry, result, field, width, line_offset, dynamic)
     ('Duration: %dms'):format(dynamic.duration or 0),
   }
 
-  append_editor_row(lines, geometry, 'dynamic_loop', ('Loop: %s'):format(dynamic.loop or 'repeat'))
-  append_editor_row(lines, geometry, 'dynamic_phase', ('Phase: %.2f'):format(dynamic.phase or 0))
+  editor_rows.append(lines, geometry, 'dynamic_loop', ('Loop: %s'):format(dynamic.loop or 'repeat'))
+  editor_rows.append(lines, geometry, 'dynamic_phase', ('Phase: %.2f'):format(dynamic.phase or 0))
 
   lines[#lines + 1] = ('Swatch: %s'):format(swatch)
 
@@ -51,12 +42,12 @@ function M.build(instance, geometry, result, field, width, line_offset, dynamic)
     dynamic = dynamic,
   })
 
-  append_editor_row(lines, geometry, 'dynamic_raw_json', 'Raw JSON')
+  editor_rows.append(lines, geometry, 'dynamic_raw_json', 'Raw JSON')
 
   local samples = { 0, 0.25, 0.5, 0.75, 1 }
   for _, phase in ipairs(samples) do
     local prefix = ('Sample %s: '):format(phase_label(phase))
-    local row = append_editor_row(
+    local row = editor_rows.append(
       lines,
       geometry,
       ('dynamic_sample:%s'):format(phase_label(phase)),

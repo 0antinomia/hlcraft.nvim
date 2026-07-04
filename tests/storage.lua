@@ -12,7 +12,7 @@ config.setup({ persist_dir = persist_dir })
 h.write_file(persist_dir .. '/manual.toml', {
   '# comment',
   '["ui.group"]',
-  '"Normal Float" = { bg = "NONE", blend = 12, bold = true, fg = "#aabbcc" }',
+  '"Normal Float" = { bg = "NONE", blend = 12, bold = true, fg = "#aabbcc", unknown = "drop" }',
 })
 
 local decoded = storage.load(persist_dir)
@@ -21,6 +21,7 @@ h.assert_equal(decoded.entries['Normal Float'].fg, '#aabbcc', 'manual TOML fg di
 h.assert_equal(decoded.entries['Normal Float'].bg, 'NONE', 'manual TOML NONE did not load', scope)
 h.assert_equal(decoded.entries['Normal Float'].blend, 12, 'manual TOML number did not load', scope)
 h.assert_equal(decoded.entries['Normal Float'].bold, true, 'manual TOML boolean did not load', scope)
+h.assert_true(decoded.entries['Normal Float'].unknown == nil, 'unknown manual TOML field leaked after load', scope)
 
 local symlink_target = persist_dir .. '-linked-target.toml'
 vim.fn.delete(symlink_target, 'rf')
@@ -44,16 +45,23 @@ local dynamic_json = vim.json.encode({
     { at = 1, color = '#ffffff' },
   },
 })
+local invalid_dynamic_json = vim.json.encode({
+  version = 1,
+  timeline = {},
+})
 h.write_file(persist_dir .. '/dynamic.toml', {
   '["dynamic.group"]',
   ('"DynamicNormal" = { fg = "#101010", dyn_fg = "%s" }'):format(dynamic_json:gsub('\\', '\\\\'):gsub('"', '\\"')),
-  '"OldDynamic" = { fg = "#202020", dyn_fg_mode = "rgb", dyn_fg_speed = 1500 }',
+  ('"InvalidDynamic" = { fg = "#202020", dyn_fg = "%s" }'):format(
+    invalid_dynamic_json:gsub('\\', '\\\\'):gsub('"', '\\"')
+  ),
 })
 
 local dynamic_decoded = storage.load(persist_dir)
 h.assert_equal(dynamic_decoded.entries.DynamicNormal.dynamic.fg.preset, 'pulse', 'dynamic preset did not load', scope)
 h.assert_equal(dynamic_decoded.entries.DynamicNormal.dynamic.fg.duration, 1500, 'dynamic duration did not load', scope)
-h.assert_true(dynamic_decoded.entries.OldDynamic.dynamic == nil, 'old dynamic keys should not load', scope)
+h.assert_true(dynamic_decoded.entries.InvalidDynamic ~= nil, 'invalid dynamic entry did not load', scope)
+h.assert_true(dynamic_decoded.entries.InvalidDynamic.dynamic == nil, 'invalid dynamic JSON should not load', scope)
 h.assert_true(dynamic_decoded.entries.DynamicNormal.dyn_fg == nil, 'flat dynamic key leaked after load', scope)
 
 h.write_file(persist_dir .. '/stale.toml', {
@@ -130,23 +138,7 @@ h.assert_equal(
 local dynamic_content = h.read_file(files.file_path(persist_dir, 'dynamic/group'))
 h.assert_true(dynamic_content:find('dyn_fg = ', 1, true) ~= nil, 'saved TOML omitted dyn_fg', scope)
 h.assert_true(dynamic_content:find('dyn_bg = ', 1, true) ~= nil, 'saved TOML omitted dyn_bg', scope)
-local old_dynamic_keys = {
-  'dyn_fg_mode',
-  'dyn_fg_speed',
-  'dyn_fg_params',
-  'dyn_fg_palette',
-  'dyn_bg_mode',
-  'dyn_bg_speed',
-  'dyn_bg_params',
-  'dyn_bg_palette',
-}
-for _, old_dynamic_key in ipairs(old_dynamic_keys) do
-  h.assert_true(
-    dynamic_content:find(old_dynamic_key, 1, true) == nil,
-    ('saved TOML wrote old dynamic key %s'):format(old_dynamic_key),
-    scope
-  )
-end
+h.assert_true(dynamic_content:find('unknown = ', 1, true) == nil, 'saved TOML wrote unknown field', scope)
 
 vim.fn.delete(persist_dir, 'rf')
 vim.fn.delete(symlink_target, 'rf')

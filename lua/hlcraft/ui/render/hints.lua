@@ -1,6 +1,60 @@
 local M = {}
 
 local separator = '  |  '
+local groups = {
+  search = {
+    { 'Enter', 'open/apply' },
+    { 'Tab', 'input' },
+    { '?', 'more' },
+  },
+  detail = {
+    { 'Enter', 'edit/toggle' },
+    { 's', 'save' },
+    { '?', 'more' },
+  },
+  color_adjust = {
+    { 'r/R', 'red' },
+    { 'g/G', 'green' },
+    { 'b/B', 'blue' },
+    { 'n', 'NONE' },
+    { 'i', 'input' },
+  },
+  color_global = {
+    { 'd', 'dynamic' },
+    { 's', 'save' },
+    { 'q', 'back' },
+    { '?', 'more' },
+  },
+  dynamic_edit = {
+    { 'i', 'row' },
+    { 'm', 'preset' },
+    { '+/-', 'time/phase' },
+    { 'e', 'JSON' },
+  },
+  dynamic_global = {
+    { 'd', 'static' },
+    { 's', 'save' },
+    { 'q', 'back' },
+    { '?', 'more' },
+  },
+  blend_adjust = {
+    { '-/+', 'small' },
+    { '</>', 'large' },
+    { 'u', 'unset' },
+    { 'i', 'input' },
+  },
+  blend_global = {
+    { 's', 'save' },
+    { 'q', 'back' },
+    { '?', 'more' },
+  },
+  group = {
+    { 'Enter', 'select' },
+    { 'i', 'input' },
+    { 's', 'save' },
+    { '?', 'more' },
+  },
+}
 
 function M.format(items)
   local parts = {}
@@ -14,88 +68,44 @@ function M.format(items)
   return table.concat(parts, separator)
 end
 
+local function section(label, group)
+  return label .. ': ' .. M.format(groups[group])
+end
+
 function M.search()
-  return M.format({
-    { 'Enter', 'open/apply' },
-    { 'Tab', 'input' },
-    { '?', 'more' },
-  })
+  return M.format(groups.search)
 end
 
 function M.detail()
-  return M.format({
-    { 'Enter', 'edit/toggle' },
-    { 's', 'save' },
-    { '?', 'more' },
-  })
+  return M.format(groups.detail)
 end
 
 function M.color_adjust()
-  return 'Adjust: '
-    .. M.format({
-      { 'r/R', 'red' },
-      { 'g/G', 'green' },
-      { 'b/B', 'blue' },
-      { 'n', 'NONE' },
-      { 'i', 'input' },
-    })
+  return section('Adjust', 'color_adjust')
 end
 
 function M.color_global()
-  return 'Global: '
-    .. M.format({
-      { 'd', 'dynamic' },
-      { 's', 'save' },
-      { 'q', 'back' },
-      { '?', 'more' },
-    })
+  return section('Global', 'color_global')
 end
 
 function M.dynamic_edit()
-  return 'Edit: '
-    .. M.format({
-      { 'i', 'row' },
-      { 'm', 'preset' },
-      { '+/-', 'time/phase' },
-      { 'e', 'JSON' },
-    })
+  return section('Edit', 'dynamic_edit')
 end
 
 function M.dynamic_global()
-  return 'Global: '
-    .. M.format({
-      { 'd', 'static' },
-      { 's', 'save' },
-      { 'q', 'back' },
-      { '?', 'more' },
-    })
+  return section('Global', 'dynamic_global')
 end
 
 function M.blend_adjust()
-  return 'Adjust: '
-    .. M.format({
-      { '-/+', 'small' },
-      { '</>', 'large' },
-      { 'u', 'unset' },
-      { 'i', 'input' },
-    })
+  return section('Adjust', 'blend_adjust')
 end
 
 function M.blend_global()
-  return 'Global: ' .. M.format({
-    { 's', 'save' },
-    { 'q', 'back' },
-    { '?', 'more' },
-  })
+  return section('Global', 'blend_global')
 end
 
 function M.group()
-  return M.format({
-    { 'Enter', 'select' },
-    { 'i', 'input' },
-    { 's', 'save' },
-    { '?', 'more' },
-  })
+  return M.format(groups.group)
 end
 
 return M
