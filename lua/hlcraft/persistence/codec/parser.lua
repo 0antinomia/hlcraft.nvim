@@ -2,6 +2,11 @@ local util = require('hlcraft.persistence.codec.util')
 
 local M = {}
 
+local supported_escapes = {
+  ['"'] = true,
+  ['\\'] = true,
+}
+
 local function parse_quoted_token(text, index)
   if text:sub(index, index) ~= '"' then
     return nil, index
@@ -12,7 +17,14 @@ local function parse_quoted_token(text, index)
 
   while i <= #text do
     local char = text:sub(i, i)
-    if char == '\\' and i < #text then
+    if char == '\\' then
+      if i >= #text then
+        return nil, index
+      end
+      local escaped_char = text:sub(i + 1, i + 1)
+      if not supported_escapes[escaped_char] then
+        return nil, index
+      end
       parts[#parts + 1] = text:sub(i, i + 1)
       i = i + 2
     elseif char == '"' then
@@ -24,6 +36,14 @@ local function parse_quoted_token(text, index)
   end
 
   return nil, index
+end
+
+local function parse_quoted_string(value)
+  local parsed, next_index = parse_quoted_token(value, 1)
+  if parsed ~= nil and next_index > #value then
+    return parsed
+  end
+  return nil
 end
 
 local function split_top_level(text, separator)
@@ -106,6 +126,9 @@ local function parse_inline_table(text)
     if value == nil then
       return nil
     end
+    if entry[key] ~= nil then
+      return nil
+    end
     entry[key] = value
   end
 
@@ -127,15 +150,15 @@ parse_value = function(raw)
   if value:match('^%b[]$') then
     return parse_array(value)
   end
-  if value:match('^".*"$') then
-    return util.unescape_string(value:sub(2, -2))
+  if value:sub(1, 1) == '"' then
+    return parse_quoted_string(value)
   end
 
   local number_value = tonumber(value)
   if number_value ~= nil then
     return number_value
   end
-  return value
+  return nil
 end
 
 function M.section_header(text)
