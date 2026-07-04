@@ -21,21 +21,12 @@ local function normalize_override_fields(entry, normalized)
 end
 
 local function normalize_dynamic_fields(entry, normalized, opts)
-  if type(entry.dynamic) ~= 'table' then
+  local dynamic = dynamic_model.normalize_dynamic(entry.dynamic)
+  if not dynamic then
     return
   end
 
-  local dynamic = {}
-  for _, key in ipairs(fields.color_keys) do
-    if entry.dynamic[key] ~= nil then
-      local value = override_values.normalize_dynamic_channel(key, entry.dynamic[key])
-      set_normalized(dynamic, key, value)
-    end
-  end
-
-  if next(dynamic) ~= nil then
-    normalized.dynamic = opts.compact_dynamic and dynamic_model.compact_dynamic(dynamic) or dynamic
-  end
+  normalized.dynamic = opts.compact_dynamic and dynamic_model.compact_dynamic(dynamic) or dynamic
 end
 
 function M.normalize_entry(entry, opts)

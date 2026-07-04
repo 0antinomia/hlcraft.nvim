@@ -43,6 +43,7 @@ h.write_file(persist_dir .. '/dynamic.toml', {
   '["dynamic.group"]',
   '"DynamicNormal" = { fg = "#101010", dynamic = { fg = { version = 1, preset = "pulse", duration = 1500, loop = "pingpong", timeline = [{ at = 0, color = "base" }, { at = 1, color = "#ffffff" }] } } }',
   '"InvalidDynamic" = { fg = "#202020", dynamic = { fg = { version = 1, timeline = [] } } }',
+  '"UnknownDynamicKey" = { fg = "#303030", dynamic = { fg = { version = 1, timeline = [{ at = 0, color = "base" }] }, unknown = { version = 1, timeline = [{ at = 0, color = "base" }] } } }',
 })
 
 local dynamic_decoded = storage.load(persist_dir)
@@ -62,6 +63,12 @@ h.assert_equal(
 )
 h.assert_true(dynamic_decoded.entries.InvalidDynamic ~= nil, 'invalid dynamic entry did not load', scope)
 h.assert_true(dynamic_decoded.entries.InvalidDynamic.dynamic == nil, 'invalid dynamic config should not load', scope)
+h.assert_equal(dynamic_decoded.entries.UnknownDynamicKey.fg, '#303030', 'unknown dynamic key entry did not load', scope)
+h.assert_true(
+  dynamic_decoded.entries.UnknownDynamicKey.dynamic == nil,
+  'unknown dynamic root key should invalidate dynamic config',
+  scope
+)
 
 h.write_file(persist_dir .. '/stale.toml', {
   '["stale"]',
