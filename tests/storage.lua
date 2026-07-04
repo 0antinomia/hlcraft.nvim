@@ -12,7 +12,8 @@ config.setup({ persist_dir = persist_dir })
 h.write_file(persist_dir .. '/manual.toml', {
   '# comment',
   '["ui.group"]',
-  '"Normal Float" = { bg = "NONE", blend = 12, bold = true, fg = "#aabbcc", unknown = "drop" }',
+  '"Normal Float" = { bg = "NONE", blend = 12, bold = true, fg = "#AABBCC", unknown = "drop" }',
+  '"InvalidManual" = { fg = 123, blend = "bad", bold = "yes", dynamic = { fg = { version = 1, timeline = [] } } }',
 })
 
 local decoded = storage.load(persist_dir)
@@ -22,6 +23,9 @@ h.assert_equal(decoded.entries['Normal Float'].bg, 'NONE', 'manual TOML NONE did
 h.assert_equal(decoded.entries['Normal Float'].blend, 12, 'manual TOML number did not load', scope)
 h.assert_equal(decoded.entries['Normal Float'].bold, true, 'manual TOML boolean did not load', scope)
 h.assert_true(decoded.entries['Normal Float'].unknown == nil, 'unknown manual TOML field leaked after load', scope)
+h.assert_true(decoded.entries.InvalidManual ~= nil, 'invalid manual TOML entry did not keep group membership', scope)
+h.assert_equal(decoded.groups.InvalidManual, 'ui.group', 'invalid manual TOML group did not load', scope)
+h.assert_equal(next(decoded.entries.InvalidManual), nil, 'invalid manual TOML fields leaked after load', scope)
 
 local symlink_target = persist_dir .. '-linked-target.toml'
 vim.fn.delete(symlink_target, 'rf')
