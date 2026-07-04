@@ -23,6 +23,12 @@ h.assert_equal(normal.underdashed, true, 'extended style flag did not normalize'
 h.assert_equal(normal.blend, 12, 'blend changed', scope)
 h.assert_equal(normal.resolved_fg, '#112233', 'non-linked resolved fg changed', scope)
 h.assert_equal(normal.resolved_bg, '#445566', 'non-linked resolved bg changed', scope)
+local invalid_name_ok = pcall(entry.from_attrs, nil, {})
+h.assert_true(not invalid_name_ok, 'entry accepted missing name', scope)
+local invalid_attrs_ok = pcall(entry.from_attrs, 'Invalid', nil)
+h.assert_true(not invalid_attrs_ok, 'entry accepted missing attrs', scope)
+local invalid_opts_ok = pcall(entry.from_attrs, 'Invalid', {}, false)
+h.assert_true(not invalid_opts_ok, 'entry accepted non-table options', scope)
 
 local style_result = {}
 for _, key in ipairs(fields.style_keys) do
