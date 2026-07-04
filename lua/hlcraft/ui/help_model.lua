@@ -1,5 +1,11 @@
 local M = {}
 
+local function assert_string(value, message)
+  if type(value) ~= 'string' then
+    error(message, 3)
+  end
+end
+
 local function keycap(item)
   return ('[%s]'):format(item[1])
 end
@@ -29,8 +35,11 @@ function M.sections(preview_key)
     { 'S-Tab', 'previous input' },
   }
 
-  if preview_key and preview_key ~= false and preview_key ~= '' then
-    action_items[#action_items + 1] = { tostring(preview_key), 'preview result' }
+  if preview_key ~= nil and preview_key ~= false then
+    assert_string(preview_key, 'preview key must be a string or false')
+    if preview_key ~= '' then
+      action_items[#action_items + 1] = { preview_key, 'preview result' }
+    end
   end
 
   return {
@@ -119,7 +128,7 @@ function M.lines(preview_key)
 end
 
 function M.is_item_line(line)
-  line = tostring(line or '')
+  assert_string(line, 'help line must be a string')
   return line:find('^%s*%b[]%s+') ~= nil
 end
 

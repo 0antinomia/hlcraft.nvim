@@ -53,10 +53,19 @@ h.assert_equal(help_lines[1], 'hlcraft help', 'help title changed', scope)
 h.assert_true(vim.tbl_contains(help_lines, 'Navigation'), 'help navigation section missing', scope)
 h.assert_true(vim.tbl_contains(help_lines, 'Actions'), 'help actions section missing', scope)
 h.assert_true(vim.tbl_contains(help_lines, '  [z]  preview result'), 'preview key help line missing', scope)
+h.assert_true(
+  not vim.tbl_contains(help_model.lines(false), '  [false]  preview result'),
+  'disabled preview key was rendered',
+  scope
+)
 h.assert_true(vim.tbl_contains(help_lines, '  [J/K]    next/prev result'), 'search jump help line missing', scope)
 h.assert_true(help_model.is_item_line('  [q / Esc] back/close'), 'indented help item line was not detected', scope)
 h.assert_true(help_model.is_item_line('[q / Esc] back/close'), 'help item line was not detected', scope)
 h.assert_true(not help_model.is_item_line('Navigation'), 'help section was treated as item line', scope)
+local numeric_preview_ok = pcall(help_model.lines, 1)
+h.assert_true(not numeric_preview_ok, 'help model accepted numeric preview key', scope)
+local numeric_line_ok = pcall(help_model.is_item_line, 1)
+h.assert_true(not numeric_line_ok, 'help item detector accepted a non-string line', scope)
 for _, line in ipairs(help_lines) do
   h.assert_true(vim.fn.strdisplaywidth(line) <= 38, 'help line exceeded compact width', scope)
 end
