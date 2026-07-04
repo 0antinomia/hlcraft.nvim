@@ -7,7 +7,7 @@ local numbers = require('hlcraft.core.number')
 --- @param n integer|nil Color value from nvim_get_hl
 --- @return string hex color as "#RRGGBB" or "NONE"
 function M.int_to_hex(n)
-  if not n then
+  if type(n) ~= 'number' or not numbers.is_finite(n) or n < 0 or n > 0xffffff or math.floor(n) ~= n then
     return 'NONE'
   end
   return ('#%06x'):format(n)
