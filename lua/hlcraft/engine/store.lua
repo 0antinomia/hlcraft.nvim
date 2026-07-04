@@ -23,7 +23,4 @@ M.data = {
   draft_groups = {},
 }
 
-M.data.runtime = M.data.draft
-M.data.runtime_groups = M.data.draft_groups
-
 return M
