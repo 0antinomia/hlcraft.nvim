@@ -4,16 +4,6 @@ local dynamic_model = require('hlcraft.dynamic.model')
 local override_values = require('hlcraft.core.override_values')
 local store = require('hlcraft.engine.store')
 
-local color_key_set = {}
-for _, key in ipairs(store.color_keys) do
-  color_key_set[key] = true
-end
-
-local style_key_set = {}
-for _, key in ipairs(store.style_keys) do
-  style_key_set[key] = true
-end
-
 local patch_key_set = {
   group = true,
   dynamic = true,
@@ -24,11 +14,11 @@ for _, key in ipairs(store.override_keys) do
 end
 
 function M.is_color_key(key)
-  return color_key_set[key] == true
+  return store.color_set[key] == true
 end
 
 function M.is_style_key(key)
-  return style_key_set[key] == true
+  return store.style_set[key] == true
 end
 
 function M.is_dynamic_key(key)

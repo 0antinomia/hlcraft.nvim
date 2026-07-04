@@ -1,17 +1,21 @@
 local color = require('hlcraft.core.color')
+local fields = require('hlcraft.core.fields')
 local numbers = require('hlcraft.core.number')
 
 local M = {}
 
-M.channels = { 'fg', 'bg', 'sp' }
-M.channel_set = { fg = true, bg = true, sp = true }
+M.channels = vim.deepcopy(fields.color_keys)
+M.channel_set = vim.deepcopy(fields.color_set)
 
 M.version = 1
 M.default_duration = 2000
 
 local min_duration = 250
 local max_duration = 10000
-local color_refs = { base = true, fg = true, bg = true, sp = true }
+local color_refs = { base = true }
+for _, key in ipairs(fields.color_keys) do
+  color_refs[key] = true
+end
 local interpolation_set = { linear = true, step = true, smooth = true, smoothstep = true, sine = true }
 local transform_type_set = { brightness = true, hue_shift = true, saturation = true }
 
