@@ -35,6 +35,17 @@ h.assert_equal(
   'toggle did not create pulse preset',
   scope
 )
+local clear_toggle_ok, clear_toggle_err = editor.toggle(instance, result, 'fg')
+h.assert_true(clear_toggle_ok, clear_toggle_err or 'toggle dynamic clear failed', scope)
+h.assert_true(engine.get('HlcraftUiDynamicNormal').dynamic == nil, 'toggle did not clear dynamic field', scope)
+local reset_toggle_ok, reset_toggle_err = editor.toggle(instance, result, 'fg')
+h.assert_true(reset_toggle_ok, reset_toggle_err or 'toggle dynamic reset failed', scope)
+h.assert_equal(
+  engine.get('HlcraftUiDynamicNormal').dynamic.fg.preset,
+  'pulse',
+  'toggle did not recreate pulse preset',
+  scope
+)
 
 local cycle_ok, cycle_err = editor.cycle_preset(instance, result, 'fg')
 h.assert_true(cycle_ok, cycle_err or 'cycle preset failed', scope)

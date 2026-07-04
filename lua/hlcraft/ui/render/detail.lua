@@ -50,6 +50,16 @@ local function color_display_value(result, key)
   return session.display_value(result.name, key, fallback)
 end
 
+local function detail_value(result, key, fallback)
+  if key == 'group' then
+    return session.display_group(result.name)
+  end
+  if ui_fields.detail_kinds[key] == 'color' then
+    return color_display_value(result, key)
+  end
+  return session.display_value(result.name, key, fallback)
+end
+
 function M.build(instance, geometry, result, width, line_offset)
   instance = render_instance(instance)
   geometry = detail_geometry(geometry)
@@ -67,9 +77,7 @@ function M.build(instance, geometry, result, width, line_offset)
   for _, key in ipairs(ui_fields.detail_order) do
     local fallback = field_values.fallback_value(result, key)
     local dynamic = dynamic_model.channel_set[key] and session.dynamic_value(result.name, key) or nil
-    local value = key == 'group' and session.display_group(result.name)
-      or ui_fields.detail_kinds[key] == 'color' and color_display_value(result, key)
-      or session.display_value(result.name, key, fallback)
+    local value = detail_value(result, key, fallback)
     local label_text = render_util.pad(ui_fields.detail_labels[key] or key, label_width)
     local prefix = ('%s %s  '):format(dirty_mark, label_text)
     local value_col = #prefix
