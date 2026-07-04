@@ -42,7 +42,7 @@ local function toml_directory_opts(opts)
 end
 
 function M.sanitize_filename(name)
-  local sanitized = assert_string(name, 'Filename'):gsub('[^%w._-]', function(char)
+  local sanitized = assert_string(name, 'Filename'):gsub('[^%w%.%-]', function(char)
     return ('_%02X'):format(string.byte(char))
   end)
 
