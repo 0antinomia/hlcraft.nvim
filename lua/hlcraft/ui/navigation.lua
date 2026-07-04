@@ -1,4 +1,5 @@
 local window = require('hlcraft.ui.workspace.window')
+local buffer_lines = require('hlcraft.ui.buffer_lines')
 
 local M = {}
 
@@ -105,7 +106,7 @@ function M.clamp_cursor(instance)
 
   instance.state.clamping_cursor = true
   local ok = pcall(function()
-    local line = vim.api.nvim_buf_get_lines(instance.state.buf, target_row - 1, target_row, false)[1] or ''
+    local line = buffer_lines.line(instance.state.buf, target_row - 1, 'navigation target')
     vim.api.nvim_win_set_cursor(win, { target_row, math.min(col, #line) })
   end)
   instance.state.clamping_cursor = false

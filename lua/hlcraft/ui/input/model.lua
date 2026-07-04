@@ -1,5 +1,6 @@
 local input_sequence = require('hlcraft.ui.input.sequence')
 local window = require('hlcraft.ui.workspace.window')
+local buffer_lines = require('hlcraft.ui.buffer_lines')
 
 local M = {}
 
@@ -204,7 +205,7 @@ end
 --- @param field table Field descriptor with a `line` key
 --- @return string Text content of the field's line
 function M.field_line_text(instance, field)
-  return vim.api.nvim_buf_get_lines(instance.state.buf, field.line - 1, field.line, false)[1] or ''
+  return buffer_lines.line(instance.state.buf, field.line - 1, 'input field')
 end
 
 --- Read name and color query values from the buffer into instance state

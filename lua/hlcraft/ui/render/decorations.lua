@@ -2,6 +2,7 @@ local color = require('hlcraft.core.color')
 local numbers = require('hlcraft.core.number')
 local ui_detail = require('hlcraft.ui.detail')
 local window = require('hlcraft.ui.workspace.window')
+local buffer_lines = require('hlcraft.ui.buffer_lines')
 local line_highlights = require('hlcraft.ui.render.line_highlights')
 local placeholders = require('hlcraft.ui.render.placeholders')
 local theme = require('hlcraft.ui.theme')
@@ -135,7 +136,7 @@ function M.apply_detail_menu_highlights(instance, detail_menu, dirty)
 
   for _, row in pairs(assert_detail_menu(detail_menu)) do
     local line_idx = row.line - 1
-    local line = vim.api.nvim_buf_get_lines(buf, line_idx, line_idx + 1, false)[1] or ''
+    local line = buffer_lines.line(buf, line_idx, 'detail menu geometry')
     local line_len = #line
 
     if dirty and line_len > 0 then

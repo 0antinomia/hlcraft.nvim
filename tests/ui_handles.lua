@@ -2,6 +2,7 @@ local h = require('tests.helpers')
 local scope = 'hlcraft ui handles'
 
 local handles = require('hlcraft.ui.handles')
+local buffer_lines = require('hlcraft.ui.buffer_lines')
 local ui = require('hlcraft.ui')
 
 h.assert_true(not handles.is_valid_buf(nil), 'nil buffer was valid', scope)
@@ -17,5 +18,16 @@ local invalid_instance_name_ok = pcall(ui.get_instance, false)
 h.assert_true(not invalid_instance_name_ok, 'UI accepted non-string instance name', scope)
 local invalid_open_opts_ok = pcall(ui.open, false)
 h.assert_true(not invalid_open_opts_ok, 'UI open accepted non-table options', scope)
+
+h.with_temp_buf(function(line_buf)
+  vim.api.nvim_buf_set_lines(line_buf, 0, -1, false, { 'alpha' })
+  h.assert_equal(buffer_lines.line(line_buf, 0, 'test buffer'), 'alpha', 'buffer line lookup changed', scope)
+  local missing_line_ok = pcall(buffer_lines.line, line_buf, 1, 'test buffer')
+  h.assert_true(not missing_line_ok, 'buffer line lookup accepted missing line', scope)
+  local invalid_row_ok = pcall(buffer_lines.line, line_buf, -1, 'test buffer')
+  h.assert_true(not invalid_row_ok, 'buffer line lookup accepted invalid row', scope)
+end)
+local invalid_buffer_ok = pcall(buffer_lines.line, nil, 0, 'test buffer')
+h.assert_true(not invalid_buffer_ok, 'buffer line lookup accepted invalid buffer', scope)
 
 print('hlcraft ui handles: OK')
