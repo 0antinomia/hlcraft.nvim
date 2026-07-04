@@ -1,6 +1,6 @@
 local M = {}
 
-local separator = '  |  '
+local separator = '  '
 local label_width = 8
 local default_max_items = 3
 
@@ -87,7 +87,7 @@ function M.format(items)
     local key = item[1] or item.key
     local action = item[2] or item.action
     if key and action then
-      parts[#parts + 1] = ('%s %s'):format(key, action)
+      parts[#parts + 1] = ('[%s] %s'):format(key, action)
     end
   end
   return table.concat(parts, separator)

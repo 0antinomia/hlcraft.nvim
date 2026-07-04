@@ -48,30 +48,30 @@ h.assert_equal(
     { 'Tab', 'input' },
     { '?', 'more' },
   }),
-  'Enter open/apply  |  Tab input  |  ? more',
+  '[Enter] open/apply  [Tab] input  [?] more',
   'compact hint formatter changed unexpectedly',
   scope
 )
-h.assert_equal(hints.search(), 'Action  Enter open/apply  |  Tab input  |  ? help', 'search hint is too verbose', scope)
+h.assert_equal(hints.search(), 'Action  [Enter] open/apply  [Tab] input  [?] help', 'search hint is too verbose', scope)
 h.assert_true(not hints.search():find('Keys:', 1, true), 'search hint kept the crowded Keys prefix', scope)
-h.assert_equal(hints.detail(), 'Action  Enter edit/toggle  |  s save  |  ? help', 'detail hint is too verbose', scope)
+h.assert_equal(hints.detail(), 'Action  [Enter] edit/toggle  [s] save  [?] help', 'detail hint is too verbose', scope)
 
 local dynamic_hint_lines = hints.dynamic()
-h.assert_equal(dynamic_hint_lines[1], 'Edit    i row  |  m preset', 'dynamic edit hint first row changed', scope)
+h.assert_equal(dynamic_hint_lines[1], 'Edit    [i] row  [m] preset', 'dynamic edit hint first row changed', scope)
 h.assert_equal(
   dynamic_hint_lines[2],
-  '        +/- time/phase  |  e JSON',
+  '        [+/-] time/phase  [e] JSON',
   'dynamic edit hint continuation changed',
   scope
 )
-h.assert_equal(dynamic_hint_lines[3], 'Global  d static  |  s save', 'dynamic global hint first row changed', scope)
-h.assert_equal(dynamic_hint_lines[4], '        q back  |  ? help', 'dynamic global hint continuation changed', scope)
+h.assert_equal(dynamic_hint_lines[3], 'Global  [d] static  [s] save', 'dynamic global hint first row changed', scope)
+h.assert_equal(dynamic_hint_lines[4], '        [q] back  [?] help', 'dynamic global hint continuation changed', scope)
 
 local help_lines = help_model.lines('z')
 h.assert_equal(help_lines[1], 'hlcraft help', 'help title changed', scope)
 h.assert_true(vim.tbl_contains(help_lines, 'Global'), 'help global section missing', scope)
-h.assert_true(vim.tbl_contains(help_lines, 'z        flash current result'), 'preview key help line missing', scope)
-h.assert_true(help_model.is_item_line('q / Esc  back or close'), 'help item line was not detected', scope)
+h.assert_true(vim.tbl_contains(help_lines, '[z] flash current result'), 'preview key help line missing', scope)
+h.assert_true(help_model.is_item_line('[q / Esc] back or close'), 'help item line was not detected', scope)
 h.assert_true(not help_model.is_item_line('Global'), 'help section was treated as item line', scope)
 
 local editor_geometry = { editor_rows = {} }
