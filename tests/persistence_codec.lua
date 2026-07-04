@@ -23,6 +23,12 @@ local decoded = codec.decode_lines({
 h.assert_equal(decoded.groups.Normal, 'dynamic.group', 'section group did not decode', scope)
 h.assert_equal(decoded.entries.Normal.dynamic.fg.preset, 'pulse', 'nested dynamic preset did not decode', scope)
 h.assert_equal(decoded.entries.Normal.dynamic.fg.timeline[2].color, '#ffffff', 'nested array did not decode', scope)
+local nil_decode_ok = pcall(codec.decode_lines, nil)
+h.assert_true(not nil_decode_ok, 'codec decode accepted nil lines', scope)
+local numeric_line_decode_ok = pcall(codec.decode_lines, { 1 })
+h.assert_true(not numeric_line_decode_ok, 'codec decode accepted a non-string line', scope)
+local numeric_load_ok = pcall(codec.load_file, 1)
+h.assert_true(not numeric_load_ok, 'codec load_file accepted a non-string path', scope)
 
 local encoded = codec.encode_section('dynamic.group', {
   Normal = {
