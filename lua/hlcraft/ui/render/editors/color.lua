@@ -34,8 +34,9 @@ function M.build(instance, geometry, result, field, width, line_offset)
     value = value,
     field = field,
   }
-  lines[#lines + 1] = hints.color_adjust()
-  lines[#lines + 1] = hints.color_global()
+  for _, line in ipairs(hints.color()) do
+    lines[#lines + 1] = line
+  end
 
   for index, line in ipairs(lines) do
     lines[index] = render_util.truncate(line, width)

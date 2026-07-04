@@ -6,6 +6,23 @@ local theme = require('hlcraft.ui.theme')
 
 local M = {}
 
+local label_width = 8
+
+local function label_token(label)
+  return { render_util.pad(label .. ':', label_width), theme.groups.section }
+end
+
+local function value_token(value, hl)
+  return { tostring(value or '-'), hl or theme.groups.value }
+end
+
+local function info_line(label, value, value_hl)
+  return {
+    label_token(label),
+    value_token(value, value_hl),
+  }
+end
+
 --- Build virtual lines for the detail info panel (name, colors, attrs, source, links, file)
 --- @param result table Highlight group result with resolved colors and metadata
 --- @param get_color_hl function Callback(bg, suffix) -> string highlight name
@@ -22,32 +39,34 @@ function M.build_virt_lines(result, get_color_hl, width)
   local fg_text = render_util.display_color(resolved_fg)
   local bg_text = render_util.display_color(resolved_bg)
   local sp_text = render_util.display_color(result.sp)
+  local attrs_text = highlights.bool_attrs(result)
+  local blend_text = result.blend ~= nil and tostring(result.blend) or '-'
+  local dist_text = result.distance and ('%.1f'):format(result.distance) or '-'
 
   return {
     { { string.rep('─', math.max(20, width or 20)), theme.groups.rule } },
-    { { ('Name: %s'):format(result.name), theme.groups.text } },
+    info_line('Name', result.name, theme.groups.title),
     {
-      { 'Colors: FG ', theme.groups.text },
+      label_token('Colors'),
+      { 'FG ', theme.groups.muted },
       { fg_text, get_color_hl(resolved_fg, 'fg') },
-      { '   BG ', theme.groups.text },
+      { '  BG ', theme.groups.muted },
       { bg_text, get_color_hl(resolved_bg, 'bg') },
-      { '   SP ', theme.groups.text },
+      { '  SP ', theme.groups.muted },
       { sp_text, get_color_hl(result.sp, 'sp') },
     },
     {
-      {
-        ('Attrs:  %s   Blend %s   Dist %s'):format(
-          highlights.bool_attrs(result),
-          result.blend ~= nil and tostring(result.blend) or '-',
-          result.distance and ('%.1f'):format(result.distance) or '-'
-        ),
-        theme.groups.text,
-      },
+      label_token('Attrs'),
+      value_token(attrs_text),
+      { '  Blend ', theme.groups.muted },
+      value_token(blend_text),
+      { '  Dist ', theme.groups.muted },
+      value_token(dist_text),
     },
-    { { ('Source: %s'):format(render_util.truncate(source_text, 88)), theme.groups.text } },
-    { { ('Links:  %s'):format(render_util.truncate(chain, 88)), theme.groups.text } },
+    info_line('Source', render_util.truncate(source_text, 88), theme.groups.muted),
+    info_line('Links', render_util.truncate(chain, 88), theme.groups.muted),
     { { '' } },
-    { { ('File: %s'):format(render_util.truncate(persist_path, 88)), theme.groups.text } },
+    info_line('File', render_util.truncate(persist_path, 88), theme.groups.muted),
     { { '' } },
   }
 end

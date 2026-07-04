@@ -1,29 +1,41 @@
 local M = {}
 
-local separator = '  |  '
+local separator = '   '
+local label_width = 8
+
+local function pad_label(label)
+  local display_width = vim.fn.strdisplaywidth(label)
+  if display_width >= label_width then
+    return label .. ' '
+  end
+  return label .. string.rep(' ', label_width - display_width)
+end
+
 local groups = {
   search = {
     { 'Enter', 'open/apply' },
     { 'Tab', 'input' },
-    { '?', 'more' },
+    { '?', 'help' },
   },
   detail = {
     { 'Enter', 'edit/toggle' },
     { 's', 'save' },
-    { '?', 'more' },
+    { '?', 'help' },
   },
   color_adjust = {
     { 'r/R', 'red' },
     { 'g/G', 'green' },
     { 'b/B', 'blue' },
+  },
+  color_set = {
     { 'n', 'NONE' },
     { 'i', 'input' },
+    { 'd', 'dynamic' },
   },
   color_global = {
-    { 'd', 'dynamic' },
     { 's', 'save' },
     { 'q', 'back' },
-    { '?', 'more' },
+    { '?', 'help' },
   },
   dynamic_edit = {
     { 'i', 'row' },
@@ -35,24 +47,28 @@ local groups = {
     { 'd', 'static' },
     { 's', 'save' },
     { 'q', 'back' },
-    { '?', 'more' },
+    { '?', 'help' },
   },
   blend_adjust = {
     { '-/+', 'small' },
     { '</>', 'large' },
+  },
+  blend_set = {
     { 'u', 'unset' },
     { 'i', 'input' },
   },
   blend_global = {
     { 's', 'save' },
     { 'q', 'back' },
-    { '?', 'more' },
+    { '?', 'help' },
   },
-  group = {
+  group_action = {
     { 'Enter', 'select' },
     { 'i', 'input' },
+  },
+  group_global = {
     { 's', 'save' },
-    { '?', 'more' },
+    { '?', 'help' },
   },
 }
 
@@ -69,43 +85,53 @@ function M.format(items)
 end
 
 local function section(label, group)
-  return label .. ': ' .. M.format(groups[group])
+  return pad_label(label) .. M.format(groups[group])
+end
+
+local function block(spec)
+  local lines = {}
+  for _, item in ipairs(spec) do
+    lines[#lines + 1] = section(item[1], item[2])
+  end
+  return lines
 end
 
 function M.search()
-  return M.format(groups.search)
+  return section('Action', 'search')
 end
 
 function M.detail()
-  return M.format(groups.detail)
+  return section('Action', 'detail')
 end
 
-function M.color_adjust()
-  return section('Adjust', 'color_adjust')
+function M.color()
+  return block({
+    { 'Adjust', 'color_adjust' },
+    { 'Set', 'color_set' },
+    { 'Global', 'color_global' },
+  })
 end
 
-function M.color_global()
-  return section('Global', 'color_global')
+function M.dynamic()
+  return block({
+    { 'Edit', 'dynamic_edit' },
+    { 'Global', 'dynamic_global' },
+  })
 end
 
-function M.dynamic_edit()
-  return section('Edit', 'dynamic_edit')
-end
-
-function M.dynamic_global()
-  return section('Global', 'dynamic_global')
-end
-
-function M.blend_adjust()
-  return section('Adjust', 'blend_adjust')
-end
-
-function M.blend_global()
-  return section('Global', 'blend_global')
+function M.blend()
+  return block({
+    { 'Adjust', 'blend_adjust' },
+    { 'Set', 'blend_set' },
+    { 'Global', 'blend_global' },
+  })
 end
 
 function M.group()
-  return M.format(groups.group)
+  return block({
+    { 'Action', 'group_action' },
+    { 'Global', 'group_global' },
+  })
 end
 
 return M
