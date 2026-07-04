@@ -22,6 +22,15 @@ M.dynamic_interval_ms = {
   max = 1000,
 }
 
+M.threshold_range = {
+  min = 0,
+  max = 1000,
+}
+
+M.debounce_ms_range = {
+  min = 0,
+}
+
 M.values = {
   from_none = M.from_none,
   threshold = 100,
