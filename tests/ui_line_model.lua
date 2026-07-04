@@ -48,6 +48,8 @@ h.assert_equal(
 h.assert_equal(line_model.line_kind('[q / Esc] back/close'), 'hint', 'keycap help item not classified', scope)
 h.assert_equal(line_model.line_kind('Current: #ffffff'), 'label', 'label line not classified', scope)
 h.assert_true(line_model.line_kind('plain text') == nil, 'plain line was classified', scope)
+local numeric_line_kind_ok = pcall(line_model.line_kind, 1)
+h.assert_true(not numeric_line_kind_ok, 'line kind accepted a non-string line', scope)
 
 assert_deep_equal(compact(line_model.hint_spans('Action  [Enter] open/apply  [Tab] input')), {
   { 'section', 0, 6 },
@@ -63,11 +65,15 @@ assert_deep_equal(compact(line_model.hint_spans('        [+/-] time/phase  [e] J
   { 'key', 26, 29 },
   { 'action', 30, 34 },
 }, 'continuation hint spans changed')
+local numeric_hint_spans_ok = pcall(line_model.hint_spans, 1)
+h.assert_true(not numeric_hint_spans_ok, 'hint spans accepted a non-string line', scope)
 
 assert_deep_equal(compact(line_model.label_spans('Current: #ffffff')), {
   { 'section', 0, 8 },
   { 'value', 9, -1 },
 }, 'label spans changed')
 h.assert_equal(#line_model.label_spans('plain text'), 0, 'plain text should not have label spans', scope)
+local numeric_label_spans_ok = pcall(line_model.label_spans, 1)
+h.assert_true(not numeric_label_spans_ok, 'label spans accepted a non-string line', scope)
 
 print('hlcraft ui line model: OK')
