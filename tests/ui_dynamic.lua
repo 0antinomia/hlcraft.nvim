@@ -49,6 +49,14 @@ h.assert_equal(engine.get('HlcraftUiDynamicNormal').dynamic.fg.duration, 2250, '
 local loop_ok, loop_err = editor.set_loop(instance, result, 'fg', 'once')
 h.assert_true(loop_ok, loop_err or 'loop set failed', scope)
 h.assert_equal(engine.get('HlcraftUiDynamicNormal').dynamic.fg.loop, 'once', 'loop did not set', scope)
+local bad_loop_ok, bad_loop_err = editor.set_loop(instance, result, 'fg', 'bad')
+h.assert_true(not bad_loop_ok, 'invalid loop set succeeded', scope)
+h.assert_true(
+  tostring(bad_loop_err):find('Loop must be one of:', 1, true) ~= nil,
+  'invalid loop reported wrong error',
+  scope
+)
+h.assert_equal(engine.get('HlcraftUiDynamicNormal').dynamic.fg.loop, 'once', 'invalid loop changed draft', scope)
 
 local phase_ok, phase_err = editor.set_phase(instance, result, 'fg', '0.5')
 h.assert_true(phase_ok, phase_err or 'phase set failed', scope)
