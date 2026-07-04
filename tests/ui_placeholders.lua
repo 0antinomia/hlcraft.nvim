@@ -40,4 +40,16 @@ h.with_temp_buf(function(buf)
   h.assert_equal(#marks, 0, 'placeholder was not cleared after input text', scope)
 end)
 
+h.with_temp_buf(function(buf)
+  local invalid_geometry_ok = pcall(placeholders.refresh, {
+    ns = vim.api.nvim_create_namespace('hlcraft-ui-placeholders-invalid-test'),
+    state = {
+      buf = buf,
+      geometry = {},
+      placeholder_marks = {},
+    },
+  })
+  h.assert_true(not invalid_geometry_ok, 'placeholders accepted missing geometry inputs', scope)
+end)
+
 print('hlcraft ui placeholders: OK')

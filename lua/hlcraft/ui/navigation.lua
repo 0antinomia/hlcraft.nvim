@@ -2,25 +2,33 @@ local window = require('hlcraft.ui.workspace.window')
 
 local M = {}
 
+local function geometry_table(instance, key)
+  local value = instance.state.geometry[key]
+  if type(value) ~= 'table' then
+    error(('navigation geometry %s must be a table'):format(key), 3)
+  end
+  return value
+end
+
 --- Get sorted list of row numbers where the cursor is allowed to land
 --- @param instance table The Instance object holding UI state
 --- @return number[] Sorted list of allowed 1-based row numbers
 function M.allowed_rows(instance)
   local rows = {}
-  for _, field in ipairs(instance.state.geometry.inputs or {}) do
+  for _, field in ipairs(geometry_table(instance, 'inputs')) do
     if not instance.state.detail_index then
       rows[#rows + 1] = field.line
     end
   end
   if instance.state.detail_index then
-    for _, row in pairs(instance.state.geometry.detail_menu or {}) do
+    for _, row in pairs(geometry_table(instance, 'detail_menu')) do
       rows[#rows + 1] = row.line
     end
-    for _, row in pairs(instance.state.geometry.editor_rows or {}) do
+    for _, row in pairs(geometry_table(instance, 'editor_rows')) do
       rows[#rows + 1] = row.line
     end
   else
-    for line_nr in pairs(instance.state.geometry.result_lines or {}) do
+    for line_nr in pairs(geometry_table(instance, 'result_lines')) do
       rows[#rows + 1] = line_nr
     end
   end

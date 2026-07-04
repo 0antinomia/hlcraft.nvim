@@ -13,8 +13,16 @@ local function assert_input_value(value)
   end
 end
 
+local function geometry_inputs(instance)
+  local inputs = instance.state.geometry.inputs
+  if type(inputs) ~= 'table' then
+    error('input geometry inputs must be a table', 3)
+  end
+  return inputs
+end
+
 local function find_input_field(instance, name)
-  for _, input in ipairs(instance.state.geometry.inputs or {}) do
+  for _, input in ipairs(geometry_inputs(instance)) do
     if field_name(input) == name then
       return input
     end
@@ -58,8 +66,7 @@ function M.set_input_extmarks(instance)
   end
 
   instance.state.extmark_ids = {}
-  local inputs = instance.state.geometry.inputs or {}
-  for _, field in ipairs(inputs) do
+  for _, field in ipairs(geometry_inputs(instance)) do
     local name = field_name(field)
     instance.state.extmark_ids[name .. ':start'] =
       vim.api.nvim_buf_set_extmark(instance.state.buf, instance.ns, field.line - 1, 0, {
@@ -170,7 +177,7 @@ end
 --- @param row0 number 0-based row number
 --- @return table|nil Input data with name, value, start_row, end_row, field keys
 function M.get_input_at_row(instance, row0)
-  for _, field in ipairs(instance.state.geometry.inputs or {}) do
+  for _, field in ipairs(geometry_inputs(instance)) do
     local name = field_name(field)
     local start_row, end_boundary_row = M.get_input_pos(instance, name)
     if start_row and end_boundary_row then
