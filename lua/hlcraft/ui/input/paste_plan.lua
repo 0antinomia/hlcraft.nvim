@@ -5,7 +5,9 @@ local function before_input_end(input, row0)
 end
 
 local function plan(key, opts)
-  opts = opts or {}
+  if opts == nil then
+    opts = {}
+  end
   return {
     key = key,
     append_newline = opts.append_newline == true,
