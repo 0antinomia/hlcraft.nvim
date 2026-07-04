@@ -156,7 +156,10 @@ local function parse_inline_table(text)
 end
 
 parse_value = function(raw)
-  local value = vim.trim(raw or '')
+  if type(raw) ~= 'string' then
+    error('TOML value must be a string', 2)
+  end
+  local value = vim.trim(raw)
 
   if value == 'true' then
     return true
