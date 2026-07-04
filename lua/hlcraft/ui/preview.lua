@@ -41,8 +41,10 @@ local function restore_keymap(map)
     return
   end
 
-  local rhs = map.rhs or ''
-  vim.api.nvim_set_keymap('n', map.lhs, rhs, opts)
+  if type(map.rhs) ~= 'string' then
+    error('preview keymap restore requires a string rhs', 2)
+  end
+  vim.api.nvim_set_keymap('n', map.lhs, map.rhs, opts)
 end
 
 local function restore(instance)

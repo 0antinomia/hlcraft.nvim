@@ -16,6 +16,7 @@ local tests = {
   'tests/ui_field_values.lua',
   'tests/ui_handles.lua',
   'tests/ui_state.lua',
+  'tests/ui_preview.lua',
   'tests/ui_timers.lua',
   'tests/ui_autocmds.lua',
   'tests/ui_context.lua',
