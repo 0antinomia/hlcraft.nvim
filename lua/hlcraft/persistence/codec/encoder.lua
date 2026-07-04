@@ -1,4 +1,5 @@
 local fields = require('hlcraft.core.fields')
+local tables = require('hlcraft.core.tables')
 local util = require('hlcraft.persistence.codec.util')
 
 local M = {}
@@ -31,22 +32,6 @@ for _, key in ipairs({
   'value',
 }) do
   append_priority(key)
-end
-
-local function is_array(value)
-  if type(value) ~= 'table' then
-    return false
-  end
-
-  local count = 0
-  for key, _ in pairs(value) do
-    if type(key) ~= 'number' or key < 1 or key % 1 ~= 0 then
-      return false
-    end
-    count = count + 1
-  end
-
-  return count == #value
 end
 
 local function ordered_keys(entry)
@@ -98,7 +83,7 @@ encode_value = function(value)
     return tostring(value)
   end
   if type(value) == 'table' then
-    if is_array(value) then
+    if tables.is_sequence(value) then
       return encode_array(value)
     end
     return M.inline_table(value)
