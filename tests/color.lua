@@ -3,6 +3,11 @@ local scope = 'hlcraft color'
 
 local color = require('hlcraft.core.color')
 
+h.assert_equal(color.int_to_hex(nil), 'NONE', 'nil int color did not normalize to NONE', scope)
+h.assert_equal(color.int_to_hex('bad'), 'NONE', 'string int color did not normalize to NONE', scope)
+h.assert_equal(color.int_to_hex(-1), 'NONE', 'negative int color did not normalize to NONE', scope)
+h.assert_equal(color.int_to_hex(0x1000000), 'NONE', 'out-of-range int color did not normalize to NONE', scope)
+h.assert_equal(color.int_to_hex(0xabcdef), '#abcdef', 'valid int color did not normalize', scope)
 h.assert_equal(color.clamp_channel(-1), 0, 'negative channel was not clamped', scope)
 h.assert_equal(color.clamp_channel(0 / 0), 0, 'NaN channel was not clamped', scope)
 h.assert_equal(color.clamp_channel(255.9), 255, 'high channel was not clamped', scope)
