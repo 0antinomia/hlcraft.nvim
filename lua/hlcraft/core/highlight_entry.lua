@@ -8,8 +8,34 @@ local function terminal_name(chain)
   return terminal and terminal:gsub(' %(circular%)$', '') or nil
 end
 
+local function assert_name(name)
+  if type(name) ~= 'string' then
+    error('highlight entry name must be a string', 3)
+  end
+  return name
+end
+
+local function assert_attrs(attrs)
+  if type(attrs) ~= 'table' then
+    error('highlight attrs must be a table', 3)
+  end
+  return attrs
+end
+
+local function optional_opts(opts)
+  if opts == nil then
+    return {}
+  end
+  if type(opts) ~= 'table' then
+    error('highlight entry options must be a table', 3)
+  end
+  return opts
+end
+
 function M.from_attrs(name, attrs, opts)
-  opts = opts or {}
+  name = assert_name(name)
+  attrs = assert_attrs(attrs)
+  opts = optional_opts(opts)
   local entry = {
     name = name,
     fg = color.int_to_hex(attrs.fg),
