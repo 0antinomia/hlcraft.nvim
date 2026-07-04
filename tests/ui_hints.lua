@@ -17,6 +17,12 @@ h.assert_equal(
 h.assert_equal(hints.search(), 'Action  [Enter] open/apply  [Tab] input  [?] help', 'search hint is too verbose', scope)
 h.assert_true(not hints.search():find('Keys:', 1, true), 'search hint kept the crowded Keys prefix', scope)
 h.assert_equal(hints.detail(), 'Action  [Enter] edit/toggle  [s] save  [?] help', 'detail hint is too verbose', scope)
+local legacy_options_ok = pcall(hints.section_lines, 'Action', 'search', 2)
+h.assert_true(not legacy_options_ok, 'hint sections accepted legacy numeric options', scope)
+local keyed_item_ok = pcall(hints.format, {
+  { key = 'x', action = 'legacy' },
+})
+h.assert_true(not keyed_item_ok, 'hint formatter accepted keyed item compatibility shape', scope)
 
 local dynamic_hint_lines = hints.dynamic()
 h.assert_equal(dynamic_hint_lines[1], 'Edit    [i] row  [m] preset', 'dynamic edit hint first row changed', scope)

@@ -1,6 +1,6 @@
 local field_values = require('hlcraft.ui.field_values')
-local render_util = require('hlcraft.render.util')
 local session = require('hlcraft.ui.session')
+local editor_layout = require('hlcraft.ui.render.editor_layout')
 local hints = require('hlcraft.ui.render.hints')
 
 local M = {}
@@ -13,15 +13,7 @@ function M.build(geometry, result, width)
     string.rep('─', math.max(20, math.min(width, 36))),
     ('Current: %s'):format(field_values.display_text(value)),
   }
-  lines[#lines + 1] = ''
-  for _, line in ipairs(hints.blend(width)) do
-    lines[#lines + 1] = line
-  end
-
-  for index, line in ipairs(lines) do
-    lines[index] = render_util.truncate(line, width)
-  end
-  return lines
+  return editor_layout.finish(lines, width, hints.blend(width))
 end
 
 return M

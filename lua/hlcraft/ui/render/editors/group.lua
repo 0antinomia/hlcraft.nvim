@@ -1,5 +1,5 @@
-local render_util = require('hlcraft.render.util')
 local group_editor = require('hlcraft.ui.editor.group')
+local editor_layout = require('hlcraft.ui.render.editor_layout')
 local editor_rows = require('hlcraft.ui.render.editor_rows')
 local hints = require('hlcraft.ui.render.hints')
 
@@ -14,14 +14,7 @@ function M.build(geometry, result, width)
     editor_rows.append(lines, geometry, 'group:' .. group_name, group_name)
   end
   editor_rows.append(lines, geometry, 'new_group', '+ New group (i)')
-  lines[#lines + 1] = ''
-  for _, line in ipairs(hints.group(width)) do
-    lines[#lines + 1] = line
-  end
-  for index, line in ipairs(lines) do
-    lines[index] = render_util.truncate(line, width)
-  end
-  return lines
+  return editor_layout.finish(lines, width, hints.group(width))
 end
 
 return M
