@@ -68,6 +68,16 @@ local function normalize_dynamic(value)
   }
 end
 
+local function normalize_preview_key(value)
+  if value == false then
+    return false
+  end
+  if type(value) == 'string' then
+    return vim.trim(value)
+  end
+  return defaults.values.preview_key
+end
+
 function M.config(config)
   local normalized = vim.deepcopy(config or defaults.values)
   normalized.threshold = normalize_number(normalized.threshold, defaults.values.threshold, defaults.threshold_range)
@@ -76,12 +86,7 @@ function M.config(config)
   normalized.from_none = normalize_from_none(normalized.from_none)
   normalized.reapply_events = normalize_reapply_events(normalized.reapply_events)
   normalized.dynamic = normalize_dynamic(normalized.dynamic)
-
-  if normalized.preview_key == false then
-    normalized.preview_key = false
-  else
-    normalized.preview_key = vim.trim(tostring(normalized.preview_key or defaults.values.preview_key))
-  end
+  normalized.preview_key = normalize_preview_key(normalized.preview_key)
 
   return normalized
 end

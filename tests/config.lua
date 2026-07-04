@@ -63,6 +63,11 @@ for _, case in ipairs({
     message = 'preview_key=true was accepted',
   },
   {
+    value = { preview_key = 123 },
+    error = 'preview_key: must be a string or boolean, got number',
+    message = 'numeric preview_key was accepted',
+  },
+  {
     value = { preview_key = '' },
     error = 'preview_key: must be a non-empty string when provided',
     message = 'blank preview_key was accepted',
@@ -114,6 +119,10 @@ h.assert_equal(low_debounce.debounce_ms, 0, 'debounce_ms did not clamp to minimu
 local non_finite_numbers = normalize_with({ threshold = 0 / 0, debounce_ms = math.huge })
 h.assert_equal(non_finite_numbers.threshold, 100, 'non-finite threshold did not fall back to default', scope)
 h.assert_equal(non_finite_numbers.debounce_ms, 100, 'non-finite debounce_ms did not fall back to default', scope)
+local trimmed_preview_key = normalize_with({ preview_key = ' zz ' })
+h.assert_equal(trimmed_preview_key.preview_key, 'zz', 'preview_key did not trim', scope)
+local invalid_preview_key = normalize_with({ preview_key = 123 })
+h.assert_equal(invalid_preview_key.preview_key, 'z', 'invalid preview_key did not fall back to default', scope)
 
 local defaults = config.setup({})
 h.assert_equal(defaults.from_none.enabled, false, 'default from_none.enabled changed', scope)
