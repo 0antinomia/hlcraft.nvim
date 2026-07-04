@@ -94,6 +94,15 @@ h.with_temp_buf(function(buf)
   local marks = vim.api.nvim_buf_get_extmarks(buf, detail_ns, 0, -1, { details = true })
   h.assert_true(#marks > 0, 'detail menu highlights were not applied', scope)
 end)
+h.with_temp_buf(function(buf)
+  local invalid_detail_menu_ok = pcall(decorations.apply_detail_menu_highlights, {
+    ns = vim.api.nvim_create_namespace('hlcraft-ui-render-invalid-detail-menu-test'),
+    state = {
+      buf = buf,
+    },
+  }, nil, false)
+  h.assert_true(not invalid_detail_menu_ok, 'detail menu highlighter accepted nil geometry', scope)
+end)
 
 local top_help = ''
 for _, chunk in ipairs(decorations.help_virt_line()) do
