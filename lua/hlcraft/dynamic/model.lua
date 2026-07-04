@@ -78,8 +78,11 @@ local function normalize_stop_sequence(stops, normalize_stop)
 end
 
 function M.normalize_duration(value)
-  local duration = numbers.to_finite(value, M.default_duration)
-  duration = math.floor(duration)
+  if type(value) ~= 'number' or not numbers.is_finite(value) then
+    error('Dynamic duration must be a finite number', 2)
+  end
+
+  local duration = math.floor(value)
   if duration < constants.min_duration then
     return constants.min_duration
   end
@@ -93,14 +96,14 @@ function M.normalize_interpolation(value)
   if constants.interpolation_set[value] then
     return value
   end
-  return M.default_interpolation
+  return nil
 end
 
 function M.normalize_loop(value)
   if constants.loop_set[value] then
     return value
   end
-  return M.default_loop
+  return nil
 end
 
 local function normalize_optional_duration(value)
@@ -117,20 +120,14 @@ local function normalize_optional_interpolation(value)
   if value == nil then
     return M.default_interpolation
   end
-  if constants.interpolation_set[value] then
-    return value
-  end
-  return nil
+  return M.normalize_interpolation(value)
 end
 
 local function normalize_optional_loop(value)
   if value == nil then
     return M.default_loop
   end
-  if constants.loop_set[value] then
-    return value
-  end
-  return nil
+  return M.normalize_loop(value)
 end
 
 local function normalize_optional_phase(value)
