@@ -3,6 +3,19 @@ local M = {}
 
 local numbers = require('hlcraft.core.number')
 
+local function rgb_integer(value, label)
+  if
+    type(value) ~= 'number'
+    or not numbers.is_finite(value)
+    or math.floor(value) ~= value
+    or value < 0
+    or value > 0xffffff
+  then
+    error(('%s must be a 24-bit RGB integer'):format(label), 3)
+  end
+  return value
+end
+
 --- Convert a 24-bit RGB integer to #RRGGBB hex string
 --- @param n integer|nil Color value from nvim_get_hl
 --- @return string hex color as "#RRGGBB" or "NONE"
@@ -31,7 +44,7 @@ end
 --- @param name string|nil Color name ("red") or hex ("#ff0000")
 --- @return integer|nil 24-bit RGB value, or nil if invalid
 function M.name_to_int(name)
-  if not name then
+  if type(name) ~= 'string' then
     return nil
   end
   local result = vim.api.nvim_get_color_by_name(name)
@@ -82,6 +95,7 @@ end
 --- @return integer g
 --- @return integer b
 function M.int_to_rgb(n)
+  n = rgb_integer(n, 'RGB color')
   local r = math.floor(n / 65536) % 256
   local g = math.floor(n / 256) % 256
   local b = n % 256
