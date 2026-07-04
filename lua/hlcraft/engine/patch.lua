@@ -27,6 +27,19 @@ end
 
 M.is_unset = override_values.is_unset
 
+function M.normalize_group(value)
+  if value == vim.NIL then
+    return vim.NIL, nil
+  end
+  if value == nil or (type(value) == 'string' and vim.trim(value) == '') then
+    return nil, 'Group name is required'
+  end
+  if type(value) ~= 'string' then
+    return nil, 'Group name must be a string'
+  end
+  return vim.trim(value), nil
+end
+
 function M.validate(patch)
   if type(patch) ~= 'table' then
     return false, 'Patch must be a table'
@@ -62,7 +75,11 @@ function M.normalize(patch)
   local normalized = {}
 
   if patch.group ~= nil then
-    normalized.group = override_values.is_unset(patch.group) and vim.NIL or vim.trim(tostring(patch.group))
+    local value, err = M.normalize_group(patch.group)
+    if err then
+      return nil, err
+    end
+    normalized.group = value
   end
 
   for _, key in ipairs(store.override_keys) do

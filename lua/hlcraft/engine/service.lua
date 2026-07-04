@@ -71,9 +71,9 @@ end
 --- @return boolean ok
 --- @return string|nil err
 function M.set_group(name, group_name)
-  local normalized = vim.trim(tostring(group_name or ''))
-  if normalized == '' then
-    return false, 'Group name is required'
+  local normalized, err = patch_model.normalize_group(group_name)
+  if err or patch_model.is_unset(normalized) then
+    return false, err or 'Group name is required'
   end
 
   return mutations.apply_patch(name, { group = normalized })
