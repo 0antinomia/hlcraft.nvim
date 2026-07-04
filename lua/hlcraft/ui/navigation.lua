@@ -78,62 +78,65 @@ end
 
 --- Move cursor to the nearest allowed row if it is on a disallowed row
 --- @param instance table The Instance object holding UI state
---- @return nil
+--- @return boolean moved True when the cursor was moved
 function M.clamp_cursor(instance)
   if instance.state.clamping_cursor then
-    return
+    return false
   end
   local win = window.get_win(instance)
   if not window.is_valid_win(win) then
-    return
+    return false
   end
 
   local cursor = vim.api.nvim_win_get_cursor(win)
   local row, col = cursor[1], cursor[2]
   local target_row = M.nearest_allowed_row(instance, row)
   if not target_row or target_row == row then
-    return
+    return false
   end
 
   instance.state.clamping_cursor = true
-  pcall(function()
+  local ok = pcall(function()
     local line = vim.api.nvim_buf_get_lines(instance.state.buf, target_row - 1, target_row, false)[1] or ''
-    pcall(vim.api.nvim_win_set_cursor, win, { target_row, math.min(col, #line) })
+    vim.api.nvim_win_set_cursor(win, { target_row, math.min(col, #line) })
   end)
   instance.state.clamping_cursor = false
+  return ok
 end
 
 --- Move cursor to a specific row and optionally enter insert mode
 --- @param instance table The Instance object holding UI state
 --- @param row1 number 1-based target row number
 --- @param insert boolean Whether to enter insert mode after jumping
---- @return nil
+--- @return boolean moved True when the cursor was moved
 function M.jump_to_row(instance, row1, insert)
   local win = window.get_win(instance)
   if not window.is_valid_win(win) then
-    return
+    return false
   end
   vim.api.nvim_set_current_win(win)
   vim.api.nvim_win_set_cursor(win, { row1, 0 })
   if insert then
     vim.cmd('startinsert!')
   end
+  return true
 end
 
 --- Move the cursor by `step` rows through allowed rows only
 --- @param instance table The Instance object holding UI state
 --- @param step integer Number of rows to move (+1 down, -1 up)
---- @return nil
+--- @return boolean moved True when the cursor was moved
 function M.move_interactive(instance, step)
   local win = window.get_win(instance)
   if not window.is_valid_win(win) then
-    return
+    return false
   end
   local current = vim.api.nvim_win_get_cursor(win)
   local target_row = M.adjacent_allowed_row(instance, current[1], step)
   if target_row then
-    M.jump_to_row(instance, target_row, false)
+    return M.jump_to_row(instance, target_row, false)
   end
+  return false
 end
 
 return M

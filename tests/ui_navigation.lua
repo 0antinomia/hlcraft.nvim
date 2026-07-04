@@ -60,4 +60,27 @@ detail_instance.state.geometry.editor_rows = {
 
 assert_list(navigation.allowed_rows(detail_instance), { 3, 7, 9 }, 'detail allowed rows changed')
 
+local invalid_window_instance = {
+  state = {
+    buf = nil,
+    clamping_cursor = false,
+    geometry = ui_state.geometry(),
+  },
+}
+invalid_window_instance.state.geometry.result_lines = {
+  [3] = 1,
+}
+
+h.assert_true(not navigation.clamp_cursor(invalid_window_instance), 'invalid window clamp reported movement', scope)
+h.assert_true(
+  not navigation.jump_to_row(invalid_window_instance, 3, false),
+  'invalid window jump reported movement',
+  scope
+)
+h.assert_true(
+  not navigation.move_interactive(invalid_window_instance, 1),
+  'invalid window move reported movement',
+  scope
+)
+
 print('hlcraft ui navigation: OK')

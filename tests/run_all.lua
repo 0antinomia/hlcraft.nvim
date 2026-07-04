@@ -19,6 +19,7 @@ local tests = {
   'tests/ui_autocmds.lua',
   'tests/ui_context.lua',
   'tests/ui_search_model.lua',
+  'tests/ui_search_scene.lua',
   'tests/ui_json.lua',
   'tests/ui_prompt.lua',
   'tests/ui_input_sequence.lua',
