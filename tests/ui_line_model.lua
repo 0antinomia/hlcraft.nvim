@@ -1,6 +1,7 @@
 local h = require('tests.helpers')
 local scope = 'hlcraft ui line model'
 
+local hints = require('hlcraft.ui.render.hints')
 local line_model = require('hlcraft.ui.render.line_model')
 
 local function assert_deep_equal(actual, expected, message)
@@ -25,6 +26,14 @@ end
 
 h.assert_equal(line_model.hint_label('Action  [Enter] open/apply'), 'Action', 'keycap action label not detected', scope)
 h.assert_true(line_model.hint_label('Current: #ffffff') == nil, 'value label was treated as hint', scope)
+for _, label in ipairs(hints.section_labels) do
+  h.assert_equal(
+    line_model.hint_label(('%s  [x] action'):format(label)),
+    label,
+    ('hint section label %s was not detected'):format(label),
+    scope
+  )
+end
 
 h.assert_equal(line_model.line_kind('Detail fields'), 'title', 'detail title not classified', scope)
 h.assert_equal(line_model.line_kind('Color editor: FG'), 'title', 'color editor title not classified', scope)

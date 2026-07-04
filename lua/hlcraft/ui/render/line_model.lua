@@ -1,12 +1,6 @@
 local M = {}
 
-local hint_labels = {
-  Action = true,
-  Adjust = true,
-  Edit = true,
-  Global = true,
-  Set = true,
-}
+local hint_labels = require('hlcraft.ui.render.hints').section_label_set
 
 local function trim_bounds(line, first, last)
   while first <= last and line:sub(first, first) == ' ' do
