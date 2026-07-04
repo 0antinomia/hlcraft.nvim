@@ -49,6 +49,13 @@ function M.empty_data()
   }
 end
 
+local function ensure_section(data, section_name)
+  if data.sections[section_name] == nil then
+    data.sections[section_name] = {}
+  end
+  return data.sections[section_name]
+end
+
 function M.decode_lines(lines, data)
   lines = assert_lines(lines)
   data = assert_data(data)
@@ -60,7 +67,7 @@ function M.decode_lines(lines, data)
       local section_name = parser.section_header(text)
       if section_name then
         current_section = section_name
-        data.sections[current_section] = data.sections[current_section] or {}
+        ensure_section(data, current_section)
       elseif current_section then
         local highlight_name, entry = parser.entry_line(text)
         if highlight_name and entry then
