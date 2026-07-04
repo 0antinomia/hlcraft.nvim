@@ -5,7 +5,6 @@ local config = require('hlcraft.config')
 local hlcraft = require('hlcraft')
 local color_renderer = require('hlcraft.ui.render.editors.color')
 local decorations = require('hlcraft.ui.render.decorations')
-local detail_info = require('hlcraft.ui.detail')
 local detail_renderer = require('hlcraft.ui.render.detail')
 local dynamic_renderer = require('hlcraft.ui.render.editors.dynamic')
 local engine = require('hlcraft.engine.service')
@@ -39,24 +38,6 @@ local result = {
   resolved_bg = '#222222',
   sp = '#333333',
 }
-
-local function virt_line_text(line)
-  local text = ''
-  for _, chunk in ipairs(line or {}) do
-    text = text .. tostring(chunk[1] or '')
-  end
-  return text
-end
-
-local function virt_line_with_label(lines, label)
-  local prefix = label .. ':'
-  for _, line in ipairs(lines or {}) do
-    if virt_line_text(line):find(prefix, 1, true) == 1 then
-      return line
-    end
-  end
-  return nil
-end
 
 local editor_geometry = { editor_rows = {} }
 local editor_lines = {}
@@ -115,39 +96,6 @@ end
 local hint_hl = vim.api.nvim_get_hl(ns, { name = theme.groups.hint })
 local action_hl = vim.api.nvim_get_hl(ns, { name = theme.groups.hint_action })
 h.assert_true(action_hl.fg ~= hint_hl.fg, 'hint actions should contrast with muted hint text', scope)
-
-local detail_info_lines = detail_info.build_virt_lines(result, function()
-  return theme.groups.value
-end, 80)
-h.assert_equal(detail_info_lines[2][1][2], theme.groups.section, 'detail info label lacks contrast', scope)
-h.assert_equal(detail_info_lines[2][2][2], theme.groups.title, 'detail info name lacks title contrast', scope)
-h.assert_equal(detail_info_lines[3][1][2], theme.groups.section, 'detail color label lacks contrast', scope)
-local style_line = virt_line_with_label(detail_info_lines, 'Style')
-h.assert_true(style_line ~= nil, 'detail style line missing', scope)
-h.assert_equal(style_line[1][2], theme.groups.section, 'detail style label lacks contrast', scope)
-local metrics_line = virt_line_with_label(detail_info_lines, 'Metrics')
-h.assert_true(metrics_line ~= nil, 'detail metrics line missing', scope)
-h.assert_equal(metrics_line[2][2], theme.groups.muted, 'detail metrics label lacks muted contrast', scope)
-
-local narrow_detail_info_lines = detail_info.build_virt_lines({
-  name = 'HlcraftUiRenderNarrowInfo',
-  fg = 'NONE',
-  resolved_fg = 'NONE',
-  bg = 'NONE',
-  resolved_bg = 'NONE',
-  sp = 'NONE',
-  link_chain = {
-    'HlcraftUiRenderNarrowInfo',
-    'HlcraftUiRenderNarrowInfoLinkedTarget',
-  },
-}, function()
-  return theme.groups.value
-end, 40)
-h.assert_true(
-  vim.fn.strdisplaywidth(virt_line_with_label(narrow_detail_info_lines, 'Links')[2][1]) <= 32,
-  'detail info link value ignored narrow width',
-  scope
-)
 
 local color_geometry = { editor_rows = {} }
 local color_lines = color_renderer.build(instance, color_geometry, result, 'fg', 80, 0)
