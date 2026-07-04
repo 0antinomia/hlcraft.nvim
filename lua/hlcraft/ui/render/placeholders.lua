@@ -1,6 +1,8 @@
 local M = {}
 
 local buffer_fields = require('hlcraft.ui.input.buffer_fields')
+local core_fields = require('hlcraft.core.fields')
+local input_sequence = require('hlcraft.ui.input.sequence')
 local theme = require('hlcraft.ui.theme')
 local ui_fields = require('hlcraft.ui.fields')
 local window = require('hlcraft.ui.workspace.window')
@@ -30,22 +32,23 @@ end
 local function detail_values(result)
   local resolved_fg = result.resolved_fg ~= 'NONE' and result.resolved_fg or result.fg
   local resolved_bg = result.resolved_bg ~= 'NONE' and result.resolved_bg or result.bg
-  return {
+  local values = {
     group = '',
     fg = resolved_fg or 'NONE',
     bg = resolved_bg or 'NONE',
     sp = result.sp or 'NONE',
-    bold = result.bold and 'true' or 'false',
-    italic = result.italic and 'true' or 'false',
-    underline = result.underline and 'true' or 'false',
-    undercurl = result.undercurl and 'true' or 'false',
-    strikethrough = result.strikethrough and 'true' or 'false',
     blend = result.blend ~= nil and tostring(result.blend) or '',
   }
+
+  for _, key in ipairs(core_fields.style_keys) do
+    values[key] = result[key] and 'true' or 'false'
+  end
+
+  return values
 end
 
 local function text_for_field(instance, field)
-  local name = field.key or field.name
+  local name = input_sequence.name(field)
   if name == 'name' then
     return ui_fields.search_placeholders.name
   end
@@ -69,7 +72,7 @@ function M.refresh(instance)
   end
 
   for _, field in ipairs(instance.state.geometry.inputs or {}) do
-    local key = field.key or field.name
+    local key = input_sequence.name(field)
     local text = text_for_field(instance, field)
     local value = buffer_fields.field_line_text(instance, field)
     if value == '' and text and text ~= '' then
