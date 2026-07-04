@@ -9,8 +9,8 @@ local function copy_dynamic(result, key)
   return dynamic and vim.deepcopy(dynamic) or nil
 end
 
-local function preset_index(name)
-  for index, candidate in ipairs(dynamic_model.presets) do
+local function preset_index(names, name)
+  for index, candidate in ipairs(names) do
     if candidate == name then
       return index
     end
@@ -45,8 +45,9 @@ function M.cycle_preset(instance, result, key)
     return false, 'No dynamic color field is active'
   end
 
-  local current = preset_index(dynamic.preset) or 0
-  local next_name = dynamic_model.presets[current + 1] or dynamic_model.presets[1]
+  local preset_names = presets.names()
+  local current = preset_index(preset_names, dynamic.preset) or 0
+  local next_name = preset_names[current + 1] or preset_names[1]
   return set_normalized(instance, result, key, presets.get(next_name))
 end
 
