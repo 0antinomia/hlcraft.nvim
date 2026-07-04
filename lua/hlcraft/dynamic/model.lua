@@ -47,10 +47,10 @@ local value_stop_keys = {
 }
 
 local function normalize_at(value)
-  if not numbers.is_finite(value) then
+  if not numbers.is_finite(value) or value < 0 or value > 1 then
     return nil
   end
-  return numbers.unit(value, 0)
+  return value
 end
 
 local function sort_stops(stops)

@@ -208,6 +208,10 @@ for _, case in ipairs({
     spec = channel_spec({ timeline = { { at = 'bad', color = 'base' } } }),
   },
   {
+    message = 'out-of-range color stop at was accepted',
+    spec = channel_spec({ timeline = { { at = 1.01, color = 'base' } } }),
+  },
+  {
     message = 'missing transform stop at was accepted',
     spec = channel_spec({
       transforms = {
@@ -220,6 +224,14 @@ for _, case in ipairs({
     spec = channel_spec({
       transforms = {
         brightness_transform({ timeline = { { at = 'bad', value = 1 } } }),
+      },
+    }),
+  },
+  {
+    message = 'out-of-range transform stop at was accepted',
+    spec = channel_spec({
+      transforms = {
+        brightness_transform({ timeline = { { at = -0.01, value = 1 } } }),
       },
     }),
   },
