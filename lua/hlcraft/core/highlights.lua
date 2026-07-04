@@ -1,7 +1,7 @@
 --- @type table
 local M = {}
 
-local color = require('hlcraft.core.color')
+local highlight_entry = require('hlcraft.core.highlight_entry')
 
 --- Module-level cache for highlight group enumeration.
 --- Invalidated on ColorScheme events.
@@ -47,50 +47,14 @@ end
 --- @param all_hls table Full bulk result map (name -> attrs)
 --- @return table Highlight group entry
 local function build_entry_from_raw(name, attrs, all_hls)
-  local entry = {
-    name = name,
-    fg = color.int_to_hex(attrs.fg),
-    bg = color.int_to_hex(attrs.bg),
-    sp = color.int_to_hex(attrs.sp),
-    bold = attrs.bold or false,
-    italic = attrs.italic or false,
-    underline = attrs.underline or false,
-    undercurl = attrs.undercurl or false,
-    strikethrough = attrs.strikethrough or false,
-    underdouble = attrs.underdouble or false,
-    underdotted = attrs.underdotted or false,
-    underdashed = attrs.underdashed or false,
-    blend = attrs.blend,
-    link_chain = {},
-    resolved_fg = 'NONE',
-    resolved_bg = 'NONE',
-  }
-
-  if attrs.link then
-    entry.link_chain = resolve_chain_from_map(name, all_hls)
-    local terminal = entry.link_chain[#entry.link_chain]
-    if terminal then
-      -- Strip " (circular)" suffix if present
-      terminal = terminal:gsub(' %(circular%)$', '')
-      local resolved = all_hls[terminal]
-      if resolved then
-        entry.resolved_fg = color.int_to_hex(resolved.fg)
-        entry.resolved_bg = color.int_to_hex(resolved.bg)
-      else
-        -- Fallback: target not in bulk result (e.g. treesitter groups not yet loaded)
-        local term_hl = vim.api.nvim_get_hl(0, { name = terminal, create = false })
-        if term_hl then
-          entry.resolved_fg = color.int_to_hex(term_hl.fg)
-          entry.resolved_bg = color.int_to_hex(term_hl.bg)
-        end
-      end
-    end
-  else
-    entry.resolved_fg = entry.fg
-    entry.resolved_bg = entry.bg
-  end
-
-  return entry
+  return highlight_entry.from_attrs(name, attrs, {
+    resolve_chain = function(group_name)
+      return resolve_chain_from_map(group_name, all_hls)
+    end,
+    resolve_attrs = function(group_name)
+      return all_hls[group_name] or vim.api.nvim_get_hl(0, { name = group_name, create = false })
+    end,
+  })
 end
 
 --- Resolve the full link chain for a highlight group (per-name API calls).
@@ -132,43 +96,12 @@ function M.get_group(name)
     return nil
   end
 
-  local entry = {
-    name = name,
-    fg = color.int_to_hex(hl.fg),
-    bg = color.int_to_hex(hl.bg),
-    sp = color.int_to_hex(hl.sp),
-    bold = hl.bold or false,
-    italic = hl.italic or false,
-    underline = hl.underline or false,
-    undercurl = hl.undercurl or false,
-    strikethrough = hl.strikethrough or false,
-    underdouble = hl.underdouble or false,
-    underdotted = hl.underdotted or false,
-    underdashed = hl.underdashed or false,
-    blend = hl.blend,
-    link_chain = {},
-    resolved_fg = 'NONE',
-    resolved_bg = 'NONE',
-  }
-
-  if hl.link then
-    entry.link_chain = M.resolve_link_chain(name)
-    local terminal = entry.link_chain[#entry.link_chain]
-    if terminal then
-      -- Strip " (circular)" suffix if present
-      terminal = terminal:gsub(' %(circular%)$', '')
-      local resolved = vim.api.nvim_get_hl(0, { name = terminal, create = false })
-      if resolved then
-        entry.resolved_fg = color.int_to_hex(resolved.fg)
-        entry.resolved_bg = color.int_to_hex(resolved.bg)
-      end
-    end
-  else
-    entry.resolved_fg = entry.fg
-    entry.resolved_bg = entry.bg
-  end
-
-  return entry
+  return highlight_entry.from_attrs(name, hl, {
+    resolve_chain = M.resolve_link_chain,
+    resolve_attrs = function(group_name)
+      return vim.api.nvim_get_hl(0, { name = group_name, create = false })
+    end,
+  })
 end
 
 --- Get all highlight groups as a flat list with normalized attributes.

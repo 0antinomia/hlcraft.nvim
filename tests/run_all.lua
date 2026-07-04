@@ -1,5 +1,6 @@
 local tests = {
   'tests/config.lua',
+  'tests/highlight_entry.lua',
   'tests/dynamic_model.lua',
   'tests/dynamic_effects.lua',
   'tests/dynamic_runtime.lua',
