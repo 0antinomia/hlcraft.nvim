@@ -19,62 +19,70 @@ local function item_line(item, width)
 end
 
 function M.sections(preview_key)
-  local global_items = {
-    { 'q / Esc', 'back or close' },
-    { '?', 'toggle this help' },
-    { 's', 'save current draft when available' },
+  local action_items = {
+    { 's', 'save draft' },
+  }
+  local navigation_items = {
+    { 'q / Esc', 'back/close' },
+    { '?', 'help' },
     { 'Tab', 'next input' },
     { 'S-Tab', 'previous input' },
   }
 
   if preview_key and preview_key ~= false and preview_key ~= '' then
-    table.insert(global_items, 4, { tostring(preview_key), 'flash current result' })
+    action_items[#action_items + 1] = { tostring(preview_key), 'preview result' }
   end
 
   return {
     {
-      title = 'Global',
-      items = global_items,
+      title = 'Navigation',
+      items = navigation_items,
+    },
+    {
+      title = 'Actions',
+      items = action_items,
     },
     {
       title = 'Search',
       items = {
-        { 'Enter', 'open selected result or apply input' },
+        { 'Enter', 'open/apply' },
         { 'j/k', 'move' },
+        { 'J/K', 'next/prev result' },
+        { 'gr', 'first result' },
       },
     },
     {
       title = 'Detail',
       items = {
-        { 'Enter', 'edit field or toggle boolean' },
+        { 'Enter', 'edit/toggle' },
       },
     },
     {
-      title = 'Static color editor',
+      title = 'Static color',
       items = {
         { 'i', 'input value' },
-        { 'r/R', 'decrease/increase red' },
-        { 'g/G', 'decrease/increase green' },
-        { 'b/B', 'decrease/increase blue' },
+        { 'r/R', 'red' },
+        { 'g/G', 'green' },
+        { 'b/B', 'blue' },
         { 'n', 'set NONE' },
-        { 'd', 'switch to dynamic' },
+        { 'd', 'dynamic' },
       },
     },
     {
-      title = 'Dynamic color editor',
+      title = 'Dynamic color',
       items = {
-        { 'i', 'edit selected row or raw JSON' },
+        { 'i', 'edit row' },
         { 'm', 'cycle preset' },
-        { '+/-', 'adjust duration, or phase on the Phase row' },
-        { 'e', 'edit raw JSON' },
-        { 'd', 'switch to static' },
+        { '+/-', 'duration / phase row' },
+        { 'e', 'raw JSON' },
+        { 'd', 'static' },
       },
     },
     {
       title = 'Blend editor',
       items = {
-        { '-/+', 'small adjustment' },
-        { '</>', 'large adjustment' },
+        { '-/+', 'small step' },
+        { '</>', 'large step' },
         { 'u', 'unset blend' },
         { 'i', 'input value' },
       },
@@ -83,7 +91,7 @@ function M.sections(preview_key)
       title = 'Group editor',
       items = {
         { 'Enter', 'select group' },
-        { 'i', 'input new group' },
+        { 'i', 'input group' },
       },
     },
   }
