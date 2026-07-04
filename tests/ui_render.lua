@@ -128,6 +128,17 @@ h.assert_true(dynamic_text:find('Global  ', 1, true) ~= nil, 'dynamic editor lac
 h.assert_true(not dynamic_text:find('Keys:', 1, true), 'dynamic editor kept crowded Keys hint', scope)
 h.assert_true(dynamic_geometry.editor_rows.dynamic_keys == nil, 'dynamic hint row should not be selectable', scope)
 
+local dynamic_set_ok, dynamic_set_err = engine.set_dynamic('HlcraftUiRenderNormal', 'fg', dynamic)
+h.assert_true(dynamic_set_ok, dynamic_set_err or 'dynamic fixture did not set', scope)
+local dynamic_detail_geometry = { detail_menu = {} }
+local dynamic_detail_lines = detail_renderer.build(instance, dynamic_detail_geometry, result, 80, 0)
+local dynamic_detail_text = table.concat(dynamic_detail_lines, '\n')
+h.assert_true(
+  dynamic_detail_text:find('custom 1000ms repeat', 1, true) ~= nil,
+  'detail dynamic metadata did not use normalized values',
+  scope
+)
+
 h.cleanup_dir(persist_dir)
 config.setup({})
 

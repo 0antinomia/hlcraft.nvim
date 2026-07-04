@@ -13,7 +13,7 @@ local M = {}
 
 local function dynamic_metadata(dynamic)
   local preset = dynamic.preset or 'custom'
-  return ('%s %dms %s'):format(preset, dynamic.duration or 0, dynamic.loop or 'repeat')
+  return ('%s %dms %s'):format(preset, dynamic.duration, dynamic.loop)
 end
 
 local function swatch_end_col(col_start, swatch)
