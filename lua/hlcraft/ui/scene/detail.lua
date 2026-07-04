@@ -20,8 +20,28 @@ local function restore_search_scene(instance)
   require('hlcraft.ui.scene').set(instance, 'search')
 end
 
+local function optional_table(opts, label)
+  if opts == nil then
+    return {}
+  end
+  if type(opts) ~= 'table' then
+    error(('%s options must be a table'):format(label), 3)
+  end
+  return opts
+end
+
+local function positive_integer(value, label)
+  if type(value) ~= 'number' or math.floor(value) ~= value or value < 1 then
+    error(('%s must be a positive integer'):format(label), 3)
+  end
+  return value
+end
+
 function M.enter(instance, opts)
-  instance.state.detail_index = opts and opts.index or instance.state.detail_index
+  opts = optional_table(opts, 'detail entry')
+  if opts.index ~= nil then
+    instance.state.detail_index = positive_integer(opts.index, 'detail entry index')
+  end
 end
 
 function M.render(instance)

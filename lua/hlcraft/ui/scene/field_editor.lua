@@ -47,6 +47,13 @@ local function optional_table(opts, label)
   return opts
 end
 
+local function optional_string(value, label)
+  if value ~= nil and (type(value) ~= 'string' or value == '') then
+    error(('%s must be a non-empty string or nil'):format(label), 3)
+  end
+  return value
+end
+
 local function selected_editor_row_key(instance)
   local row = M.editor_row_at_cursor(instance)
   return row and row.key or nil
@@ -96,7 +103,9 @@ end
 
 function M.enter(instance, opts)
   opts = optional_table(opts, 'field editor entry')
-  instance.state.field_editor.field = opts.field or instance.state.field_editor.field
+  local field = optional_string(opts.field, 'field editor field')
+  optional_string(opts.kind, 'field editor kind')
+  instance.state.field_editor.field = field ~= nil and field or instance.state.field_editor.field
   instance.state.scene.field = instance.state.field_editor.field
 end
 

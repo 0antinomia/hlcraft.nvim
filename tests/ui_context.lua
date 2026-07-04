@@ -3,6 +3,7 @@ local scope = 'hlcraft ui context'
 
 local config = require('hlcraft.config')
 local context = require('hlcraft.ui.context')
+local detail_scene = require('hlcraft.ui.scene.detail')
 local engine = require('hlcraft.engine.service')
 local hlcraft = require('hlcraft')
 local scene = require('hlcraft.ui.scene')
@@ -68,8 +69,24 @@ local invalid_register_scene_ok = pcall(scene.register, 'broken', false)
 h.assert_true(not invalid_register_scene_ok, 'scene register accepted a non-table scene', scope)
 local invalid_scene_opts_ok = pcall(scene.set, instance, 'field_editor', false)
 h.assert_true(not invalid_scene_opts_ok, 'scene set accepted non-table options', scope)
+local scene_name_option_ok = pcall(scene.set, instance, 'field_editor', { name = 'search' })
+h.assert_true(not scene_name_option_ok, 'scene set accepted a name option override', scope)
 local empty_scene_set_ok = pcall(scene.set, instance, '', {})
 h.assert_true(not empty_scene_set_ok, 'scene set accepted an empty scene name', scope)
+
+local detail_instance = {
+  state = {
+    detail_index = 1,
+  },
+}
+detail_scene.enter(detail_instance, { index = 2 })
+h.assert_equal(detail_instance.state.detail_index, 2, 'detail enter did not set index', scope)
+detail_scene.enter(detail_instance, {})
+h.assert_equal(detail_instance.state.detail_index, 2, 'detail enter did not preserve missing index', scope)
+local invalid_detail_opts_ok = pcall(detail_scene.enter, detail_instance, false)
+h.assert_true(not invalid_detail_opts_ok, 'detail enter accepted non-table options', scope)
+local invalid_detail_index_ok = pcall(detail_scene.enter, detail_instance, { index = 0 })
+h.assert_true(not invalid_detail_index_ok, 'detail enter accepted invalid index', scope)
 
 instance.state.field_editor.field = 'blend'
 h.assert_equal(context.current_field_kind(instance), 'blend', 'blend field kind changed', scope)
