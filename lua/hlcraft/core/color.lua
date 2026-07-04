@@ -17,7 +17,7 @@ end
 --- @param s string|nil Hex color string (with or without #)
 --- @return integer|nil 24-bit RGB value, or nil if invalid
 function M.hex_to_int(s)
-  if not s then
+  if type(s) ~= 'string' then
     return nil
   end
   s = s:gsub('^#', '')
@@ -50,7 +50,11 @@ function M.normalize(value)
     return nil, nil
   end
 
-  local text = vim.trim(tostring(value))
+  if type(value) ~= 'string' then
+    return nil, ('Color must be a string or nil, got %s'):format(type(value))
+  end
+
+  local text = vim.trim(value)
   if text == '' then
     return nil, nil
   end
@@ -106,10 +110,10 @@ end
 --- @param hex string|nil Background color in #RRGGBB format
 --- @return string Foreground color as #RRGGBB
 function M.contrast_fg(hex)
-  if not hex or hex == 'NONE' then
+  if hex == 'NONE' then
     return '#808080'
   end
-  local value = tonumber(hex:gsub('^#', ''), 16)
+  local value = M.hex_to_int(hex)
   if not value then
     return '#808080'
   end

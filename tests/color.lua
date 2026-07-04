@@ -10,11 +10,16 @@ h.assert_equal(color.clamp_channel(127.5), 128, 'channel was not rounded', scope
 h.assert_equal(color.rgb_to_hex(127.5, -20, 300), '#8000ff', 'rgb hex conversion changed', scope)
 h.assert_equal(
   select(2, color.normalize(123)),
-  'Invalid color: 123. Use #RRGGBB, color name, or NONE.',
+  'Color must be a string or nil, got number',
   'numeric color error changed',
   scope
 )
+h.assert_equal(select(1, color.normalize('')), nil, 'blank color did not normalize to unset', scope)
+h.assert_equal(select(1, color.normalize('NONE')), 'NONE', 'NONE color did not normalize', scope)
+h.assert_equal(select(1, color.normalize('#ABCDEF')), '#abcdef', 'hex color did not normalize', scope)
 h.assert_equal(color.int_to_rgb(0x123456), 0x12, 'red channel changed', scope)
+h.assert_true(color.hex_to_int(123) == nil, 'numeric hex input did not fail safely', scope)
+h.assert_equal(color.contrast_fg(123), '#808080', 'numeric contrast input did not use fallback', scope)
 
 local _, green, blue = color.int_to_rgb(0x123456)
 h.assert_equal(green, 0x34, 'green channel changed', scope)

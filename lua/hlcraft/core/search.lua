@@ -4,6 +4,7 @@ local M = {}
 local highlights = require('hlcraft.core.highlights')
 local color = require('hlcraft.core.color')
 local config = require('hlcraft.config')
+local numbers = require('hlcraft.core.number')
 local notify = require('hlcraft.notify')
 
 local function is_none_query(value)
@@ -62,7 +63,7 @@ end
 --- @param keyword string|nil The search keyword
 --- @return table[] Array of matching highlight groups, sorted alphabetically by name
 function M.by_name(keyword)
-  if not keyword or keyword == '' then
+  if type(keyword) ~= 'string' or keyword == '' then
     return {}
   end
 
@@ -131,7 +132,7 @@ function M.by_color(hex, threshold)
     return {}
   end
 
-  local max_dist = threshold or config.config.threshold
+  local max_dist = numbers.to_finite(threshold, config.config.threshold)
   local all = highlights.get_all()
   local results = {}
 
