@@ -300,8 +300,11 @@ function M.normalize_dynamic(dynamic)
 
   local normalized = {}
   for _, channel in ipairs(M.channels) do
-    local spec = M.normalize_channel(dynamic[channel])
-    if spec then
+    if dynamic[channel] ~= nil then
+      local spec = M.normalize_channel(dynamic[channel])
+      if not spec then
+        return nil
+      end
       normalized[channel] = spec
     end
   end
@@ -359,13 +362,14 @@ function M.compact_channel(spec)
 end
 
 function M.compact_dynamic(dynamic)
-  if type(dynamic) ~= 'table' then
+  local normalized = M.normalize_dynamic(dynamic)
+  if not normalized then
     return nil
   end
 
   local compacted = {}
   for _, channel in ipairs(M.channels) do
-    local spec = M.compact_channel(dynamic[channel])
+    local spec = M.compact_channel(normalized[channel])
     if spec then
       compacted[channel] = spec
     end
