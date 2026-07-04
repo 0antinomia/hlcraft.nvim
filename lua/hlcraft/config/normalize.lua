@@ -47,7 +47,9 @@ local function normalize_dynamic(value)
     return vim.deepcopy(defaults.dynamic)
   end
 
+  local interval = defaults.dynamic_interval_ms
   local interval_ms = math.floor(numbers.to_finite(value.interval_ms, defaults.dynamic.interval_ms))
+  interval_ms = numbers.clamp(interval_ms, interval.min, interval.max)
 
   return {
     enabled = value.enabled == true,

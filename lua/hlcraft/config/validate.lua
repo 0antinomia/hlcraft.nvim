@@ -125,11 +125,12 @@ local function validate_dynamic(errors, value)
     return
   end
 
+  local interval = defaults.dynamic_interval_ms
   validate_boolean(errors, 'dynamic.enabled', value.enabled)
   validate_number(errors, 'dynamic.interval_ms', value.interval_ms, {
-    min = 16,
-    max = 1000,
-    range_message = 'dynamic.interval_ms: must be between 16 and 1000',
+    min = interval.min,
+    max = interval.max,
+    range_message = ('dynamic.interval_ms: must be between %d and %d'):format(interval.min, interval.max),
   })
 end
 

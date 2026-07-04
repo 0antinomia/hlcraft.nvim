@@ -17,6 +17,11 @@ M.dynamic = {
   interval_ms = 80,
 }
 
+M.dynamic_interval_ms = {
+  min = 16,
+  max = 1000,
+}
+
 M.values = {
   from_none = M.from_none,
   threshold = 100,
