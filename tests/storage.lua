@@ -143,6 +143,52 @@ local invalid_entry_ok, invalid_entry_err = storage.save({
 h.assert_true(not invalid_entry_ok, 'storage.save accepted a non-table entry', scope)
 h.assert_equal(invalid_entry_err, 'Override entry InvalidEntry must be a table', 'non-table entry error changed', scope)
 
+local invalid_field_ok, invalid_field_err = storage.save({
+  InvalidField = { fg = 123 },
+}, {
+  InvalidField = 'group',
+}, persist_dir)
+h.assert_true(not invalid_field_ok, 'storage.save accepted an invalid override field', scope)
+h.assert_equal(
+  invalid_field_err,
+  'Highlight InvalidField has invalid fg: Color must be a string or nil, got number',
+  'invalid field error changed',
+  scope
+)
+
+local unknown_field_ok, unknown_field_err = storage.save({
+  UnknownField = { unknown = true },
+}, {
+  UnknownField = 'group',
+}, persist_dir)
+h.assert_true(not unknown_field_ok, 'storage.save accepted an unknown override field', scope)
+h.assert_equal(
+  unknown_field_err,
+  'Highlight UnknownField has unsupported field: unknown',
+  'unknown field error changed',
+  scope
+)
+
+local invalid_dynamic_save_ok, invalid_dynamic_save_err = storage.save({
+  InvalidDynamicSave = {
+    dynamic = {
+      fg = {
+        version = 1,
+        timeline = {},
+      },
+    },
+  },
+}, {
+  InvalidDynamicSave = 'group',
+}, persist_dir)
+h.assert_true(not invalid_dynamic_save_ok, 'storage.save accepted an invalid dynamic override', scope)
+h.assert_equal(
+  invalid_dynamic_save_err,
+  'Highlight InvalidDynamicSave has invalid dynamic override',
+  'invalid dynamic save error changed',
+  scope
+)
+
 local invalid_group_ok, invalid_group_err = storage.save({
   InvalidGroup = { fg = '#111111' },
 }, {
