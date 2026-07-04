@@ -1,6 +1,7 @@
 local detail_scene = require('hlcraft.ui.scene.detail')
 local search_scene = require('hlcraft.ui.scene.search')
 local config = require('hlcraft.config')
+local timers = require('hlcraft.core.timers')
 
 local M = {}
 
@@ -61,15 +62,7 @@ local function stop_timer(instance)
     return
   end
 
-  if preview.timer.stop then
-    preview.timer:stop()
-  end
-  if preview.timer.close then
-    pcall(function()
-      preview.timer:close()
-    end)
-  end
-
+  timers.stop(preview.timer)
   preview.timer = nil
 end
 
@@ -113,21 +106,16 @@ function M.flash_current(instance)
     bold = true,
   })
 
-  local timer = vim.uv.new_timer()
-  if not timer then
-    restore(instance)
-    return
-  end
-
-  instance.state.preview.timer = timer
-  timer:start(
+  instance.state.preview.timer = timers.once(
     preview_timeout_ms,
-    0,
     vim.schedule_wrap(function()
       stop_timer(instance)
       restore(instance)
     end)
   )
+  if not instance.state.preview.timer then
+    restore(instance)
+  end
 end
 
 --- Stop any pending preview timer and restore the original highlight immediately.

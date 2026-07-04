@@ -1,6 +1,7 @@
 local config = require('hlcraft.config')
 local effects = require('hlcraft.dynamic.effects')
 local model = require('hlcraft.dynamic.model')
+local timers = require('hlcraft.core.timers')
 local store = require('hlcraft.engine.store')
 
 local M = {}
@@ -26,16 +27,7 @@ local function restore_group(name, spec)
 end
 
 local function close_timer()
-  if not state.timer then
-    return
-  end
-
-  pcall(function()
-    state.timer:stop()
-  end)
-  pcall(function()
-    state.timer:close()
-  end)
+  timers.stop(state.timer)
   state.timer = nil
 end
 
@@ -68,28 +60,11 @@ function M.start()
     return
   end
 
-  local ok, timer = pcall(vim.uv.new_timer)
-  if not ok or not timer then
-    state.timer = nil
-    return
-  end
-
-  local start_ok = pcall(function()
-    timer:start(config.config.dynamic.interval_ms, config.config.dynamic.interval_ms, function()
-      vim.schedule(function()
-        M.tick(vim.uv.hrtime() / 1000000)
-      end)
+  state.timer = timers.repeating(config.config.dynamic.interval_ms, function()
+    vim.schedule(function()
+      M.tick(vim.uv.hrtime() / 1000000)
     end)
   end)
-  if not start_ok then
-    pcall(function()
-      timer:close()
-    end)
-    state.timer = nil
-    return
-  end
-
-  state.timer = timer
 end
 
 function M.base_spec(name)

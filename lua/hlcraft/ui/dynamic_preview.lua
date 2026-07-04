@@ -1,5 +1,6 @@
 local config = require('hlcraft.config')
 local effects = require('hlcraft.dynamic.effects')
+local timers = require('hlcraft.core.timers')
 
 local M = {}
 
@@ -25,16 +26,10 @@ end
 
 local function close_timer(instance)
   local timer = instance and instance.state and instance.state.dynamic_preview_timer or nil
-  if not timer then
-    return
+  timers.stop(timer)
+  if instance and instance.state then
+    instance.state.dynamic_preview_timer = nil
   end
-  pcall(function()
-    timer:stop()
-  end)
-  pcall(function()
-    timer:close()
-  end)
-  instance.state.dynamic_preview_timer = nil
 end
 
 local function expected_hl_name(instance, item_id)
@@ -150,29 +145,16 @@ function M.sync(instance)
   if instance.state.dynamic_preview_timer then
     return
   end
-  local ok, new_timer = pcall(vim.uv.new_timer)
-  if not ok or not new_timer then
-    return
-  end
   local interval = config.config.dynamic.interval_ms
-  local started = pcall(function()
-    new_timer:start(interval, interval, function()
-      vim.schedule(function()
-        if not valid_buffer(instance) or next(instance.state.dynamic_preview_items) == nil then
-          close_timer(instance)
-          return
-        end
-        M.tick(instance, vim.uv.hrtime() / 1000000)
-      end)
+  instance.state.dynamic_preview_timer = timers.repeating(interval, function()
+    vim.schedule(function()
+      if not valid_buffer(instance) or next(instance.state.dynamic_preview_items) == nil then
+        close_timer(instance)
+        return
+      end
+      M.tick(instance, vim.uv.hrtime() / 1000000)
     end)
   end)
-  if not started then
-    pcall(function()
-      new_timer:close()
-    end)
-    return
-  end
-  instance.state.dynamic_preview_timer = new_timer
 end
 
 function M.clear(instance)
