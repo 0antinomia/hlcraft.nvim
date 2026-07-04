@@ -28,7 +28,8 @@ local explicit = rows.find_by_line({
 }, 9)
 h.assert_equal(explicit.key, 'explicit', 'row helper overwrote explicit row key', scope)
 h.assert_true(rows.find_by_line({ fg = { line = 7 } }, 8) == nil, 'row helper returned a non-matching row', scope)
-h.assert_true(rows.find_by_line(nil, 8) == nil, 'row helper did not handle nil rows', scope)
 h.assert_true(rows.find_by_line({ fg = { line = 7 } }, nil) == nil, 'row helper did not handle nil line', scope)
+local nil_rows_ok = pcall(rows.find_by_line, nil, 8)
+h.assert_true(not nil_rows_ok, 'row helper accepted nil rows', scope)
 
 print('hlcraft ui scene rows: OK')

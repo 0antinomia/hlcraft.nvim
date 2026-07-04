@@ -7,6 +7,14 @@ local window = require('hlcraft.ui.workspace.window')
 
 local M = {}
 
+local function result_lines(instance)
+  local lines = instance.state.geometry.result_lines
+  if type(lines) ~= 'table' then
+    error('search geometry result_lines must be a table', 3)
+  end
+  return lines
+end
+
 function M.enter(instance)
   instance.state.scene.name = 'search'
 end
@@ -43,7 +51,7 @@ end
 --- @return table[] Sorted array of {line=number, index=number} entries
 function M.rows(instance)
   local rows = {}
-  for line_nr, result_index in pairs(instance.state.geometry.result_lines or {}) do
+  for line_nr, result_index in pairs(result_lines(instance)) do
     rows[#rows + 1] = { line = line_nr, index = result_index }
   end
   table.sort(rows, function(a, b)
@@ -61,7 +69,7 @@ function M.current_entry(instance)
     return nil
   end
   local row = vim.api.nvim_win_get_cursor(win)[1]
-  local index = instance.state.geometry.result_lines[row]
+  local index = result_lines(instance)[row]
   if not index then
     return nil
   end

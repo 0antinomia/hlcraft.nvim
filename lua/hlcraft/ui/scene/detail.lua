@@ -8,6 +8,14 @@ local window = require('hlcraft.ui.workspace.window')
 
 local M = {}
 
+local function result_lines(instance)
+  local lines = instance.state.geometry.result_lines
+  if type(lines) ~= 'table' then
+    error('detail geometry result_lines must be a table', 3)
+  end
+  return lines
+end
+
 local function restore_search_scene(instance)
   require('hlcraft.ui.scene').set(instance, 'search')
 end
@@ -86,7 +94,7 @@ function M.force_close(instance)
   if not window.is_valid_win(win) then
     return
   end
-  for line, index in pairs(instance.state.geometry.result_lines or {}) do
+  for line, index in pairs(result_lines(instance)) do
     if index == instance.state.list_cursor then
       vim.api.nvim_win_set_cursor(win, { line, 0 })
       break
