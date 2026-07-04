@@ -55,6 +55,19 @@ local function validate_known_keys(errors, user_config)
   end
 end
 
+local function validate_table_keys(errors, path, value, known_keys)
+  for key, _ in pairs(value) do
+    if not known_keys[key] then
+      add(errors, ('unknown config key: %q'):format(('%s.%s'):format(path, tostring(key))))
+    end
+  end
+end
+
+local from_none_keys = {
+  enabled = true,
+  scope = true,
+}
+
 local function validate_from_none(errors, value)
   local value_type = type(value)
   if value_type ~= 'boolean' and value_type ~= 'table' then
@@ -66,6 +79,7 @@ local function validate_from_none(errors, value)
     return
   end
 
+  validate_table_keys(errors, 'from_none', value, from_none_keys)
   validate_boolean(errors, 'from_none.enabled', value.enabled)
   if value.scope == nil then
     return
@@ -76,6 +90,12 @@ local function validate_from_none(errors, value)
     add(errors, ('from_none.scope: must be "core" or "extended", got %q'):format(value.scope))
   end
 end
+
+local reapply_event_keys = {
+  event = true,
+  once = true,
+  pattern = true,
+}
 
 local function validate_reapply_event(errors, index, entry)
   local entry_type = type(entry)
@@ -89,12 +109,18 @@ local function validate_reapply_event(errors, index, entry)
     return
   end
 
+  validate_table_keys(errors, ('reapply_events.events[%d]'):format(index), entry, reapply_event_keys)
   validate_event_name(errors, ('reapply_events.events[%d].event'):format(index), entry.event)
   if entry.pattern ~= nil and type(entry.pattern) ~= 'string' then
     add(errors, ('reapply_events.events[%d].pattern: must be a string'):format(index))
   end
   validate_boolean(errors, ('reapply_events.events[%d].once'):format(index), entry.once)
 end
+
+local reapply_events_keys = {
+  enabled = true,
+  events = true,
+}
 
 local function validate_reapply_events(errors, value)
   local value_type = type(value)
@@ -107,6 +133,7 @@ local function validate_reapply_events(errors, value)
     return
   end
 
+  validate_table_keys(errors, 'reapply_events', value, reapply_events_keys)
   validate_boolean(errors, 'reapply_events.enabled', value.enabled)
   if value.events ~= nil and type(value.events) ~= 'table' then
     add(errors, 'reapply_events.events: must be a table, got ' .. type(value.events))
@@ -121,12 +148,18 @@ local function validate_reapply_events(errors, value)
   end
 end
 
+local dynamic_keys = {
+  enabled = true,
+  interval_ms = true,
+}
+
 local function validate_dynamic(errors, value)
   if type(value) ~= 'table' then
     add(errors, 'dynamic: must be a table, got ' .. type(value))
     return
   end
 
+  validate_table_keys(errors, 'dynamic', value, dynamic_keys)
   local interval = defaults.dynamic_interval_ms
   validate_boolean(errors, 'dynamic.enabled', value.enabled)
   validate_number(errors, 'dynamic.interval_ms', value.interval_ms, {

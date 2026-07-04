@@ -43,6 +43,16 @@ for _, case in ipairs({
     message = 'invalid from_none scope was accepted',
   },
   {
+    value = { from_none = { unknown = true } },
+    error = 'unknown config key: "from_none.unknown"',
+    message = 'unknown from_none key was accepted',
+  },
+  {
+    value = { reapply_events = { unknown = true } },
+    error = 'unknown config key: "reapply_events.unknown"',
+    message = 'unknown reapply_events key was accepted',
+  },
+  {
     value = { reapply_events = { events = { '' } } },
     error = 'reapply_events.events[1]: must be a non-empty string',
     message = 'empty reapply event was accepted',
@@ -63,9 +73,19 @@ for _, case in ipairs({
     message = 'blank table event was accepted',
   },
   {
+    value = { reapply_events = { events = { { event = 'ColorScheme', unknown = true } } } },
+    error = 'unknown config key: "reapply_events.events[1].unknown"',
+    message = 'unknown reapply event key was accepted',
+  },
+  {
     value = { dynamic = { enabled = 'yes', interval_ms = 0 } },
     error = 'dynamic.enabled: must be boolean, got string',
     message = 'invalid dynamic config was accepted',
+  },
+  {
+    value = { dynamic = { unknown = true } },
+    error = 'unknown config key: "dynamic.unknown"',
+    message = 'unknown dynamic config key was accepted',
   },
   {
     value = { preview_key = true },
