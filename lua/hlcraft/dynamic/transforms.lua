@@ -12,15 +12,6 @@ local function clamp(value, min, max)
   return value
 end
 
-local function clamp_channel(value)
-  value = math.floor(value + 0.5)
-  return clamp(value, 0, 255)
-end
-
-local function rgb_to_hex(r, g, b)
-  return ('#%02x%02x%02x'):format(clamp_channel(r), clamp_channel(g), clamp_channel(b))
-end
-
 local function hue_to_rgb(p, q, t)
   if t < 0 then
     t = t + 1
@@ -96,7 +87,7 @@ function M.apply(hex, transform)
   local r, g, b = color.int_to_rgb(value)
   if transform.type == 'brightness' then
     amount = clamp(amount, 0, 2)
-    return rgb_to_hex(r * amount, g * amount, b * amount)
+    return color.rgb_to_hex(r * amount, g * amount, b * amount)
   end
 
   local h, s, l = rgb_to_hsl(r, g, b)
@@ -109,7 +100,7 @@ function M.apply(hex, transform)
     return hex
   end
 
-  return rgb_to_hex(hsl_to_rgb(h, s, l))
+  return color.rgb_to_hex(hsl_to_rgb(h, s, l))
 end
 
 return M

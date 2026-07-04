@@ -5,21 +5,6 @@ local transforms = require('hlcraft.dynamic.transforms')
 
 local M = {}
 
-local function clamp_channel(value)
-  value = math.floor(value + 0.5)
-  if value < 0 then
-    return 0
-  end
-  if value > 255 then
-    return 255
-  end
-  return value
-end
-
-local function rgb_to_hex(r, g, b)
-  return ('#%02x%02x%02x'):format(clamp_channel(r), clamp_channel(g), clamp_channel(b))
-end
-
 local function normalize_hex(value)
   if type(value) == 'number' then
     return color.int_to_hex(value)
@@ -54,7 +39,7 @@ local function interpolate_hex(left_hex, right_hex, amount)
 
   local lr, lg, lb = color.int_to_rgb(left)
   local rr, rg, rb = color.int_to_rgb(right)
-  return rgb_to_hex(lr + ((rr - lr) * amount), lg + ((rg - lg) * amount), lb + ((rb - lb) * amount))
+  return color.rgb_to_hex(lr + ((rr - lr) * amount), lg + ((rg - lg) * amount), lb + ((rb - lb) * amount))
 end
 
 function M.compute(spec, base_hex, now_ms, context)
