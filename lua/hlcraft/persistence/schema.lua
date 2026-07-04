@@ -1,6 +1,4 @@
-local fields = require('hlcraft.core.fields')
-local dynamic_model = require('hlcraft.dynamic.model')
-local override_values = require('hlcraft.core.override_values')
+local override_entries = require('hlcraft.core.override_entries')
 
 local M = {}
 
@@ -29,54 +27,14 @@ local function normalize_entry_options(opts)
   return opts
 end
 
-local entry_keys = {
-  dynamic = true,
-}
-for _, key in ipairs(fields.override_keys) do
-  entry_keys[key] = true
-end
-
-local function set_normalized(entry, key, value)
-  local field_value = override_values.entry_value(value)
-  if field_value ~= nil then
-    entry[key] = field_value
-  end
-end
-
 function M.normalize_entry(name, entry, opts)
   entry = assert_table(entry, ('persistence entry %s'):format(tostring(name)))
   opts = normalize_entry_options(opts)
 
-  for key, _ in pairs(entry) do
-    if not entry_keys[key] then
-      return nil, ('Highlight %s has unsupported field: %s'):format(name, key)
-    end
-  end
-
-  local normalized = {}
-  for _, key in ipairs(fields.override_keys) do
-    if entry[key] ~= nil then
-      local value, err = override_values.normalize_field(key, entry[key])
-      if err then
-        return nil, ('Highlight %s has invalid %s: %s'):format(name, key, err)
-      end
-      set_normalized(normalized, key, value)
-    end
-  end
-
-  if entry.dynamic ~= nil then
-    local dynamic = dynamic_model.normalize_dynamic(entry.dynamic)
-    if not dynamic then
-      return nil, ('Highlight %s has invalid dynamic override'):format(name)
-    end
-    if opts.compact_dynamic then
-      normalized.dynamic = dynamic_model.compact_dynamic(dynamic)
-    else
-      normalized.dynamic = dynamic
-    end
-  end
-
-  return normalized, nil
+  return override_entries.normalize(entry, {
+    compact_dynamic = opts.compact_dynamic,
+    label = ('Highlight %s'):format(name),
+  })
 end
 
 function M.normalize_loaded_data(data)

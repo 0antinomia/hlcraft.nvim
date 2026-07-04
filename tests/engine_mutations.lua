@@ -34,6 +34,51 @@ with_draft_state(function()
   )
 end)
 
+with_draft_state(function()
+  local name = 'HlcraftEngineMutationsInvalidDynamic'
+  store.data.draft[name] = {
+    fg = '#111111',
+    dynamic = {
+      fg = {
+        version = 1,
+        timeline = {},
+      },
+    },
+  }
+  store.data.draft_groups[name] = 'mutations'
+  local before_entry = vim.deepcopy(store.data.draft[name])
+  local before_group = store.data.draft_groups[name]
+
+  local invalid_dynamic_ok = pcall(mutations.apply_patch, name, {
+    bg = '#ffffff',
+  })
+  h.assert_true(not invalid_dynamic_ok, 'mutation accepted invalid existing draft dynamic state', scope)
+  h.assert_true(
+    vim.deep_equal(store.data.draft[name], before_entry),
+    'invalid existing dynamic state changed after rejected mutation',
+    scope
+  )
+  h.assert_equal(
+    store.data.draft_groups[name],
+    before_group,
+    'invalid existing dynamic state changed draft group after rejected mutation',
+    scope
+  )
+end)
+
+with_draft_state(function()
+  local name = 'HlcraftEngineMutationsNormalizeDraft'
+  store.data.draft[name] = {
+    fg = '#ABCDEF',
+  }
+  store.data.draft_groups[name] = 'old'
+
+  local ok, err = mutations.apply_patch(name, { group = 'new' })
+  h.assert_true(ok, err or 'group mutation failed', scope)
+  h.assert_equal(store.data.draft[name].fg, '#abcdef', 'group mutation did not normalize draft entry', scope)
+  h.assert_equal(store.data.draft_groups[name], 'new', 'group mutation changed wrong group', scope)
+end)
+
 local nil_name_ok = pcall(mutations.apply_patch, nil, { fg = '#ffffff' })
 h.assert_true(not nil_name_ok, 'mutation accepted nil highlight name', scope)
 local empty_name_ok = pcall(mutations.toggle_style, '', 'bold')

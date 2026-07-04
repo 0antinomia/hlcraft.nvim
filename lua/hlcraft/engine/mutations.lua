@@ -55,8 +55,8 @@ function M.apply_patch(name, patch_spec)
   end
 
   patch_model.apply_entry(entry, normalized_patch)
-  local compacted_entry = snapshot.compact_entry(entry)
-  if normalized_patch.group ~= nil and patch_model.is_unset(normalized_patch.group) and compacted_entry ~= nil then
+  local normalized_entry = snapshot.normalize_draft_entry(entry)
+  if normalized_patch.group ~= nil and patch_model.is_unset(normalized_patch.group) and normalized_entry ~= nil then
     return fail('Group name is required for non-empty override')
   end
 
@@ -65,19 +65,19 @@ function M.apply_patch(name, patch_spec)
       data.draft_groups[name] = nil
     else
       data.draft_groups[name] = normalized_patch.group
-      data.draft[name] = entry
+      data.draft[name] = normalized_entry or {}
     end
   elseif patch_model.changes_entry(normalized_patch) then
     snapshot.ensure_draft_group(name)
   end
 
   if patch_model.changes_entry(normalized_patch) then
-    data.draft[name] = compacted_entry
+    data.draft[name] = normalized_entry
     if data.draft[name] == nil then
       data.draft_groups[name] = nil
     end
   elseif normalized_patch.group ~= nil and data.draft[name] == nil and data.draft_groups[name] ~= nil then
-    data.draft[name] = entry
+    data.draft[name] = normalized_entry or {}
   end
 
   snapshot.rebuild_active()
