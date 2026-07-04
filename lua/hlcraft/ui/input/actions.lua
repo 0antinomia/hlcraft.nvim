@@ -1,6 +1,7 @@
 local input_model = require('hlcraft.ui.input.model')
 local paste_plan = require('hlcraft.ui.input.paste_plan')
 local input_sequence = require('hlcraft.ui.input.sequence')
+local buffer_lines = require('hlcraft.ui.buffer_lines')
 local navigation = require('hlcraft.ui.navigation')
 local window = require('hlcraft.ui.workspace.window')
 
@@ -93,7 +94,7 @@ function M.should_block_forward_delete(instance)
   if not context then
     return false
   end
-  local line = vim.api.nvim_buf_get_lines(instance.state.buf, context.row0, context.row0 + 1, false)[1] or ''
+  local line = buffer_lines.line(instance.state.buf, context.row0, 'cursor input action')
   if context.col < #line then
     return false
   end
