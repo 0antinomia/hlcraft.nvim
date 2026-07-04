@@ -45,7 +45,9 @@ function M.format(value)
 end
 
 function M.decode_object(text)
-  text = tostring(text or '')
+  if type(text) ~= 'string' then
+    return nil
+  end
   if not text:match('^%s*{') then
     return nil
   end
