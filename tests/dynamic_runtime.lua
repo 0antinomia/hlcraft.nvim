@@ -47,6 +47,7 @@ runtime.stop()
 runtime.sync_group('HlcraftDynamicRuntime', { fg = '#111111', bg = '#808080' }, {
   dynamic = runtime_dynamic,
 })
+h.assert_equal(runtime.active_count(), 0, 'disabled runtime registered a dynamic task', scope)
 runtime.tick(500)
 local disabled_spec = vim.api.nvim_get_hl(0, { name = 'HlcraftDynamicRuntime', create = false })
 h.assert_equal(disabled_spec.fg, tonumber('111111', 16), 'disabled runtime changed fg', scope)
@@ -60,6 +61,7 @@ config.setup({
 runtime.sync_group('HlcraftDynamicRuntime', { fg = '#111111', bg = '#808080' }, {
   dynamic = runtime_dynamic,
 })
+h.assert_equal(runtime.active_count(), 1, 'enabled runtime did not register a dynamic task', scope)
 runtime.tick(1000)
 local enabled_spec = vim.api.nvim_get_hl(0, { name = 'HlcraftDynamicRuntime', create = false })
 h.assert_equal(enabled_spec.fg, tonumber('808080', 16), 'runtime did not use configured custom fg', scope)
@@ -67,6 +69,7 @@ local transform_spec = vim.api.nvim_get_hl(0, { name = 'HlcraftDynamicRuntime', 
 h.assert_equal(transform_spec.bg, tonumber('606060', 16), 'runtime did not use configured custom bg transform', scope)
 
 runtime.stop()
+h.assert_equal(runtime.active_count(), 0, 'runtime stop did not clear dynamic tasks', scope)
 local stopped_spec = vim.api.nvim_get_hl(0, { name = 'HlcraftDynamicRuntime', create = false })
 h.assert_equal(stopped_spec.fg, tonumber('111111', 16), 'runtime stop did not restore fg', scope)
 h.assert_equal(stopped_spec.bg, tonumber('808080', 16), 'runtime stop did not restore bg', scope)
