@@ -181,7 +181,9 @@ Dynamic color configuration is edited from the existing `FG`, `BG`, and `SP` edi
 
 Dynamic rows use animated color swatches as the primary preview. Compact text such as `pulse 2000ms` remains visible as metadata and as a fallback for environments where the preview cannot animate.
 
-Each dynamic channel is stored as a JSON model with `version`, `preset`, `duration`, `loop`, and `timeline` fields. Presets provide common shapes, while the raw JSON editor can hold custom timelines and transforms. Runtime animation updates group-level `fg`, `bg`, and `sp` highlight values over time; it is not per-character or spatial terminal animation.
+Each dynamic channel is stored as the same declarative model used by the raw JSON editor. The required fields are `version = 1` and a non-empty `timeline`; `preset`, `duration`, `loop`, `phase`, `interpolation`, and `transforms` are optional and fall back to defaults when omitted. Presets provide common shapes, while the raw JSON editor can hold custom timelines and transforms. Runtime animation updates group-level `fg`, `bg`, and `sp` highlight values over time; it is not per-character or spatial terminal animation.
+
+Timeline stops use `{ at, color }`, where `at` must be between `0` and `1`. `color` can be `base`, another channel reference (`fg`, `bg`, or `sp`), or a concrete color such as `#ff6699`. Transforms use `{ type, timeline, interpolation? }`, with `type` set to `brightness`, `hue_shift`, or `saturation`.
 
 #### `debounce_ms`
 
