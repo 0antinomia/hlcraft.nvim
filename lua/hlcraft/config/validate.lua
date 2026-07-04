@@ -157,10 +157,11 @@ function M.config(user_config)
   local errors = {}
   validate_known_keys(errors, user_config)
 
+  local threshold = defaults.threshold_range
   validate_number(errors, 'threshold', user_config.threshold, {
-    min = 0,
-    max = 1000,
-    range_message = 'threshold: must be between 0 and 1000',
+    min = threshold.min,
+    max = threshold.max,
+    range_message = ('threshold: must be between %d and %d'):format(threshold.min, threshold.max),
   })
   validate_boolean(errors, 'include_sp_in_color_search', user_config.include_sp_in_color_search)
 
@@ -176,8 +177,9 @@ function M.config(user_config)
   if user_config.dynamic ~= nil then
     validate_dynamic(errors, user_config.dynamic)
   end
+  local debounce_ms = defaults.debounce_ms_range
   validate_number(errors, 'debounce_ms', user_config.debounce_ms, {
-    min = 0,
+    min = debounce_ms.min,
     range_message = 'debounce_ms: must be >= 0',
   })
   if user_config.preview_key ~= nil then

@@ -3,6 +3,17 @@ local numbers = require('hlcraft.core.number')
 
 local M = {}
 
+local function normalize_number(value, fallback, range)
+  local normalized = numbers.to_finite(value, fallback)
+  if range.min ~= nil and normalized < range.min then
+    return range.min
+  end
+  if range.max ~= nil and normalized > range.max then
+    return range.max
+  end
+  return normalized
+end
+
 local function normalize_from_none(value)
   if type(value) == 'boolean' then
     return {
@@ -59,6 +70,9 @@ end
 
 function M.config(config)
   local normalized = vim.deepcopy(config or defaults.values)
+  normalized.threshold = normalize_number(normalized.threshold, defaults.values.threshold, defaults.threshold_range)
+  normalized.debounce_ms =
+    normalize_number(normalized.debounce_ms, defaults.values.debounce_ms, defaults.debounce_ms_range)
   normalized.from_none = normalize_from_none(normalized.from_none)
   normalized.reapply_events = normalize_reapply_events(normalized.reapply_events)
   normalized.dynamic = normalize_dynamic(normalized.dynamic)
