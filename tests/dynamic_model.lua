@@ -31,6 +31,25 @@ h.assert_equal(
   'model default phase drifted from dynamic constants',
   scope
 )
+for _, loop in ipairs(constants.loops) do
+  h.assert_equal(model.normalize_loop(loop), loop, ('loop %s was not accepted'):format(loop), scope)
+end
+for _, interpolation in ipairs(constants.interpolations) do
+  h.assert_equal(
+    model.normalize_interpolation(interpolation),
+    interpolation,
+    ('interpolation %s was not accepted'):format(interpolation),
+    scope
+  )
+end
+for _, transform_type in ipairs(constants.transform_types) do
+  h.assert_true(model.normalize_transform({
+    type = transform_type,
+    timeline = {
+      { at = 0, value = 1 },
+    },
+  }) ~= nil, ('transform type %s was not accepted'):format(transform_type), scope)
+end
 
 local normalized_custom = model.normalize_channel({
   version = 1,

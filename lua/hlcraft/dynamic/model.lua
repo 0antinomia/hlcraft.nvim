@@ -17,12 +17,6 @@ local color_refs = { base = true }
 for _, key in ipairs(fields.color_keys) do
   color_refs[key] = true
 end
-local interpolation_set = { linear = true, step = true, smooth = true, smoothstep = true, sine = true }
-local transform_type_set = { brightness = true, hue_shift = true, saturation = true }
-
-local function valid_loop(value)
-  return value == 'repeat' or value == 'pingpong' or value == 'once'
-end
 
 local function normalize_at(value)
   if not numbers.is_finite(value) then
@@ -79,14 +73,14 @@ function M.normalize_duration(value)
 end
 
 function M.normalize_interpolation(value)
-  if interpolation_set[value] then
+  if constants.interpolation_set[value] then
     return value
   end
   return M.default_interpolation
 end
 
 function M.normalize_loop(value)
-  if valid_loop(value) then
+  if constants.loop_set[value] then
     return value
   end
   return M.default_loop
@@ -146,7 +140,7 @@ function M.normalize_timeline(timeline)
 end
 
 function M.normalize_transform(transform)
-  if type(transform) ~= 'table' or not transform_type_set[transform.type] then
+  if type(transform) ~= 'table' or not constants.transform_type_set[transform.type] then
     return nil
   end
 
