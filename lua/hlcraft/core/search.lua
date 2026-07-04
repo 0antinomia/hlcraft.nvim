@@ -14,6 +14,29 @@ local function include_sp()
   return config.config.include_sp_in_color_search == true
 end
 
+local function sort_by_name(results)
+  table.sort(results, function(a, b)
+    return a.name:lower() < b.name:lower()
+  end)
+  return results
+end
+
+local function sort_by_distance(results)
+  table.sort(results, function(a, b)
+    if a.distance == b.distance then
+      return a.name:lower() < b.name:lower()
+    end
+    return a.distance < b.distance
+  end)
+  return results
+end
+
+local function with_distance(group, distance)
+  local entry = vim.deepcopy(group)
+  entry.distance = distance
+  return entry
+end
+
 --- Compute RGB Euclidean distance between two hex color strings
 --- @param hex1 string First color in #RRGGBB format
 --- @param hex2 string Second color in #RRGGBB format
@@ -53,11 +76,40 @@ function M.by_name(keyword)
     end
   end
 
-  table.sort(results, function(a, b)
-    return a.name:lower() < b.name:lower()
-  end)
+  return sort_by_name(results)
+end
 
-  return results
+local function none_matches(group)
+  local matches = group.resolved_fg == 'NONE' or group.resolved_bg == 'NONE'
+  return include_sp() and (matches or group.sp == 'NONE') or matches
+end
+
+local function by_none_color()
+  local results = {}
+  for _, group in ipairs(highlights.get_all()) do
+    if none_matches(group) then
+      results[#results + 1] = with_distance(group, 0)
+    end
+  end
+  return sort_by_name(results)
+end
+
+local function nearest_distance(group, hex, max_dist)
+  local distances = {
+    color_distance(group.resolved_fg, hex),
+    color_distance(group.resolved_bg, hex),
+  }
+  if include_sp() then
+    distances[#distances + 1] = color_distance(group.sp, hex)
+  end
+
+  local best = nil
+  for _, distance in ipairs(distances) do
+    if distance and distance <= max_dist and (not best or distance < best) then
+      best = distance
+    end
+  end
+  return best
 end
 
 --- Search highlight groups by color similarity (RGB Euclidean distance)
@@ -70,27 +122,7 @@ function M.by_color(hex, threshold)
   end
 
   if is_none_query(hex) then
-    local all = highlights.get_all()
-    local results = {}
-
-    for _, group in ipairs(all) do
-      local matches_none = group.resolved_fg == 'NONE' or group.resolved_bg == 'NONE'
-      if include_sp() then
-        matches_none = matches_none or group.sp == 'NONE'
-      end
-
-      if matches_none then
-        local entry = vim.deepcopy(group)
-        entry.distance = 0
-        results[#results + 1] = entry
-      end
-    end
-
-    table.sort(results, function(a, b)
-      return a.name:lower() < b.name:lower()
-    end)
-
-    return results
+    return by_none_color()
   end
 
   local target_int = color.hex_to_int(hex)
@@ -104,40 +136,13 @@ function M.by_color(hex, threshold)
   local results = {}
 
   for _, group in ipairs(all) do
-    local fg_dist = color_distance(group.resolved_fg, hex)
-    local bg_dist = color_distance(group.resolved_bg, hex)
-    local sp_dist = include_sp() and color_distance(group.sp, hex) or nil
-
-    local best_dist = nil
-
-    if fg_dist and fg_dist <= max_dist then
-      best_dist = fg_dist
-    end
-
-    if bg_dist and bg_dist <= max_dist then
-      if not best_dist or bg_dist < best_dist then
-        best_dist = bg_dist
-      end
-    end
-
-    if sp_dist and sp_dist <= max_dist then
-      if not best_dist or sp_dist < best_dist then
-        best_dist = sp_dist
-      end
-    end
-
+    local best_dist = nearest_distance(group, hex, max_dist)
     if best_dist then
-      local entry = vim.deepcopy(group)
-      entry.distance = best_dist
-      results[#results + 1] = entry
+      results[#results + 1] = with_distance(group, best_dist)
     end
   end
 
-  table.sort(results, function(a, b)
-    return a.distance < b.distance
-  end)
-
-  return results
+  return sort_by_distance(results)
 end
 
 return M
