@@ -37,13 +37,16 @@ local function restore_workspace_window_options(instance, win)
   return restored
 end
 
-local function restore_origin_window_options(instance, opts)
+local function restore_origin_window_options(instance, keep_snapshot)
+  if keep_snapshot ~= nil and type(keep_snapshot) ~= 'boolean' then
+    error('origin restore keep_snapshot must be boolean', 3)
+  end
   if instance.state.origin_win_options == nil then
     return false
   end
 
   local restored = window_options.restore(instance.state.origin_win_options)
-  if not (opts and opts.keep_snapshot) then
+  if not keep_snapshot then
     instance.state.origin_win_options = nil
   end
   return restored
@@ -142,7 +145,7 @@ function M.restore_origin(instance)
   end
 
   if instance.state.origin_win_options ~= nil then
-    restore_origin_window_options(instance, { keep_snapshot = true })
+    restore_origin_window_options(instance, true)
   end
 
   if had_origin then
@@ -202,7 +205,7 @@ function M.release_workspace_window(instance, win)
   end
 
   if win == instance.state.origin_win then
-    restore_origin_window_options(instance, { keep_snapshot = true })
+    restore_origin_window_options(instance, true)
     return
   end
 
