@@ -40,8 +40,8 @@ local function apply_paste_plan(instance, win, cursor_row, cursor_col, input, pl
   if input and plan.cleanup_trailing_newline then
     vim.schedule(function()
       local updated = input_model.get_input_at_row(instance, cursor_row - 1)
-      if updated and updated.value:sub(-1) == '\n' then
-        vim.api.nvim_buf_set_lines(instance.state.buf, updated.end_row, updated.end_row + 1, true, {})
+      if updated then
+        input_model.remove_trailing_empty_line(instance, updated.name)
       end
     end)
   end
