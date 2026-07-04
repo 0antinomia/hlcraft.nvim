@@ -25,10 +25,20 @@ h.assert_equal(normal.resolved_fg, '#112233', 'non-linked resolved fg changed', 
 h.assert_equal(normal.resolved_bg, '#445566', 'non-linked resolved bg changed', scope)
 local invalid_name_ok = pcall(entry.from_attrs, nil, {})
 h.assert_true(not invalid_name_ok, 'entry accepted missing name', scope)
+local empty_name_ok = pcall(entry.from_attrs, '', {})
+h.assert_true(not empty_name_ok, 'entry accepted empty name', scope)
 local invalid_attrs_ok = pcall(entry.from_attrs, 'Invalid', nil)
 h.assert_true(not invalid_attrs_ok, 'entry accepted missing attrs', scope)
 local invalid_opts_ok = pcall(entry.from_attrs, 'Invalid', {}, false)
 h.assert_true(not invalid_opts_ok, 'entry accepted non-table options', scope)
+local invalid_resolve_chain_ok = pcall(entry.from_attrs, 'Invalid', {}, { resolve_chain = false })
+h.assert_true(not invalid_resolve_chain_ok, 'entry accepted non-function resolve_chain option', scope)
+local invalid_resolve_attrs_ok = pcall(entry.from_attrs, 'Invalid', {}, { resolve_attrs = false })
+h.assert_true(not invalid_resolve_attrs_ok, 'entry accepted non-function resolve_attrs option', scope)
+local invalid_style_ok = pcall(entry.from_attrs, 'Invalid', { bold = 'yes' })
+h.assert_true(not invalid_style_ok, 'entry accepted non-boolean style attr', scope)
+local invalid_link_ok = pcall(entry.from_attrs, 'Invalid', { link = '' })
+h.assert_true(not invalid_link_ok, 'entry accepted empty link attr', scope)
 
 local style_result = {}
 for _, key in ipairs(fields.style_keys) do
@@ -57,6 +67,19 @@ h.assert_equal(linked.fg, 'NONE', 'linked source fg should stay NONE', scope)
 h.assert_equal(linked.link_chain[2], 'Target', 'link chain changed', scope)
 h.assert_equal(linked.resolved_fg, '#abcdef', 'linked resolved fg changed', scope)
 h.assert_equal(linked.resolved_bg, '#010203', 'linked resolved bg changed', scope)
+
+local invalid_chain_result_ok = pcall(entry.from_attrs, 'InvalidLinked', { link = 'Target' }, {
+  resolve_chain = function()
+    return 'Target'
+  end,
+})
+h.assert_true(not invalid_chain_result_ok, 'entry accepted a non-table link chain result', scope)
+local invalid_attrs_result_ok = pcall(entry.from_attrs, 'InvalidLinked', { link = 'Target' }, {
+  resolve_attrs = function()
+    return false
+  end,
+})
+h.assert_true(not invalid_attrs_result_ok, 'entry accepted a non-table resolved attrs result', scope)
 
 local circular = entry.from_attrs('Circular', { link = 'Circular' }, {
   resolve_chain = function()
