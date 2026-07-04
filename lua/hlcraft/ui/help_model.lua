@@ -15,7 +15,7 @@ end
 local function item_line(item, width)
   local key = keycap(item)
   local padding = math.max(2, (width or 0) - vim.fn.strdisplaywidth(key) + 2)
-  return key .. string.rep(' ', padding) .. item[2]
+  return '  ' .. key .. string.rep(' ', padding) .. item[2]
 end
 
 function M.sections(preview_key)
