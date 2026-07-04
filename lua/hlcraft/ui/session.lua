@@ -64,7 +64,7 @@ end
 function M.display_color_value(name, key, fallback)
   local dynamic = M.dynamic_value(name, key)
   if dynamic then
-    return ('dynamic:%s %dms'):format(dynamic.preset or 'custom', dynamic.duration or 0)
+    return ('dynamic:%s %dms'):format(dynamic.preset or 'custom', dynamic.duration)
   end
   return M.display_value(name, key, fallback)
 end
