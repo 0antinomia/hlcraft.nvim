@@ -81,8 +81,9 @@ local function build_sections(overrides, groups)
   local sections = {}
 
   for highlight_name, entry in pairs(overrides) do
-    if entry and next(entry) ~= nil then
-      local section_name = codec.normalize_group_name(groups and groups[highlight_name])
+    if next(entry) ~= nil then
+      local group_name = groups and groups[highlight_name] or nil
+      local section_name = codec.normalize_group_name(group_name)
       if not section_name then
         return nil, ('Highlight %s must have a group before saving'):format(highlight_name)
       end
@@ -97,9 +98,7 @@ local function build_sections(overrides, groups)
       return nil, ('Highlight %s must have a group before saving'):format(highlight_name)
     end
     sections[section_name] = sections[section_name] or {}
-    sections[section_name][highlight_name] = sections[section_name][highlight_name]
-      or (overrides and overrides[highlight_name])
-      or {}
+    sections[section_name][highlight_name] = sections[section_name][highlight_name] or overrides[highlight_name] or {}
   end
 
   return sections, nil

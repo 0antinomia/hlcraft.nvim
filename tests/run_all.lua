@@ -41,6 +41,7 @@ local tests = {
   'tests/ui_detail_info.lua',
   'tests/ui_render.lua',
   'tests/persistence_codec.lua',
+  'tests/persistence_schema.lua',
   'tests/storage.lua',
   'tests/override_values.lua',
   'tests/engine_patch.lua',
