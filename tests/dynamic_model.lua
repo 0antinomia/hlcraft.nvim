@@ -320,5 +320,7 @@ local normalized_entry = model.normalize_entry({
 h.assert_equal(normalized_entry.dynamic.fg.preset, 'pulse', 'dynamic fg did not normalize', scope)
 h.assert_equal(normalized_entry.dynamic.fg.duration, 1500, 'dynamic duration did not normalize', scope)
 h.assert_true(type(normalized_entry.dynamic.fg) == 'table', 'dynamic fg did not stay nested data', scope)
+local nil_entry_ok = pcall(model.normalize_entry, nil)
+h.assert_true(not nil_entry_ok, 'dynamic entry normalization accepted nil entry', scope)
 
 print('hlcraft dynamic model: OK')
