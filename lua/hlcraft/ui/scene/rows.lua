@@ -2,6 +2,12 @@ local window = require('hlcraft.ui.workspace.window')
 
 local M = {}
 
+local function row_with_key(row, key)
+  local result = vim.tbl_extend('force', {}, row)
+  result.key = result.key or key
+  return result
+end
+
 function M.cursor_line(instance)
   local win = window.get_win(instance)
   if not window.is_valid_win(win) then
@@ -17,8 +23,7 @@ function M.find_by_line(rows, line)
 
   for key, row in pairs(rows or {}) do
     if row.line == line then
-      row.key = row.key or key
-      return row
+      return row_with_key(row, key)
     end
   end
 end
