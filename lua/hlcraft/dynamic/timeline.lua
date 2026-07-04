@@ -1,18 +1,9 @@
 local M = {}
 
-local function clamp_unit(value)
-  value = tonumber(value) or 0
-  if value < 0 then
-    return 0
-  end
-  if value > 1 then
-    return 1
-  end
-  return value
-end
+local numbers = require('hlcraft.core.number')
 
 local function curve(amount, interpolation)
-  amount = clamp_unit(amount)
+  amount = numbers.unit(amount, 0)
   if interpolation == 'step' then
     return 0
   end
@@ -26,14 +17,14 @@ local function curve(amount, interpolation)
 end
 
 function M.phase(now_ms, duration, phase_offset, loop)
-  duration = tonumber(duration) or 0
+  duration = numbers.to_finite(duration, 0)
   if duration <= 0 then
     return 0
   end
 
-  local raw = ((tonumber(now_ms) or 0) / duration) + (tonumber(phase_offset) or 0)
+  local raw = (numbers.to_finite(now_ms, 0) / duration) + numbers.to_finite(phase_offset, 0)
   if loop == 'once' then
-    return clamp_unit(raw)
+    return numbers.unit(raw, 0)
   end
   if loop == 'pingpong' then
     local wrapped = raw % 2
@@ -53,7 +44,7 @@ function M.sample(stops, phase, interpolation, interpolate)
     return stops[1]
   end
 
-  phase = clamp_unit(phase)
+  phase = numbers.unit(phase, 0)
   if phase <= stops[1].at then
     return stops[1]
   end

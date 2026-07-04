@@ -1,16 +1,7 @@
 local color = require('hlcraft.core.color')
+local numbers = require('hlcraft.core.number')
 
 local M = {}
-
-local function clamp(value, min, max)
-  if value < min then
-    return min
-  end
-  if value > max then
-    return max
-  end
-  return value
-end
 
 local function hue_to_rgb(p, q, t)
   if t < 0 then
@@ -60,8 +51,8 @@ end
 
 local function hsl_to_rgb(h, s, l)
   h = h % 1
-  s = clamp(s, 0, 1)
-  l = clamp(l, 0, 1)
+  s = numbers.clamp(s, 0, 1)
+  l = numbers.clamp(l, 0, 1)
 
   if s == 0 then
     local gray = l * 255
@@ -79,14 +70,14 @@ function M.apply(hex, transform)
     return nil
   end
 
-  local amount = tonumber(transform.value)
+  local amount = numbers.to_finite(transform.value, nil)
   if not amount then
     return hex
   end
 
   local r, g, b = color.int_to_rgb(value)
   if transform.type == 'brightness' then
-    amount = clamp(amount, 0, 2)
+    amount = numbers.clamp(amount, 0, 2)
     return color.rgb_to_hex(r * amount, g * amount, b * amount)
   end
 
@@ -94,7 +85,7 @@ function M.apply(hex, transform)
   if transform.type == 'hue_shift' then
     h = h + (amount / 360)
   elseif transform.type == 'saturation' then
-    amount = clamp(amount, 0, 2)
+    amount = numbers.clamp(amount, 0, 2)
     s = s * amount
   else
     return hex

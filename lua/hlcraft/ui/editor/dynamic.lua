@@ -1,4 +1,5 @@
 local dynamic_model = require('hlcraft.dynamic.model')
+local numbers = require('hlcraft.core.number')
 local presets = require('hlcraft.dynamic.presets')
 local session = require('hlcraft.ui.session')
 
@@ -58,7 +59,7 @@ function M.adjust_duration(instance, result, key, delta)
   end
 
   dynamic.duration =
-    dynamic_model.normalize_duration((dynamic.duration or dynamic_model.default_duration) + (tonumber(delta) or 0))
+    dynamic_model.normalize_duration((dynamic.duration or dynamic_model.default_duration) + numbers.to_finite(delta, 0))
   return set_normalized(instance, result, key, dynamic)
 end
 
@@ -78,11 +79,11 @@ function M.set_phase(instance, result, key, value)
     return false, 'No dynamic color field is active'
   end
 
-  local phase = tonumber(value)
-  if type(phase) ~= 'number' or phase ~= phase or phase == math.huge or phase == -math.huge then
+  local phase = numbers.to_finite(value, nil)
+  if phase == nil then
     return false, 'Phase must be a number'
   end
-  dynamic.phase = math.max(0, math.min(1, phase))
+  dynamic.phase = numbers.unit(phase, 0)
   return set_normalized(instance, result, key, dynamic)
 end
 

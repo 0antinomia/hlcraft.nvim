@@ -1,6 +1,8 @@
 --- @type table
 local M = {}
 
+local numbers = require('hlcraft.core.number')
+
 --- Convert a 24-bit RGB integer to #RRGGBB hex string
 --- @param n integer|nil Color value from nvim_get_hl
 --- @return string hex color as "#RRGGBB" or "NONE"
@@ -86,14 +88,8 @@ end
 --- @param value number|string|nil Channel value
 --- @return integer channel Clamped channel
 function M.clamp_channel(value)
-  local channel = math.floor((tonumber(value) or 0) + 0.5)
-  if channel < 0 then
-    return 0
-  end
-  if channel > 255 then
-    return 255
-  end
-  return channel
+  local channel = math.floor(numbers.to_finite(value, 0) + 0.5)
+  return numbers.clamp(channel, 0, 255)
 end
 
 --- Convert RGB channels to a normalized #RRGGBB hex string.

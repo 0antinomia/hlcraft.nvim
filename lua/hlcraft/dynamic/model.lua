@@ -1,4 +1,5 @@
 local color = require('hlcraft.core.color')
+local numbers = require('hlcraft.core.number')
 
 local M = {}
 
@@ -14,41 +15,19 @@ local color_refs = { base = true, fg = true, bg = true, sp = true }
 local interpolation_set = { linear = true, step = true, smooth = true, smoothstep = true, sine = true }
 local transform_type_set = { brightness = true, hue_shift = true, saturation = true }
 
-local function is_finite_number(value)
-  return type(value) == 'number' and value == value and value ~= math.huge and value ~= -math.huge
-end
-
 local function valid_loop(value)
   return value == 'repeat' or value == 'pingpong' or value == 'once'
 end
 
-local function clamp_unit(value, fallback)
-  local number = tonumber(value)
-  if not is_finite_number(number) then
-    return fallback
-  end
-  if number < 0 then
-    return 0
-  end
-  if number > 1 then
-    return 1
-  end
-  return number
-end
-
 local function normalize_at(value)
-  if not is_finite_number(value) then
+  if not numbers.is_finite(value) then
     return nil
   end
-  return clamp_unit(value, 0)
+  return numbers.unit(value, 0)
 end
 
 function M.normalize_duration(value)
-  local duration = tonumber(value)
-  if not is_finite_number(duration) then
-    return M.default_duration
-  end
-
+  local duration = numbers.to_finite(value, M.default_duration)
   duration = math.floor(duration)
   if duration < min_duration then
     return min_duration
@@ -90,7 +69,7 @@ function M.normalize_color_ref(value)
 end
 
 local function normalize_value_stop(stop)
-  if type(stop) ~= 'table' or type(stop.value) ~= 'number' or not is_finite_number(stop.value) then
+  if type(stop) ~= 'table' or type(stop.value) ~= 'number' or not numbers.is_finite(stop.value) then
     return nil
   end
   local at = normalize_at(stop.at)
@@ -212,7 +191,7 @@ function M.normalize_channel(spec)
     preset = preset,
     duration = M.normalize_duration(spec.duration),
     loop = M.normalize_loop(spec.loop),
-    phase = clamp_unit(spec.phase, 0),
+    phase = numbers.unit(spec.phase, 0),
     interpolation = M.normalize_interpolation(spec.interpolation),
     timeline = timeline,
     transforms = transforms,
