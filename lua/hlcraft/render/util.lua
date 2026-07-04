@@ -22,6 +22,16 @@ local function assert_width(value)
   return value
 end
 
+local function assert_line_nr(value)
+  if type(value) ~= 'number' then
+    error('render line number must be a number', 3)
+  end
+  if not numbers.is_finite(value) or math.floor(value) ~= value or value < 1 then
+    error('render line number must be a positive finite integer', 3)
+  end
+  return value
+end
+
 local function take_display_width(text, width)
   if width <= 0 then
     return ''
@@ -79,6 +89,23 @@ function M.pad(text, width)
     return text
   end
   return text .. string.rep(' ', width - display)
+end
+
+--- Return a rendered line by 1-based line number.
+--- @param lines string[] Rendered lines
+--- @param line_nr integer 1-based line number
+--- @param label string|nil Error label for diagnostics
+--- @return string line
+function M.line_at(lines, line_nr, label)
+  if type(lines) ~= 'table' then
+    error('render lines must be a table', 2)
+  end
+  line_nr = assert_line_nr(line_nr)
+  local line = lines[line_nr]
+  if type(line) ~= 'string' then
+    error(('%s references missing render line %d'):format(label or 'geometry', line_nr), 2)
+  end
+  return line
 end
 
 return M

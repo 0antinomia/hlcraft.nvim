@@ -1,4 +1,5 @@
 local dynamic_model = require('hlcraft.dynamic.model')
+local render_util = require('hlcraft.render.util')
 local session = require('hlcraft.ui.session')
 local ui_fields = require('hlcraft.ui.fields')
 local dynamic_preview = require('hlcraft.ui.dynamic_preview')
@@ -39,7 +40,7 @@ local function apply_color_marker(instance, lines, geometry, key)
   if not geometry[key] then
     return
   end
-  local line = lines[geometry[key].line] or ''
+  local line = render_util.line_at(lines, geometry[key].line, ('%s marker geometry'):format(key))
   local start_col = decorations.find_text_start(line, geometry[key].text, 0)
   decorations.apply_color_cell(
     instance,

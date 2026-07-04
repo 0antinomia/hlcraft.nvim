@@ -49,7 +49,7 @@ function M.render(instance)
   decorations.apply_hint_line(instance, #lines - 1, lines[#lines])
   for line_nr, result_index in pairs(geometry.result_lines) do
     local result = instance.state.results[result_index]
-    local line = lines[line_nr] or ''
+    local line = render_util.line_at(lines, line_nr, 'search result geometry')
     local fg_text = render_util.display_color(result.fg)
     local bg_text = render_util.display_color(result.bg)
     local sp_text = render_util.display_color(result.sp)
