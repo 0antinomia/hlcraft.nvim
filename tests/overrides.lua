@@ -47,16 +47,25 @@ h.assert_equal(
   scope
 )
 
-local before_legacy_dynamic = vim.deepcopy(overrides.get('HlcraftTestNormal').dynamic)
-local legacy_ok = overrides.set_dynamic('HlcraftTestNormal', 'fg', {
-  mode = 'rgb',
-  speed = 1500,
-  palette = { '#000000', '#ffffff' },
+local before_bad_dynamic = vim.deepcopy(overrides.get('HlcraftTestNormal').dynamic)
+local bad_dynamic_ok = overrides.set_dynamic('HlcraftTestNormal', 'fg', {
+  version = 1,
+  timeline = {
+    { at = 0, color = 'base' },
+  },
+  transforms = {
+    {
+      type = 'unknown',
+      timeline = {
+        { at = 0, value = 1 },
+      },
+    },
+  },
 })
-h.assert_true(not legacy_ok, 'legacy dynamic mutation was accepted', scope)
+h.assert_true(not bad_dynamic_ok, 'invalid dynamic mutation was accepted', scope)
 h.assert_true(
-  vim.deep_equal(overrides.get('HlcraftTestNormal').dynamic, before_legacy_dynamic),
-  'legacy dynamic mutation changed runtime dynamic config',
+  vim.deep_equal(overrides.get('HlcraftTestNormal').dynamic, before_bad_dynamic),
+  'invalid dynamic mutation changed runtime dynamic config',
   scope
 )
 

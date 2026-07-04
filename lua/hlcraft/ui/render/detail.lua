@@ -55,16 +55,11 @@ local function color_display_value(result, key)
   return session.display_value(result.name, key, fallback)
 end
 
-local function normalize_build_args(instance, geometry, result, width, line_offset)
-  if line_offset ~= nil or width ~= nil then
-    return instance, geometry, result, width, line_offset or 0
-  end
-
-  return nil, instance, geometry, result, 0
-end
-
 function M.build(instance, geometry, result, width, line_offset)
-  instance, geometry, result, width, line_offset = normalize_build_args(instance, geometry, result, width, line_offset)
+  assert(instance and instance.state, 'detail renderer requires an instance')
+  assert(geometry and geometry.detail_menu, 'detail renderer requires detail geometry')
+  assert(result and result.name, 'detail renderer requires a highlight result')
+  line_offset = line_offset or 0
   local lines = {
     'Detail fields',
   }

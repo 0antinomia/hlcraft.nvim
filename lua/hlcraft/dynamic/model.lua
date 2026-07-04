@@ -277,10 +277,6 @@ function M.inflate_entry(entry)
 
   for _, channel in ipairs(M.channels) do
     local dynamic_key = ('dyn_%s'):format(channel)
-    local mode_key = ('dyn_%s_mode'):format(channel)
-    local speed_key = ('dyn_%s_speed'):format(channel)
-    local params_key = ('dyn_%s_params'):format(channel)
-    local palette_key = ('dyn_%s_palette'):format(channel)
 
     local decoded = decode_extension(result[dynamic_key])
     if decoded then
@@ -288,10 +284,6 @@ function M.inflate_entry(entry)
     end
 
     result[dynamic_key] = nil
-    result[mode_key] = nil
-    result[speed_key] = nil
-    result[params_key] = nil
-    result[palette_key] = nil
   end
 
   result.dynamic = M.normalize_dynamic(dynamic)
@@ -305,16 +297,8 @@ function M.flatten_entry(entry)
   result.dynamic = nil
   for _, channel in ipairs(M.channels) do
     local dynamic_key = ('dyn_%s'):format(channel)
-    local mode_key = ('dyn_%s_mode'):format(channel)
-    local speed_key = ('dyn_%s_speed'):format(channel)
-    local params_key = ('dyn_%s_params'):format(channel)
-    local palette_key = ('dyn_%s_palette'):format(channel)
 
     result[dynamic_key] = nil
-    result[mode_key] = nil
-    result[speed_key] = nil
-    result[params_key] = nil
-    result[palette_key] = nil
 
     local spec = dynamic and dynamic[channel] or nil
     if spec then

@@ -1,13 +1,29 @@
+local fields = require('hlcraft.core.fields')
 local dynamic_model = require('hlcraft.dynamic.model')
 
 local M = {}
 
+local dynamic_extension_keys = {}
+for _, channel in ipairs(dynamic_model.channels) do
+  dynamic_extension_keys[('dyn_%s'):format(channel)] = true
+end
+
+local function filter_entry(entry, include_dynamic_table)
+  local filtered = {}
+  for key, value in pairs(entry or {}) do
+    if fields.override_set[key] or dynamic_extension_keys[key] or (include_dynamic_table and key == 'dynamic') then
+      filtered[key] = value
+    end
+  end
+  return filtered
+end
+
 function M.inflate_entry(entry)
-  return dynamic_model.inflate_entry(entry)
+  return dynamic_model.inflate_entry(filter_entry(entry, true))
 end
 
 function M.flatten_entry(entry)
-  return dynamic_model.flatten_entry(entry)
+  return dynamic_model.flatten_entry(filter_entry(entry, true))
 end
 
 function M.inflate_data(data)

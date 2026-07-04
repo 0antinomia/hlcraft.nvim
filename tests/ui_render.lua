@@ -5,8 +5,11 @@ local config = require('hlcraft.config')
 local hlcraft = require('hlcraft')
 local color_renderer = require('hlcraft.ui.render.editors.color')
 local decorations = require('hlcraft.ui.render.decorations')
+local detail_renderer = require('hlcraft.ui.render.detail')
 local dynamic_renderer = require('hlcraft.ui.render.editors.dynamic')
 local engine = require('hlcraft.engine.service')
+local editor_rows = require('hlcraft.ui.render.editor_rows')
+local field_editor_renderer = require('hlcraft.ui.render.field_editor')
 local hints = require('hlcraft.ui.render.hints')
 local theme = require('hlcraft.ui.theme')
 
@@ -48,8 +51,21 @@ h.assert_equal(
   scope
 )
 h.assert_equal(hints.search(), 'Enter open/apply  |  Tab input  |  ? more', 'search hint is too verbose', scope)
-h.assert_true(not hints.search():find('Keys:', 1, true), 'search hint kept the old Keys prefix', scope)
+h.assert_true(not hints.search():find('Keys:', 1, true), 'search hint kept the crowded Keys prefix', scope)
 h.assert_equal(hints.detail(), 'Enter edit/toggle  |  s save  |  ? more', 'detail hint is too verbose', scope)
+
+local editor_geometry = { editor_rows = {} }
+local editor_lines = {}
+local editor_row = editor_rows.append(editor_lines, editor_geometry, 'sample_row', 'Sample')
+h.assert_equal(editor_row.line, 1, 'editor row helper returned wrong line', scope)
+h.assert_equal(editor_row.key, 'sample_row', 'editor row helper returned wrong key', scope)
+h.assert_equal(editor_geometry.editor_rows.sample_row, editor_row, 'editor row helper did not register geometry', scope)
+h.assert_equal(editor_lines[1], 'Sample', 'editor row helper did not append line', scope)
+
+local strict_detail_ok = pcall(detail_renderer.build, { detail_menu = {} }, result, 80)
+h.assert_true(not strict_detail_ok, 'detail renderer accepted a build call without instance', scope)
+local strict_field_editor_ok = pcall(field_editor_renderer.build, { editor_rows = {} }, result, 'fg', 80)
+h.assert_true(not strict_field_editor_ok, 'field editor renderer accepted a build call without instance', scope)
 
 local top_help = ''
 for _, chunk in ipairs(decorations.help_virt_line()) do

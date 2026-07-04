@@ -52,7 +52,11 @@ h.assert_equal(engine.get('HlcraftEngineNormal').fg, '#abcdef', 'restore did not
 
 local before_bad_dynamic = vim.deepcopy(engine.get('HlcraftEngineNormal'))
 local before_bad_dynamic_group = engine.get_draft_group('HlcraftEngineNormal')
-local bad_ok = engine.set_dynamic('HlcraftEngineNormal', 'fg', { mode = 'bad-mode' })
+local bad_ok = engine.set_dynamic('HlcraftEngineNormal', 'fg', {
+  timeline = {
+    { at = 0, color = 'base' },
+  },
+})
 h.assert_true(not bad_ok, 'invalid dynamic mutation was accepted', scope)
 h.assert_true(
   vim.deep_equal(engine.get('HlcraftEngineNormal'), before_bad_dynamic),
@@ -63,26 +67,6 @@ h.assert_equal(
   engine.get_draft_group('HlcraftEngineNormal'),
   before_bad_dynamic_group,
   'invalid dynamic mutation changed draft group',
-  scope
-)
-
-local before_legacy_dynamic = vim.deepcopy(engine.get('HlcraftEngineNormal'))
-local before_legacy_dynamic_group = engine.get_draft_group('HlcraftEngineNormal')
-local legacy_ok = engine.set_dynamic('HlcraftEngineNormal', 'fg', {
-  mode = 'rgb',
-  speed = 1500,
-  palette = { '#000000', '#ffffff' },
-})
-h.assert_true(not legacy_ok, 'legacy dynamic mutation was accepted', scope)
-h.assert_true(
-  vim.deep_equal(engine.get('HlcraftEngineNormal'), before_legacy_dynamic),
-  'legacy dynamic mutation changed draft state',
-  scope
-)
-h.assert_equal(
-  engine.get_draft_group('HlcraftEngineNormal'),
-  before_legacy_dynamic_group,
-  'legacy dynamic mutation changed draft group',
   scope
 )
 
