@@ -1,0 +1,70 @@
+local h = require('tests.helpers')
+local scope = 'hlcraft health'
+
+local config = require('hlcraft.config')
+
+local health_module = 'hlcraft.health'
+local repository_module = 'hlcraft.persistence.repository'
+local original_health_module = package.loaded[health_module]
+local original_repository_module = package.loaded[repository_module]
+local original_vim_health = vim.health
+
+local messages = {
+  error = {},
+  ok = {},
+  start = {},
+}
+
+vim.health = {
+  start = function(message)
+    messages.start[#messages.start + 1] = message
+  end,
+  ok = function(message)
+    messages.ok[#messages.ok + 1] = message
+  end,
+  error = function(message)
+    messages.error[#messages.error + 1] = message
+  end,
+}
+
+local persist_dir = h.temp_dir('hlcraft-health')
+vim.fn.mkdir(persist_dir, 'p')
+config.setup({
+  persist_dir = persist_dir,
+})
+
+package.loaded[repository_module] = {
+  load = function(path)
+    h.assert_equal(path, persist_dir, 'health loaded the wrong persist directory', scope)
+    return {
+      entries = false,
+    }
+  end,
+}
+package.loaded[health_module] = nil
+
+require(health_module).check()
+
+local function contains(list, expected)
+  for _, message in ipairs(list) do
+    if message == expected then
+      return true
+    end
+  end
+  return false
+end
+
+h.assert_true(
+  contains(messages.error, 'Parsed TOML data is invalid'),
+  'health did not report invalid parsed TOML data',
+  scope
+)
+h.assert_true(contains(messages.ok, 'dynamic colors disabled'), 'health stopped before dynamic color check', scope)
+
+package.loaded[health_module] = original_health_module
+package.loaded[repository_module] = original_repository_module
+vim.health = original_vim_health
+config.setup({})
+h.cleanup_dir(persist_dir)
+
+print('hlcraft health: OK')

@@ -1,5 +1,6 @@
 local tests = {
   'tests/config.lua',
+  'tests/health.lua',
   'tests/notify.lua',
   'tests/number.lua',
   'tests/tables.lua',
