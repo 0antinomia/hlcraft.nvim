@@ -72,6 +72,26 @@ local raw_ok, raw_err = editor.set_raw_json(
 h.assert_true(raw_ok, raw_err or 'raw json set failed', scope)
 h.assert_equal(engine.get('HlcraftUiDynamicNormal').dynamic.fg.preset, 'manual', 'raw json preset did not set', scope)
 
+local bad_schema_ok = editor.set_raw_json(
+  instance,
+  result,
+  'fg',
+  vim.json.encode({
+    version = 1,
+    loop = 'bad',
+    timeline = {
+      { at = 0, color = 'base' },
+    },
+  })
+)
+h.assert_true(not bad_schema_ok, 'invalid dynamic JSON schema was accepted', scope)
+h.assert_equal(
+  engine.get('HlcraftUiDynamicNormal').dynamic.fg.preset,
+  'manual',
+  'invalid dynamic JSON schema changed draft',
+  scope
+)
+
 local bad_raw_ok = editor.set_raw_json(instance, result, 'fg', '{bad json')
 h.assert_true(not bad_raw_ok, 'invalid raw json was accepted', scope)
 h.assert_equal(

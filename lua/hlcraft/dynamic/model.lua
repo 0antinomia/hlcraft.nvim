@@ -103,6 +103,46 @@ function M.normalize_loop(value)
   return M.default_loop
 end
 
+local function normalize_optional_duration(value)
+  if value == nil then
+    return M.default_duration
+  end
+  if type(value) ~= 'number' or not numbers.is_finite(value) then
+    return nil
+  end
+  return M.normalize_duration(value)
+end
+
+local function normalize_optional_interpolation(value)
+  if value == nil then
+    return M.default_interpolation
+  end
+  if constants.interpolation_set[value] then
+    return value
+  end
+  return nil
+end
+
+local function normalize_optional_loop(value)
+  if value == nil then
+    return M.default_loop
+  end
+  if constants.loop_set[value] then
+    return value
+  end
+  return nil
+end
+
+local function normalize_optional_phase(value)
+  if value == nil then
+    return M.default_phase
+  end
+  if not numbers.is_finite(value) then
+    return nil
+  end
+  return numbers.unit(value, 0)
+end
+
 function M.normalize_color_ref(value)
   if type(value) ~= 'string' then
     return nil
@@ -174,10 +214,14 @@ function M.normalize_transform(transform)
   if not normalized_timeline then
     return nil
   end
+  local interpolation = normalize_optional_interpolation(transform.interpolation)
+  if not interpolation then
+    return nil
+  end
 
   return {
     type = transform.type,
-    interpolation = M.normalize_interpolation(transform.interpolation),
+    interpolation = interpolation,
     timeline = normalized_timeline,
   }
 end
@@ -221,15 +265,29 @@ function M.normalize_channel(spec)
     return nil
   end
 
-  local preset = type(spec.preset) == 'string' and spec.preset ~= '' and spec.preset or nil
+  local preset = nil
+  if spec.preset ~= nil then
+    if type(spec.preset) ~= 'string' or spec.preset == '' then
+      return nil
+    end
+    preset = spec.preset
+  end
+
+  local duration = normalize_optional_duration(spec.duration)
+  local loop = normalize_optional_loop(spec.loop)
+  local phase = normalize_optional_phase(spec.phase)
+  local interpolation = normalize_optional_interpolation(spec.interpolation)
+  if not duration or not loop or phase == nil or not interpolation then
+    return nil
+  end
 
   return {
     version = M.version,
     preset = preset,
-    duration = M.normalize_duration(spec.duration),
-    loop = M.normalize_loop(spec.loop),
-    phase = numbers.unit(spec.phase, M.default_phase),
-    interpolation = M.normalize_interpolation(spec.interpolation),
+    duration = duration,
+    loop = loop,
+    phase = phase,
+    interpolation = interpolation,
     timeline = timeline,
     transforms = transforms,
   }
