@@ -1,6 +1,7 @@
 local dynamic_model = require('hlcraft.dynamic.model')
 local json = require('hlcraft.ui.json')
 local numbers = require('hlcraft.core.number')
+local constants = require('hlcraft.dynamic.constants')
 local presets = require('hlcraft.dynamic.presets')
 local session = require('hlcraft.ui.session')
 
@@ -70,7 +71,10 @@ function M.set_loop(instance, result, key, value)
     return false, 'No dynamic color field is active'
   end
 
-  dynamic.loop = dynamic_model.normalize_loop(value)
+  if not constants.loop_set[value] then
+    return false, ('Loop must be one of: %s'):format(table.concat(constants.loops, ', '))
+  end
+  dynamic.loop = value
   return set_normalized(instance, result, key, dynamic)
 end
 
