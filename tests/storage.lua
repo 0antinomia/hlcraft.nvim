@@ -119,15 +119,51 @@ local save_ok, save_err = storage.save({
 }, persist_dir)
 h.assert_true(save_ok, save_err or 'storage.save failed', scope)
 
+local invalid_overrides_ok, invalid_overrides_err = storage.save(false, nil, persist_dir)
+h.assert_true(not invalid_overrides_ok, 'storage.save accepted non-table overrides', scope)
+h.assert_equal(invalid_overrides_err, 'Overrides must be a table', 'non-table overrides error changed', scope)
+
+local invalid_groups_ok, invalid_groups_err = storage.save({}, false, persist_dir)
+h.assert_true(not invalid_groups_ok, 'storage.save accepted non-table groups', scope)
+h.assert_equal(invalid_groups_err, 'Groups must be a table', 'non-table groups error changed', scope)
+
+local invalid_name_ok, invalid_name_err = storage.save({
+  [1] = { fg = '#111111' },
+}, {
+  [1] = 'group',
+}, persist_dir)
+h.assert_true(not invalid_name_ok, 'storage.save accepted a non-string highlight name', scope)
+h.assert_equal(invalid_name_err, 'Highlight name must be a non-empty string', 'highlight name error changed', scope)
+
+local invalid_entry_ok, invalid_entry_err = storage.save({
+  InvalidEntry = false,
+}, {
+  InvalidEntry = 'group',
+}, persist_dir)
+h.assert_true(not invalid_entry_ok, 'storage.save accepted a non-table entry', scope)
+h.assert_equal(invalid_entry_err, 'Override entry InvalidEntry must be a table', 'non-table entry error changed', scope)
+
 local invalid_group_ok, invalid_group_err = storage.save({
   InvalidGroup = { fg = '#111111' },
 }, {
   InvalidGroup = 42,
 }, persist_dir)
 h.assert_true(not invalid_group_ok, 'storage.save accepted a non-string group', scope)
-h.assert_true(
-  invalid_group_err:find('Highlight InvalidGroup must have a group before saving', 1, true) ~= nil,
+h.assert_equal(
+  invalid_group_err,
+  'Group for highlight InvalidGroup must be a string',
   'storage.save reported wrong non-string group error',
+  scope
+)
+
+local empty_group_ok, empty_group_err = storage.save({}, {
+  EmptyGroup = '  ',
+}, persist_dir)
+h.assert_true(not empty_group_ok, 'storage.save accepted an empty group', scope)
+h.assert_equal(
+  empty_group_err,
+  'Highlight EmptyGroup must have a group before saving',
+  'storage.save reported wrong empty group error',
   scope
 )
 
