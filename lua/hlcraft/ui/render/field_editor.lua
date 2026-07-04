@@ -13,11 +13,34 @@ local detail_scene = require('hlcraft.ui.scene.detail')
 
 local M = {}
 
+local function render_instance(instance)
+  if type(instance) ~= 'table' or type(instance.state) ~= 'table' then
+    error('field editor renderer requires an instance', 3)
+  end
+  return instance
+end
+
+local function editor_geometry(geometry)
+  if type(geometry) ~= 'table' or type(geometry.editor_rows) ~= 'table' then
+    error('field editor renderer requires editor geometry', 3)
+  end
+  return geometry
+end
+
+local function highlight_result(result)
+  if type(result) ~= 'table' or type(result.name) ~= 'string' then
+    error('field editor renderer requires a highlight result', 3)
+  end
+  return result
+end
+
 function M.build(instance, geometry, result, field, width, line_offset)
-  assert(instance and instance.state, 'field editor renderer requires an instance')
-  assert(geometry and geometry.editor_rows, 'field editor renderer requires editor geometry')
-  assert(result and result.name, 'field editor renderer requires a highlight result')
-  assert(type(field) == 'string', 'field editor renderer requires a field')
+  instance = render_instance(instance)
+  geometry = editor_geometry(geometry)
+  result = highlight_result(result)
+  if type(field) ~= 'string' then
+    error('field editor renderer requires a field', 2)
+  end
   line_offset = line_offset or 0
 
   if dynamic_model.channel_set[field] then
