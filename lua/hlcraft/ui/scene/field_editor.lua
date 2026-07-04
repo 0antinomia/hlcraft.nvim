@@ -37,12 +37,12 @@ local function prompt_dynamic_value(instance, action, prompt_text, default)
   end)
 end
 
-local function optional_opts(opts)
+local function optional_table(opts, label)
   if opts == nil then
     return {}
   end
   if type(opts) ~= 'table' then
-    error('dynamic row input options must be a table', 3)
+    error(('%s options must be a table'):format(label), 3)
   end
   return opts
 end
@@ -72,7 +72,7 @@ function M.selected_dynamic_row_key(instance)
 end
 
 function M.input_dynamic_row(instance, opts)
-  opts = optional_opts(opts)
+  opts = optional_table(opts, 'dynamic row input')
   local result = M.current_result(instance)
   local field = M.current_field(instance)
   local dynamic = dynamic_value(result, field)
@@ -95,7 +95,8 @@ function M.input_dynamic_row(instance, opts)
 end
 
 function M.enter(instance, opts)
-  instance.state.field_editor.field = opts and opts.field or instance.state.field_editor.field
+  opts = optional_table(opts, 'field editor entry')
+  instance.state.field_editor.field = opts.field or instance.state.field_editor.field
   instance.state.scene.field = instance.state.field_editor.field
 end
 
