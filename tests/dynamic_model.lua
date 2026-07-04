@@ -124,7 +124,7 @@ h.assert_equal(normalized_entry.dynamic.fg.preset, 'pulse', 'dynamic fg did not 
 h.assert_equal(normalized_entry.dynamic.fg.duration, 1500, 'dynamic duration did not normalize', scope)
 h.assert_true(type(normalized_entry.dynamic.fg) == 'table', 'dynamic fg did not stay nested data', scope)
 
-for _, preset_name in ipairs({ 'pulse', 'breath', 'hue', 'gradient', 'blink', 'duotone' }) do
+for _, preset_name in ipairs(model.presets) do
   local preset = presets.get(preset_name)
   h.assert_equal(preset.version, 1, ('preset %s version changed'):format(preset_name), scope)
   h.assert_equal(preset.preset, preset_name, ('preset %s label changed'):format(preset_name), scope)

@@ -50,11 +50,8 @@ M.detail_kinds = {
 }
 
 M.color_step = 5
-M.dynamic_presets = { 'pulse', 'breath', 'hue', 'gradient', 'blink', 'duotone' }
 M.dynamic_duration_step = 250
 M.dynamic_phase_step = 0.05
-M.dynamic_min_duration = 250
-M.dynamic_max_duration = 10000
 M.dynamic_timeline_swatch = '████'
 M.dynamic_preview_swatch = '████████████'
 M.blend_small_step = 1
