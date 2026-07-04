@@ -13,37 +13,33 @@ local function filter_entry(entry)
   return filtered
 end
 
-function M.inflate_entry(entry)
-  return dynamic_model.inflate_entry(filter_entry(entry))
+function M.normalize_entry(entry)
+  return dynamic_model.normalize_entry(filter_entry(entry))
 end
 
-function M.flatten_entry(entry)
-  return dynamic_model.flatten_entry(filter_entry(entry))
-end
-
-function M.inflate_data(data)
-  local inflated_by_name = {}
+function M.normalize_loaded_data(data)
+  local normalized_by_name = {}
   for name, entry in pairs(data.entries or {}) do
-    local inflated = M.inflate_entry(entry)
-    data.entries[name] = inflated
-    inflated_by_name[name] = inflated
+    local normalized = M.normalize_entry(entry)
+    data.entries[name] = normalized
+    normalized_by_name[name] = normalized
   end
 
   for _, entries in pairs(data.sections or {}) do
     for name, entry in pairs(entries or {}) do
-      entries[name] = inflated_by_name[name] or M.inflate_entry(entry)
+      entries[name] = normalized_by_name[name] or M.normalize_entry(entry)
     end
   end
 
   return data
 end
 
-function M.flatten_entries(entries)
-  local flattened = {}
+function M.normalize_entries(entries)
+  local normalized = {}
   for name, entry in pairs(entries or {}) do
-    flattened[name] = M.flatten_entry(entry)
+    normalized[name] = M.normalize_entry(entry)
   end
-  return flattened
+  return normalized
 end
 
 return M

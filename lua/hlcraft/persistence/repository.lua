@@ -37,7 +37,7 @@ function M.load(path)
     codec.load_file(file, data)
   end
 
-  return schema.inflate_data(data)
+  return schema.normalize_loaded_data(data)
 end
 
 local function build_sections(overrides, groups)
@@ -78,8 +78,8 @@ function M.save(overrides, groups, path)
   local target = path or storage_dir()
   files.ensure_directory(target)
 
-  local flattened_overrides = schema.flatten_entries(overrides)
-  local sections, section_err = build_sections(flattened_overrides, groups)
+  local normalized_overrides = schema.normalize_entries(overrides)
+  local sections, section_err = build_sections(normalized_overrides, groups)
   if not sections then
     return false, section_err
   end
