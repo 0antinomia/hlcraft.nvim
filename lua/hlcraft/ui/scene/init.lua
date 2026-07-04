@@ -2,12 +2,36 @@ local M = {}
 
 local registry = {}
 
+local function scene_state(instance)
+  if not instance or not instance.state then
+    error('scene lookup requires an instance', 3)
+  end
+  local state = instance.state.scene
+  if type(state) ~= 'table' then
+    error('scene state must be a table', 3)
+  end
+  if type(state.name) ~= 'string' then
+    error('scene name must be a string', 3)
+  end
+  return state
+end
+
+local function optional_opts(opts)
+  if opts == nil then
+    return {}
+  end
+  if type(opts) ~= 'table' then
+    error('scene options must be a table', 3)
+  end
+  return opts
+end
+
 function M.register(name, scene)
   registry[name] = scene
 end
 
 function M.current_name(instance)
-  return instance.state.scene and instance.state.scene.name or 'search'
+  return scene_state(instance).name
 end
 
 function M.current(instance)
@@ -15,7 +39,10 @@ function M.current(instance)
 end
 
 function M.set(instance, name, opts)
-  opts = opts or {}
+  if type(name) ~= 'string' then
+    error('scene name must be a string', 2)
+  end
+  opts = optional_opts(opts)
   local scene = registry[name]
   if not scene then
     return false, ('unknown scene: %s'):format(tostring(name))
