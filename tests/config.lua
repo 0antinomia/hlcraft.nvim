@@ -48,9 +48,19 @@ for _, case in ipairs({
     message = 'empty reapply event was accepted',
   },
   {
+    value = { reapply_events = { events = { '   ' } } },
+    error = 'reapply_events.events[1]: must be a non-empty string',
+    message = 'blank reapply event was accepted',
+  },
+  {
     value = { reapply_events = { events = { { event = '' } } } },
     error = 'reapply_events.events[1].event: must be a non-empty string',
     message = 'empty table event was accepted',
+  },
+  {
+    value = { reapply_events = { events = { { event = '   ' } } } },
+    error = 'reapply_events.events[1].event: must be a non-empty string',
+    message = 'blank table event was accepted',
   },
   {
     value = { dynamic = { enabled = 'yes', interval_ms = 0 } },

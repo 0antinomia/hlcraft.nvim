@@ -41,6 +41,12 @@ local function validate_non_empty_string(errors, path, value)
   end
 end
 
+local function validate_event_name(errors, path, value)
+  if type(value) ~= 'string' or vim.trim(value) == '' then
+    add(errors, ('%s: must be a non-empty string'):format(path))
+  end
+end
+
 local function validate_known_keys(errors, user_config)
   for key, _ in pairs(user_config) do
     if not defaults.known_keys[key] then
@@ -74,9 +80,7 @@ end
 local function validate_reapply_event(errors, index, entry)
   local entry_type = type(entry)
   if entry_type == 'string' then
-    if entry == '' then
-      add(errors, ('reapply_events.events[%d]: must be a non-empty string'):format(index))
-    end
+    validate_event_name(errors, ('reapply_events.events[%d]'):format(index), entry)
     return
   end
 
@@ -85,9 +89,7 @@ local function validate_reapply_event(errors, index, entry)
     return
   end
 
-  if type(entry.event) ~= 'string' or entry.event == '' then
-    add(errors, ('reapply_events.events[%d].event: must be a non-empty string'):format(index))
-  end
+  validate_event_name(errors, ('reapply_events.events[%d].event'):format(index), entry.event)
   if entry.pattern ~= nil and type(entry.pattern) ~= 'string' then
     add(errors, ('reapply_events.events[%d].pattern: must be a string'):format(index))
   end
