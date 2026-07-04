@@ -39,10 +39,9 @@ function M.tick(now_ms)
 
   for name, task in pairs(state.tasks) do
     local spec = vim.deepcopy(task.base_spec or {})
-    local dynamic = model.normalize_dynamic(task.dynamic)
 
     for _, channel in ipairs(model.channels) do
-      local channel_spec = dynamic and dynamic[channel] or nil
+      local channel_spec = task.dynamic[channel]
       if channel_spec then
         local value = effects.compute(channel_spec, task.base_spec[channel], now_ms, task.base_spec)
         if value ~= nil then
