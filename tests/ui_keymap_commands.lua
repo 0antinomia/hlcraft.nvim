@@ -51,6 +51,23 @@ h.assert_equal(
 h.assert_true(commands.cycle_dynamic_preset(instance), 'cycle_dynamic_preset did not handle dynamic field', scope)
 h.assert_equal(engine.get(result.name).dynamic.fg.preset, 'breath', 'cycle_dynamic_preset did not update preset', scope)
 
+local original_buf = vim.api.nvim_get_current_buf()
+local phase_buf = vim.api.nvim_create_buf(false, true)
+vim.api.nvim_set_current_buf(phase_buf)
+instance.state.buf = phase_buf
+instance.state.geometry.editor_rows.dynamic_phase = { line = 1, key = 'dynamic_phase' }
+vim.api.nvim_win_set_cursor(0, { 1, 0 })
+h.assert_true(
+  commands.adjust_dynamic_color(instance, 0 / 0),
+  'phase row dynamic adjustment did not handle NaN delta',
+  scope
+)
+h.assert_equal(engine.get(result.name).dynamic.fg.phase, 0, 'phase row NaN delta changed phase', scope)
+vim.api.nvim_set_current_buf(original_buf)
+vim.api.nvim_buf_delete(phase_buf, { force = true })
+instance.state.buf = nil
+instance.state.geometry.editor_rows = {}
+
 instance.state.field_editor.field = 'blend'
 h.assert_true(commands.adjust_blend(instance, 7), 'adjust_blend did not handle blend field', scope)
 h.assert_equal(engine.get(result.name).blend, 7, 'adjust_blend did not update blend draft', scope)

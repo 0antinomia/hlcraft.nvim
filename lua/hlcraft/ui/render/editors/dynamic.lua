@@ -1,5 +1,6 @@
 local ui_fields = require('hlcraft.ui.fields')
 local field_values = require('hlcraft.ui.field_values')
+local numbers = require('hlcraft.core.number')
 local render_util = require('hlcraft.render.util')
 local dynamic_preview = require('hlcraft.ui.dynamic_preview')
 local editor_rows = require('hlcraft.ui.render.editor_rows')
@@ -65,7 +66,7 @@ function M.build(instance, geometry, result, field, width, line_offset, dynamic)
       field = field,
       base = fallback,
       dynamic = sample_dynamic,
-      now_ms = phase * math.max(1, tonumber(sample_dynamic.duration) or 1),
+      now_ms = phase * math.max(1, numbers.to_finite(sample_dynamic.duration, 1)),
     })
   end
 
