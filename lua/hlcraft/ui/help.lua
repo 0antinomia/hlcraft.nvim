@@ -101,7 +101,7 @@ function M.toggle(instance)
     local line = vim.api.nvim_buf_get_lines(instance.state.help_buf, line_nr, line_nr + 1, false)[1]
     if line and line ~= '' then
       if help_model.is_item_line(line) then
-        line_highlights.apply_hint_line(instance, line_nr, line)
+        line_highlights.apply_hint_line(instance, line_nr, line, { buf = instance.state.help_buf })
       else
         vim.api.nvim_buf_add_highlight(instance.state.help_buf, instance.ns, theme.groups.section, line_nr, 0, -1)
       end

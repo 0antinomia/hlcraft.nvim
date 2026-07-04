@@ -1,17 +1,7 @@
 local M = {}
 
-local key_width = 9
-
-local function pad_key(key)
-  local display_width = vim.fn.strdisplaywidth(key)
-  if display_width >= key_width then
-    return key .. '  '
-  end
-  return key .. string.rep(' ', key_width - display_width)
-end
-
 local function item_line(item)
-  return pad_key(item[1]) .. item[2]
+  return ('[%s] %s'):format(item[1], item[2])
 end
 
 function M.sections(preview_key)
@@ -106,7 +96,8 @@ function M.lines(preview_key)
 end
 
 function M.is_item_line(line)
-  return tostring(line or ''):find('%s%s+') ~= nil
+  line = tostring(line or '')
+  return line:find('^%s*%b[]%s+') ~= nil or line:find('%s%s+') ~= nil
 end
 
 return M

@@ -26,7 +26,8 @@ function M.hint_label(line)
 end
 
 local function is_hint_line(line)
-  return M.hint_label(line) ~= nil or tostring(line or ''):find(' | ', 1, true) ~= nil
+  line = tostring(line or '')
+  return M.hint_label(line) ~= nil or line:find(' | ', 1, true) ~= nil or line:find('^%s*%b[]%s+') ~= nil
 end
 
 local function is_rule_line(line)
@@ -57,8 +58,12 @@ function M.line_kind(line)
   return nil
 end
 
-local function add_highlight(instance, line_idx, hl, start_col, end_col)
-  vim.api.nvim_buf_add_highlight(instance.state.buf, instance.ns, hl, line_idx, start_col, end_col)
+local function target_buf(instance, opts)
+  return opts and opts.buf or instance.state.buf
+end
+
+local function add_highlight(instance, buf, line_idx, hl, start_col, end_col)
+  vim.api.nvim_buf_add_highlight(buf, instance.ns, hl, line_idx, start_col, end_col)
 end
 
 local function trim_bounds(line, first, last)
@@ -74,17 +79,52 @@ local function trim_bounds(line, first, last)
   return first, last
 end
 
-local function apply_hint_segment(instance, line_idx, line, first, last)
+local function apply_keycap_segments(instance, buf, line_idx, line, first, last)
+  local search_start = first
+  local applied = false
+
+  while search_start <= last do
+    local key_start, key_end = line:find('%b[]', search_start)
+    if not key_start or key_start > last then
+      break
+    end
+
+    add_highlight(instance, buf, line_idx, theme.groups.key, key_start - 1, key_end)
+    applied = true
+
+    local action_start = key_end + 1
+    while action_start <= last and line:sub(action_start, action_start) == ' ' do
+      action_start = action_start + 1
+    end
+
+    local next_key_start = line:find('%b[]', action_start)
+    local action_end = next_key_start and math.min(last, next_key_start - 1) or last
+    local trimmed_start, trimmed_end = trim_bounds(line, action_start, action_end)
+    if trimmed_start then
+      add_highlight(instance, buf, line_idx, theme.groups.hint_action, trimmed_start - 1, trimmed_end)
+    end
+
+    search_start = next_key_start or (last + 1)
+  end
+
+  return applied
+end
+
+local function apply_hint_segment(instance, buf, line_idx, line, first, last)
   first, last = trim_bounds(line, first, last)
   if not first then
     return
   end
 
   local segment = line:sub(first, last)
+  if segment:find('%b[]') and apply_keycap_segments(instance, buf, line_idx, line, first, last) then
+    return
+  end
+
   local delimiter_start, delimiter_end = segment:find('%s%s+')
   if delimiter_start then
-    add_highlight(instance, line_idx, theme.groups.key, first - 1, first + delimiter_start - 2)
-    add_highlight(instance, line_idx, theme.groups.hint_action, first + delimiter_end - 1, last)
+    add_highlight(instance, buf, line_idx, theme.groups.key, first - 1, first + delimiter_start - 2)
+    add_highlight(instance, buf, line_idx, theme.groups.hint_action, first + delimiter_end - 1, last)
     return
   end
 
@@ -95,19 +135,20 @@ local function apply_hint_segment(instance, line_idx, line, first, last)
 
   local key_col_start = first + key_start - 2
   local key_col_end = first + key_end - 1
-  add_highlight(instance, line_idx, theme.groups.key, key_col_start, key_col_end)
+  add_highlight(instance, buf, line_idx, theme.groups.key, key_col_start, key_col_end)
 
   local action_start = first + key_end
   while action_start <= last and line:sub(action_start, action_start) == ' ' do
     action_start = action_start + 1
   end
   if action_start <= last then
-    add_highlight(instance, line_idx, theme.groups.hint_action, action_start - 1, last)
+    add_highlight(instance, buf, line_idx, theme.groups.hint_action, action_start - 1, last)
   end
 end
 
-function M.apply_hint_line(instance, line_idx, line)
-  if not window.is_valid_buf(instance.state.buf) then
+function M.apply_hint_line(instance, line_idx, line, opts)
+  local buf = target_buf(instance, opts)
+  if not window.is_valid_buf(buf) then
     return
   end
   line = tostring(line or '')
@@ -115,35 +156,36 @@ function M.apply_hint_line(instance, line_idx, line)
     return
   end
 
-  add_highlight(instance, line_idx, theme.groups.hint, 0, -1)
+  add_highlight(instance, buf, line_idx, theme.groups.hint, 0, -1)
 
   local search_start = 1
   local label = M.hint_label(line)
   if label then
-    add_highlight(instance, line_idx, theme.groups.section, 0, #label)
+    add_highlight(instance, buf, line_idx, theme.groups.section, 0, #label)
     search_start = #label + 1
   end
 
   local prefix_start, prefix_end = line:find(': ', 1, true)
   if prefix_start and not label then
-    add_highlight(instance, line_idx, theme.groups.section, 0, prefix_start)
+    add_highlight(instance, buf, line_idx, theme.groups.section, 0, prefix_start)
     search_start = prefix_end + 1
   end
 
   while search_start <= #line do
     local pipe_start = line:find('|', search_start, true)
     local segment_end = pipe_start and pipe_start - 1 or #line
-    apply_hint_segment(instance, line_idx, line, search_start, segment_end)
+    apply_hint_segment(instance, buf, line_idx, line, search_start, segment_end)
     if not pipe_start then
       break
     end
-    add_highlight(instance, line_idx, theme.groups.hint_separator, pipe_start - 1, pipe_start)
+    add_highlight(instance, buf, line_idx, theme.groups.hint_separator, pipe_start - 1, pipe_start)
     search_start = pipe_start + 1
   end
 end
 
-function M.apply_label_line(instance, line_idx, line)
-  if not window.is_valid_buf(instance.state.buf) then
+function M.apply_label_line(instance, line_idx, line, opts)
+  local buf = target_buf(instance, opts)
+  if not window.is_valid_buf(buf) then
     return
   end
   line = tostring(line or '')
@@ -151,9 +193,9 @@ function M.apply_label_line(instance, line_idx, line)
   if not colon then
     return
   end
-  vim.api.nvim_buf_add_highlight(instance.state.buf, instance.ns, theme.groups.section, line_idx, 0, colon)
+  vim.api.nvim_buf_add_highlight(buf, instance.ns, theme.groups.section, line_idx, 0, colon)
   if colon < #line then
-    vim.api.nvim_buf_add_highlight(instance.state.buf, instance.ns, theme.groups.value, line_idx, colon + 1, -1)
+    vim.api.nvim_buf_add_highlight(buf, instance.ns, theme.groups.value, line_idx, colon + 1, -1)
   end
 end
 
