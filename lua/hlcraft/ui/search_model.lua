@@ -3,6 +3,10 @@ local M = {}
 local color = require('hlcraft.core.color')
 local search = require('hlcraft.core.search')
 
+local function normalize_query(query)
+  return type(query) == 'string' and query or ''
+end
+
 function M.empty_message(name_query, color_query)
   if name_query == '' and color_query == '' then
     return 'Use Name and Color search together to narrow highlight groups'
@@ -17,8 +21,7 @@ function M.empty_message(name_query, color_query)
 end
 
 function M.valid_color_query(query)
-  local text = tostring(query or '')
-  return text:upper() == 'NONE' or color.hex_to_int(text) ~= nil
+  return type(query) == 'string' and (query:upper() == 'NONE' or color.hex_to_int(query) ~= nil)
 end
 
 function M.intersect(name_results, color_results)
@@ -50,8 +53,8 @@ end
 
 function M.results(name_query, color_query, provider)
   provider = provider or search
-  name_query = name_query or ''
-  color_query = color_query or ''
+  name_query = normalize_query(name_query)
+  color_query = normalize_query(color_query)
 
   if name_query ~= '' and color_query ~= '' then
     if M.valid_color_query(color_query) then
