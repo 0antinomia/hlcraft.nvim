@@ -82,6 +82,29 @@ function M.int_to_rgb(n)
   return r, g, b
 end
 
+--- Round and clamp a numeric RGB channel into 0..255.
+--- @param value number|string|nil Channel value
+--- @return integer channel Clamped channel
+function M.clamp_channel(value)
+  local channel = math.floor((tonumber(value) or 0) + 0.5)
+  if channel < 0 then
+    return 0
+  end
+  if channel > 255 then
+    return 255
+  end
+  return channel
+end
+
+--- Convert RGB channels to a normalized #RRGGBB hex string.
+--- @param r number|string|nil Red channel
+--- @param g number|string|nil Green channel
+--- @param b number|string|nil Blue channel
+--- @return string hex Hex color
+function M.rgb_to_hex(r, g, b)
+  return ('#%02x%02x%02x'):format(M.clamp_channel(r), M.clamp_channel(g), M.clamp_channel(b))
+end
+
 --- Calculate a contrasting foreground color (light or dark) for readability on a given background.
 --- Uses ITU-R BT.601 luminance weights with threshold 186.
 --- @param hex string|nil Background color in #RRGGBB format
