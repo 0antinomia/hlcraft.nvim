@@ -27,6 +27,13 @@ end
 
 M.is_unset = override_values.is_unset
 
+local function assert_table(value, label)
+  if type(value) ~= 'table' then
+    error(('%s must be a table'):format(label), 3)
+  end
+  return value
+end
+
 function M.normalize_group(value)
   if value == vim.NIL then
     return vim.NIL, nil
@@ -109,6 +116,9 @@ function M.normalize(patch)
 end
 
 function M.apply_entry(entry, patch)
+  entry = assert_table(entry, 'patch target entry')
+  patch = assert_table(patch, 'normalized patch')
+
   for _, key in ipairs(store.override_keys) do
     if patch[key] ~= nil then
       entry[key] = override_values.entry_value(patch[key])
@@ -116,7 +126,10 @@ function M.apply_entry(entry, patch)
   end
 
   if type(patch.dynamic) == 'table' then
-    entry.dynamic = type(entry.dynamic) == 'table' and entry.dynamic or {}
+    if entry.dynamic ~= nil and type(entry.dynamic) ~= 'table' then
+      error('entry dynamic must be a table', 2)
+    end
+    entry.dynamic = entry.dynamic or {}
     for _, key in ipairs(dynamic_model.channels) do
       if patch.dynamic[key] ~= nil then
         entry.dynamic[key] = override_values.entry_value(patch.dynamic[key])
