@@ -213,6 +213,46 @@ h.assert_true(model.normalize_channel({
 }) == nil, 'non-sequence transform timeline was accepted', scope)
 h.assert_true(model.normalize_channel({
   version = 1,
+  unknown = true,
+  timeline = { { at = 0, color = 'base' } },
+}) == nil, 'unknown dynamic channel key was accepted', scope)
+h.assert_true(model.normalize_channel({
+  version = 1,
+  timeline = { { at = 0, color = 'base', unknown = true } },
+}) == nil, 'unknown color stop key was accepted', scope)
+h.assert_true(model.normalize_channel({
+  version = 1,
+  timeline = { { at = 0, color = 'base' } },
+  transforms = {
+    {
+      type = 'brightness',
+      unknown = true,
+      timeline = { { at = 0, value = 1 } },
+    },
+  },
+}) == nil, 'unknown transform key was accepted', scope)
+h.assert_true(model.normalize_channel({
+  version = 1,
+  timeline = { { at = 0, color = 'base' } },
+  transforms = {
+    {
+      type = 'brightness',
+      timeline = { { at = 0, value = 1, unknown = true } },
+    },
+  },
+}) == nil, 'unknown transform stop key was accepted', scope)
+h.assert_true(model.normalize_dynamic({
+  fg = {
+    version = 1,
+    timeline = { { at = 0, color = 'base' } },
+  },
+  unknown = {
+    version = 1,
+    timeline = { { at = 0, color = 'base' } },
+  },
+}) == nil, 'unknown dynamic root key was accepted', scope)
+h.assert_true(model.normalize_channel({
+  version = 1,
   timeline = { { at = 0, color = 'base' } },
   transforms = {
     brightness = {
