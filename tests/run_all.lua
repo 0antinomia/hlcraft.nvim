@@ -10,6 +10,7 @@ local tests = {
   'tests/ui_input_sequence.lua',
   'tests/ui_input_paste_plan.lua',
   'tests/ui_style_editor.lua',
+  'tests/ui_scene_rows.lua',
   'tests/ui_keymaps.lua',
   'tests/ui_keymap_commands.lua',
   'tests/ui_field_editor_actions.lua',

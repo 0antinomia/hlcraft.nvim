@@ -1,16 +1,11 @@
 local detail_scene = require('hlcraft.ui.scene.detail')
+local dynamic_model = require('hlcraft.dynamic.model')
 local style_editor = require('hlcraft.ui.editor.style')
 local field_editor_actions = require('hlcraft.ui.scene.field_editor_actions')
+local rows = require('hlcraft.ui.scene.rows')
 local session = require('hlcraft.ui.session')
-local window = require('hlcraft.ui.workspace.window')
 
 local M = {}
-
-local color_fields = {
-  fg = true,
-  bg = true,
-  sp = true,
-}
 
 local function notify_error(message)
   if message then
@@ -27,35 +22,15 @@ function M.current_field(instance)
 end
 
 function M.editor_row_at_cursor(instance)
-  local win = window.get_win(instance)
-  if not window.is_valid_win(win) then
-    return nil
-  end
-  local cursor_line = vim.api.nvim_win_get_cursor(win)[1]
-  for key, row in pairs(instance.state.geometry.editor_rows or {}) do
-    if row.line == cursor_line then
-      row.key = row.key or key
-      return row
-    end
-  end
+  return rows.editor_row_at_cursor(instance)
 end
 
 local function menu_row_at_cursor(instance)
-  local win = window.get_win(instance)
-  if not window.is_valid_win(win) then
-    return nil
-  end
-
-  local cursor_line = vim.api.nvim_win_get_cursor(win)[1]
-  for _, row in pairs(instance.state.geometry.detail_menu or {}) do
-    if row.line == cursor_line then
-      return row
-    end
-  end
+  return rows.detail_menu_at_cursor(instance)
 end
 
 local function dynamic_value(result, field)
-  if not result or not color_fields[field] then
+  if not result or not dynamic_model.channel_set[field] then
     return nil
   end
   return session.dynamic_value(result.name, field)
