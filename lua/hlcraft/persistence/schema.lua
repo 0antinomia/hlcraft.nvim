@@ -4,6 +4,13 @@ local override_values = require('hlcraft.core.override_values')
 
 local M = {}
 
+local entry_keys = {
+  dynamic = true,
+}
+for _, key in ipairs(fields.override_keys) do
+  entry_keys[key] = true
+end
+
 local function set_normalized(entry, key, value)
   local field_value = override_values.entry_value(value)
   if field_value ~= nil then
@@ -44,6 +51,35 @@ function M.compact_entry(entry)
   return M.normalize_entry(entry, { compact_dynamic = true })
 end
 
+function M.compact_entry_strict(name, entry)
+  for key, _ in pairs(entry) do
+    if not entry_keys[key] then
+      return nil, ('Highlight %s has unsupported field: %s'):format(name, key)
+    end
+  end
+
+  local normalized = {}
+  for _, key in ipairs(fields.override_keys) do
+    if entry[key] ~= nil then
+      local value, err = override_values.normalize_field(key, entry[key])
+      if err then
+        return nil, ('Highlight %s has invalid %s: %s'):format(name, key, err)
+      end
+      set_normalized(normalized, key, value)
+    end
+  end
+
+  if entry.dynamic ~= nil then
+    local dynamic = dynamic_model.normalize_dynamic(entry.dynamic)
+    if not dynamic then
+      return nil, ('Highlight %s has invalid dynamic override'):format(name)
+    end
+    normalized.dynamic = dynamic_model.compact_dynamic(dynamic)
+  end
+
+  return normalized, nil
+end
+
 function M.normalize_loaded_data(data)
   local normalized_by_name = {}
   for name, entry in pairs(data.entries or {}) do
@@ -67,6 +103,18 @@ function M.normalize_entries(entries)
     normalized[name] = M.compact_entry(entry)
   end
   return normalized
+end
+
+function M.normalize_entries_strict(entries)
+  local normalized = {}
+  for name, entry in pairs(entries) do
+    local compacted, err = M.compact_entry_strict(name, entry)
+    if err then
+      return nil, err
+    end
+    normalized[name] = compacted
+  end
+  return normalized, nil
 end
 
 return M
