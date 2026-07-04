@@ -1,11 +1,46 @@
 local M = {}
 
+local function assert_field(field)
+  if type(field) ~= 'table' then
+    error('input field must be a table', 3)
+  end
+  return field
+end
+
+local function assert_inputs(inputs)
+  if type(inputs) ~= 'table' then
+    error('input sequence must be a table', 3)
+  end
+  return inputs
+end
+
+local function assert_current_name(current_name)
+  if current_name ~= nil and type(current_name) ~= 'string' then
+    error('current input name must be a string or nil', 3)
+  end
+  return current_name
+end
+
+local function assert_predicate(predicate)
+  if predicate ~= nil and type(predicate) ~= 'function' then
+    error('input predicate must be a function or nil', 3)
+  end
+  return predicate
+end
+
 function M.name(field)
-  return field and (field.key or field.name) or nil
+  field = assert_field(field)
+  local name = field.key or field.name
+  if type(name) ~= 'string' or name == '' then
+    error('input field name must be a non-empty string', 2)
+  end
+  return name
 end
 
 function M.first_name(inputs, predicate)
-  for _, field in ipairs(inputs or {}) do
+  inputs = assert_inputs(inputs)
+  predicate = assert_predicate(predicate)
+  for _, field in ipairs(inputs) do
     if not predicate or predicate(field) then
       return M.name(field)
     end
@@ -33,11 +68,15 @@ local function relative_name(inputs, current_name, fallback_index, step)
 end
 
 function M.next_name(inputs, current_name)
-  return relative_name(inputs or {}, current_name, 1, 1)
+  inputs = assert_inputs(inputs)
+  current_name = assert_current_name(current_name)
+  return relative_name(inputs, current_name, 1, 1)
 end
 
 function M.prev_name(inputs, current_name)
-  return relative_name(inputs or {}, current_name, #(inputs or {}), -1)
+  inputs = assert_inputs(inputs)
+  current_name = assert_current_name(current_name)
+  return relative_name(inputs, current_name, #inputs, -1)
 end
 
 return M
