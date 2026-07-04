@@ -1,6 +1,7 @@
 local h = require('tests.helpers')
 local scope = 'hlcraft dynamic model'
 
+local constants = require('hlcraft.dynamic.constants')
 local fields = require('hlcraft.core.fields')
 local model = require('hlcraft.dynamic.model')
 local presets = require('hlcraft.dynamic.presets')
@@ -9,6 +10,26 @@ h.assert_true(vim.deep_equal(model.channels, fields.color_keys), 'dynamic channe
 h.assert_true(
   vim.deep_equal(model.channel_set, fields.color_set),
   'dynamic channel set drifted from color fields',
+  scope
+)
+h.assert_equal(model.version, constants.version, 'model version drifted from dynamic constants', scope)
+h.assert_equal(
+  model.default_duration,
+  constants.default_duration,
+  'model default duration drifted from dynamic constants',
+  scope
+)
+h.assert_equal(
+  model.default_interpolation,
+  constants.default_interpolation,
+  'model default interpolation drifted from dynamic constants',
+  scope
+)
+h.assert_equal(model.default_loop, constants.default_loop, 'model default loop drifted from dynamic constants', scope)
+h.assert_equal(
+  model.default_phase,
+  constants.default_phase,
+  'model default phase drifted from dynamic constants',
   scope
 )
 
