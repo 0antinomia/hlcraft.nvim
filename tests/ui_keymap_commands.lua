@@ -61,6 +61,17 @@ h.assert_equal(
 h.assert_true(commands.cycle_dynamic_preset(instance), 'cycle_dynamic_preset did not handle dynamic field', scope)
 h.assert_equal(engine.get(result.name).dynamic.fg.preset, 'breath', 'cycle_dynamic_preset did not update preset', scope)
 
+local original_run_action = commands.run_action
+commands.run_action = function()
+  return false
+end
+h.assert_true(
+  not commands.input_current_editor_field(instance),
+  'dynamic input command ignored raw JSON action failure',
+  scope
+)
+commands.run_action = original_run_action
+
 h.with_temp_buf(function(phase_buf)
   instance.state.buf = phase_buf
   instance.state.geometry.editor_rows.dynamic_phase = { line = 1, key = 'dynamic_phase' }
