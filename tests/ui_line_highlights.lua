@@ -31,6 +31,30 @@ h.with_temp_bufs(2, function(workspace_buf, help_buf)
     'label highlighter did not add spans',
     scope
   )
+
+  local numeric_hint_ok = pcall(line_highlights.apply_hint_line, {
+    ns = ns,
+    state = {
+      buf = help_buf,
+    },
+  }, 0, 1)
+  h.assert_true(not numeric_hint_ok, 'hint highlighter accepted a non-string line', scope)
+
+  local numeric_label_ok = pcall(line_highlights.apply_label_line, {
+    ns = ns,
+    state = {
+      buf = help_buf,
+    },
+  }, 0, 1)
+  h.assert_true(not numeric_label_ok, 'label highlighter accepted a non-string line', scope)
+
+  local invalid_lines_ok = pcall(line_highlights.apply_workbench_lines, {
+    ns = ns,
+    state = {
+      buf = help_buf,
+    },
+  }, nil)
+  h.assert_true(not invalid_lines_ok, 'workbench highlighter accepted non-table lines', scope)
 end)
 
 print('hlcraft ui line highlights: OK')

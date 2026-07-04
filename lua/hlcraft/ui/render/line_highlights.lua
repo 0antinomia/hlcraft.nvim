@@ -15,6 +15,13 @@ local function target_buf(instance, opts)
   return opts and opts.buf or instance.state.buf
 end
 
+local function assert_line(line)
+  if type(line) ~= 'string' then
+    error('render line must be a string', 3)
+  end
+  return line
+end
+
 local function add_highlight(instance, buf, line_idx, hl, start_col, end_col)
   vim.api.nvim_buf_add_highlight(buf, instance.ns, hl, line_idx, start_col, end_col)
 end
@@ -33,7 +40,7 @@ function M.apply_hint_line(instance, line_idx, line, opts)
   if not window.is_valid_buf(buf) then
     return
   end
-  line = tostring(line or '')
+  line = assert_line(line)
   if line == '' then
     return
   end
@@ -47,12 +54,17 @@ function M.apply_label_line(instance, line_idx, line, opts)
   if not window.is_valid_buf(buf) then
     return
   end
+  line = assert_line(line)
   apply_spans(instance, buf, line_idx, line_model.label_spans(line))
 end
 
 function M.apply_workbench_lines(instance, lines, start_line)
+  if type(lines) ~= 'table' then
+    error('render lines must be a table', 2)
+  end
+
   start_line = start_line or 1
-  for index, line in ipairs(lines or {}) do
+  for index, line in ipairs(lines) do
     if index >= start_line then
       local line_idx = index - 1
       local kind = line_model.line_kind(line)
