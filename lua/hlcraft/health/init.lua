@@ -2,7 +2,7 @@
 local M = {}
 
 local config = require('hlcraft.config')
-local storage = require('hlcraft.storage')
+local storage = require('hlcraft.persistence.repository')
 
 --- Run health checks for :checkhealth hlcraft
 --- @return nil

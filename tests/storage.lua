@@ -3,7 +3,7 @@ local scope = 'hlcraft storage'
 
 local config = require('hlcraft.config')
 local files = require('hlcraft.persistence.files')
-local storage = require('hlcraft.storage')
+local storage = require('hlcraft.persistence.repository')
 
 local persist_dir = h.temp_dir('hlcraft-storage')
 vim.fn.mkdir(persist_dir, 'p')
