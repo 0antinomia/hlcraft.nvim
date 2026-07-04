@@ -1,12 +1,17 @@
 local notify = require('hlcraft.notify')
+local line_highlights = require('hlcraft.ui.render.line_highlights')
 local session = require('hlcraft.ui.session')
+local theme = require('hlcraft.ui.theme')
 local window = require('hlcraft.ui.workspace.window')
 
 local M = {}
 
 M.lines = {
   'Unsaved highlight changes',
-  's: save   d: discard   c/q: cancel',
+  '',
+  '[s] save draft',
+  '[d] discard changes',
+  '[c/q/Esc] cancel',
 }
 
 function M.close(instance)
@@ -31,8 +36,16 @@ local function create_buffer()
   return buf
 end
 
+local function max_line_width()
+  local width = 0
+  for _, line in ipairs(M.lines) do
+    width = math.max(width, vim.fn.strdisplaywidth(line))
+  end
+  return width
+end
+
 local function open_window(buf)
-  local width = 38
+  local width = math.min(math.max(28, max_line_width() + 2), math.max(1, vim.o.columns - 4))
   local height = #M.lines
   return vim.api.nvim_open_win(buf, true, {
     relative = 'editor',
@@ -51,6 +64,24 @@ local function apply_window_options(win)
   vim.wo[win].cursorline = false
   vim.wo[win].number = false
   vim.wo[win].relativenumber = false
+end
+
+local function apply_highlights(instance, buf, win)
+  if instance.ns == nil then
+    return
+  end
+
+  theme.apply(instance.ns)
+  vim.api.nvim_win_set_hl_ns(win, instance.ns)
+  vim.api.nvim_buf_clear_namespace(buf, instance.ns, 0, -1)
+  vim.api.nvim_buf_add_highlight(buf, instance.ns, theme.groups.title, 0, 0, -1)
+
+  for line_nr = 2, #M.lines - 1 do
+    local line = M.lines[line_nr + 1]
+    if line and line ~= '' then
+      line_highlights.apply_hint_line(instance, line_nr, line, { buf = buf })
+    end
+  end
 end
 
 local function install_keymaps(instance, buf, name, on_done)
@@ -82,6 +113,7 @@ function M.open(instance, name, on_done)
 
   instance.state.unsaved_prompt = { win = win, buf = buf }
   apply_window_options(win)
+  apply_highlights(instance, buf, win)
   install_keymaps(instance, buf, name, on_done)
 end
 
