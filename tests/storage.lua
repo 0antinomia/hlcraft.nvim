@@ -119,7 +119,7 @@ local save_ok, save_err = storage.save({
 }, persist_dir)
 h.assert_true(save_ok, save_err or 'storage.save failed', scope)
 
-local invalid_overrides_ok, invalid_overrides_err = storage.save(false, nil, persist_dir)
+local invalid_overrides_ok, invalid_overrides_err = storage.save(false, {}, persist_dir)
 h.assert_true(not invalid_overrides_ok, 'storage.save accepted non-table overrides', scope)
 h.assert_equal(invalid_overrides_err, 'Overrides must be a table', 'non-table overrides error changed', scope)
 
@@ -127,9 +127,13 @@ local invalid_groups_ok, invalid_groups_err = storage.save({}, false, persist_di
 h.assert_true(not invalid_groups_ok, 'storage.save accepted non-table groups', scope)
 h.assert_equal(invalid_groups_err, 'Groups must be a table', 'non-table groups error changed', scope)
 
+local missing_groups_ok, missing_groups_err = storage.save({}, nil, persist_dir)
+h.assert_true(not missing_groups_ok, 'storage.save accepted missing groups', scope)
+h.assert_equal(missing_groups_err, 'Groups must be a table', 'missing groups error changed', scope)
+
 local missing_group_ok, missing_group_err = storage.save({
   MissingGroup = { fg = '#111111' },
-}, nil, persist_dir)
+}, {}, persist_dir)
 h.assert_true(not missing_group_ok, 'storage.save accepted an override without a group table', scope)
 h.assert_equal(
   missing_group_err,
