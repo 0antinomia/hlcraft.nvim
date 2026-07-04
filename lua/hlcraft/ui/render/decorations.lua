@@ -1,4 +1,5 @@
 local color = require('hlcraft.core.color')
+local numbers = require('hlcraft.core.number')
 local ui_detail = require('hlcraft.ui.detail')
 local window = require('hlcraft.ui.workspace.window')
 local line_highlights = require('hlcraft.ui.render.line_highlights')
@@ -181,9 +182,26 @@ end
 --- @param start_col number|nil 0-based column to start searching from
 --- @return number|nil 0-based column where text starts, or nil if not found
 function M.find_text_start(line, text, start_col)
-  local target = line or ''
+  if type(line) ~= 'string' then
+    error('search line must be a string', 2)
+  end
+  if type(text) ~= 'string' then
+    error('search text must be a string', 2)
+  end
+  if
+    start_col ~= nil
+    and (
+      type(start_col) ~= 'number'
+      or not numbers.is_finite(start_col)
+      or start_col < 0
+      or math.floor(start_col) ~= start_col
+    )
+  then
+    error('search start column must be a non-negative integer', 2)
+  end
+
   local init = (start_col or 0) + 1
-  local first = target:find(text, init, true)
+  local first = line:find(text, init, true)
   return first and (first - 1) or nil
 end
 
