@@ -103,17 +103,20 @@ function M.int_to_rgb(n)
 end
 
 --- Round and clamp a numeric RGB channel into 0..255.
---- @param value number|string|nil Channel value
+--- @param value number Channel value
 --- @return integer channel Clamped channel
 function M.clamp_channel(value)
-  local channel = math.floor(numbers.to_finite(value, 0) + 0.5)
+  if not numbers.is_finite(value) then
+    error('RGB channel must be finite', 2)
+  end
+  local channel = math.floor(value + 0.5)
   return numbers.clamp(channel, 0, 255)
 end
 
 --- Convert RGB channels to a normalized #RRGGBB hex string.
---- @param r number|string|nil Red channel
---- @param g number|string|nil Green channel
---- @param b number|string|nil Blue channel
+--- @param r number Red channel
+--- @param g number Green channel
+--- @param b number Blue channel
 --- @return string hex Hex color
 function M.rgb_to_hex(r, g, b)
   return ('#%02x%02x%02x'):format(M.clamp_channel(r), M.clamp_channel(g), M.clamp_channel(b))
