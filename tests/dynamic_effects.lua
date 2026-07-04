@@ -164,6 +164,36 @@ h.assert_equal(
   'unused unresolved color ref blocked effect sampling',
   scope
 )
+h.assert_equal(
+  compute({
+    version = 1,
+    timeline = {
+      { at = 0, color = 'base' },
+    },
+  }, tonumber('123456', 16), 0),
+  '#123456',
+  'numeric base color stopped resolving',
+  scope
+)
+h.assert_true(compute({
+  version = 1,
+  timeline = {
+    { at = 0, color = 'base' },
+  },
+}, 0x1000000, 0) == nil, 'effect accepted invalid numeric base color', scope)
+h.assert_true(compute(
+  {
+    version = 1,
+    timeline = {
+      { at = 0, color = 'fg' },
+    },
+  },
+  '#123456',
+  0,
+  {
+    fg = 0x1000000,
+  }
+) == nil, 'effect accepted invalid numeric context color', scope)
 h.assert_true(compute({
   version = 1,
   duration = 2000,
