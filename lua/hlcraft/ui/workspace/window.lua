@@ -29,13 +29,13 @@ local function restore_workspace_window_options(instance, win)
   return restored
 end
 
-local function restore_origin_window_options(instance, clear_snapshot)
+local function restore_origin_window_options(instance, opts)
   if instance.state.origin_win_options == nil then
     return false
   end
 
   local restored = window_options.restore(instance.state.origin_win_options)
-  if clear_snapshot ~= false then
+  if not (opts and opts.keep_snapshot) then
     instance.state.origin_win_options = nil
   end
   return restored
@@ -107,7 +107,8 @@ end
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.restore_all_workspace_windows(instance)
-  for workspace_win, _ in pairs(instance.state.workspace_win_options or {}) do
+  local workspace_wins = vim.tbl_keys(instance.state.workspace_win_options or {})
+  for _, workspace_win in ipairs(workspace_wins) do
     restore_workspace_window_options(instance, workspace_win)
   end
 end
@@ -133,7 +134,7 @@ function M.restore_origin(instance)
   end
 
   if instance.state.origin_win_options ~= nil then
-    restore_origin_window_options(instance, false)
+    restore_origin_window_options(instance, { keep_snapshot = true })
   end
 
   if had_origin then
@@ -189,7 +190,7 @@ function M.release_workspace_window(instance, win)
   end
 
   if win == instance.state.origin_win then
-    restore_origin_window_options(instance, false)
+    restore_origin_window_options(instance, { keep_snapshot = true })
     return
   end
 
