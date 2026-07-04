@@ -2,6 +2,13 @@ local window = require('hlcraft.ui.workspace.window')
 
 local M = {}
 
+local function assert_rows(rows)
+  if type(rows) ~= 'table' then
+    error('scene rows must be a table', 3)
+  end
+  return rows
+end
+
 local function row_with_key(row, key)
   local result = vim.tbl_extend('force', {}, row)
   result.key = result.key or key
@@ -21,7 +28,7 @@ function M.find_by_line(rows, line)
     return nil
   end
 
-  for key, row in pairs(rows or {}) do
+  for key, row in pairs(assert_rows(rows)) do
     if row.line == line then
       return row_with_key(row, key)
     end

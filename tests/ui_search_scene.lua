@@ -30,6 +30,12 @@ instance.state.geometry.result_lines = {
 local rows = search_scene.rows(instance)
 h.assert_equal(rows[1].line, 4, 'search rows were not sorted by line', scope)
 h.assert_equal(rows[2].index, 2, 'search rows lost result index', scope)
+local missing_result_lines_ok = pcall(search_scene.rows, {
+  state = {
+    geometry = {},
+  },
+})
+h.assert_true(not missing_result_lines_ok, 'search scene accepted missing result_lines geometry', scope)
 
 h.assert_true(not search_scene.goto_first(instance), 'goto_first reported movement without a window', scope)
 h.assert_true(not search_scene.goto_offset(instance, 1), 'goto_offset reported movement without a window', scope)
