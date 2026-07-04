@@ -1,5 +1,6 @@
 local search_scene = require('hlcraft.ui.scene.search')
 local session = require('hlcraft.ui.session')
+local style_editor = require('hlcraft.ui.editor.style')
 local ui_fields = require('hlcraft.ui.fields')
 local window = require('hlcraft.ui.workspace.window')
 
@@ -191,14 +192,7 @@ function M.activate(instance)
     return false, nil
   end
   if row.kind == 'boolean' then
-    local draft_value = session.field_value(result.name, row.key)
-    local next_value = true
-    if draft_value == true then
-      next_value = false
-    elseif draft_value == false then
-      next_value = nil
-    end
-    return session.set_style(instance, result.name, row.key, next_value)
+    return style_editor.toggle(instance, result, row.key)
   end
   if row.kind == 'group' or row.kind == 'color' or row.kind == 'blend' then
     require('hlcraft.ui.scene').set(instance, 'field_editor', {

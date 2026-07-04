@@ -8,6 +8,7 @@ local tests = {
   'tests/ui_search_model.lua',
   'tests/ui_input_sequence.lua',
   'tests/ui_input_paste_plan.lua',
+  'tests/ui_style_editor.lua',
   'tests/ui_keymap_commands.lua',
   'tests/ui_field_editor_actions.lua',
   'tests/ui_line_highlights.lua',

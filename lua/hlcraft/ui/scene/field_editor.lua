@@ -1,4 +1,5 @@
 local detail_scene = require('hlcraft.ui.scene.detail')
+local style_editor = require('hlcraft.ui.editor.style')
 local field_editor_actions = require('hlcraft.ui.scene.field_editor_actions')
 local session = require('hlcraft.ui.session')
 local window = require('hlcraft.ui.workspace.window')
@@ -178,15 +179,7 @@ function M.activate(instance)
     return true, nil
   end
 
-  local draft_value = session.field_value(result.name, row.key)
-  local next_value = true
-  if draft_value == true then
-    next_value = false
-  elseif draft_value == false then
-    next_value = nil
-  end
-
-  return session.set_style(instance, result.name, row.key, next_value)
+  return style_editor.toggle(instance, result, row.key)
 end
 
 function M.handle(instance, action, ...)
