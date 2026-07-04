@@ -98,6 +98,25 @@ h.assert_true(not strict_detail_ok, 'detail renderer accepted a build call witho
 local strict_field_editor_ok = pcall(field_editor_renderer.build, { editor_rows = {} }, result, 'fg', 80)
 h.assert_true(not strict_field_editor_ok, 'field editor renderer accepted a build call without instance', scope)
 
+local detail_geometry = { detail_menu = {} }
+local detail_lines = detail_renderer.build(instance, detail_geometry, result, 80, 0)
+local fg_row = detail_geometry.detail_menu.fg
+h.assert_true(fg_row.label_start_col ~= nil, 'detail row lacks label highlight start', scope)
+h.assert_true(fg_row.label_end_col > fg_row.label_start_col, 'detail row label highlight range is invalid', scope)
+h.assert_true(fg_row.value_col > fg_row.label_end_col, 'detail row lacks value highlight start', scope)
+h.with_temp_buf(function(buf)
+  local detail_ns = vim.api.nvim_create_namespace('hlcraft-ui-render-detail-test')
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, detail_lines)
+  decorations.apply_detail_menu_highlights({
+    ns = detail_ns,
+    state = {
+      buf = buf,
+    },
+  }, detail_geometry.detail_menu, false)
+  local marks = vim.api.nvim_buf_get_extmarks(buf, detail_ns, 0, -1, { details = true })
+  h.assert_true(#marks > 0, 'detail menu highlights were not applied', scope)
+end)
+
 local top_help = ''
 for _, chunk in ipairs(decorations.help_virt_line()) do
   top_help = top_help .. chunk[1]

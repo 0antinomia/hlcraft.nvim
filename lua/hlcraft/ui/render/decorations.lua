@@ -103,9 +103,28 @@ function M.set_detail_menu_header(instance, row1, result)
     })
 end
 
-function M.apply_dirty_marks(instance, detail_menu)
+local function add_row_highlight(instance, buf, line_idx, line_len, hl, start_col, end_col)
+  if start_col and start_col < line_len then
+    vim.api.nvim_buf_add_highlight(buf, instance.ns, hl, line_idx, start_col, math.min(end_col or line_len, line_len))
+  end
+end
+
+function M.apply_detail_menu_highlights(instance, detail_menu, dirty)
+  local buf = instance.state.buf
+  if not window.is_valid_buf(buf) then
+    return
+  end
+
   for _, row in pairs(detail_menu or {}) do
-    vim.api.nvim_buf_add_highlight(instance.state.buf, instance.ns, theme.groups.dirty, row.line - 1, 0, 1)
+    local line_idx = row.line - 1
+    local line = vim.api.nvim_buf_get_lines(buf, line_idx, line_idx + 1, false)[1] or ''
+    local line_len = #line
+
+    if dirty and line_len > 0 then
+      vim.api.nvim_buf_add_highlight(buf, instance.ns, theme.groups.dirty, line_idx, 0, 1)
+    end
+    add_row_highlight(instance, buf, line_idx, line_len, theme.groups.section, row.label_start_col, row.label_end_col)
+    add_row_highlight(instance, buf, line_idx, line_len, theme.groups.value, row.value_col, nil)
   end
 end
 

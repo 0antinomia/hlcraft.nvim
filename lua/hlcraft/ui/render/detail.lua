@@ -49,13 +49,17 @@ function M.build(instance, geometry, result, width, line_offset)
     local value = key == 'group' and session.display_group(result.name)
       or ui_fields.detail_kinds[key] == 'color' and color_display_value(result, key)
       or session.display_value(result.name, key, fallback)
-    local prefix = ('%s %s  '):format(dirty_mark, render_util.pad(ui_fields.detail_labels[key] or key, label_width))
+    local label_text = render_util.pad(ui_fields.detail_labels[key] or key, label_width)
+    local prefix = ('%s %s  '):format(dirty_mark, label_text)
     local value_col = #prefix
     local line = prefix .. field_values.display_text(value)
     local row = {
       line = #lines + 1,
       key = key,
       kind = ui_fields.detail_kinds[key],
+      label_start_col = 2,
+      label_end_col = 2 + #label_text,
+      value_col = value_col,
     }
     geometry.detail_menu[key] = row
     if dynamic then
@@ -112,9 +116,7 @@ function M.render(instance)
 
   if detail_result then
     decorations.set_detail_menu_header(instance, results_top, detail_result)
-    if session.is_dirty(detail_result.name) then
-      decorations.apply_dirty_marks(instance, geometry.detail_menu)
-    end
+    decorations.apply_detail_menu_highlights(instance, geometry.detail_menu, session.is_dirty(detail_result.name))
   end
 
   decorations.refresh_input_placeholders(instance)
