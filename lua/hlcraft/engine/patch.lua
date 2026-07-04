@@ -8,9 +8,24 @@ local patch_key_set = {
   group = true,
   dynamic = true,
 }
+local field_normalizers = {}
 
 for _, key in ipairs(store.override_keys) do
   patch_key_set[key] = true
+end
+for _, key in ipairs(store.color_keys) do
+  field_normalizers[key] = function(value)
+    return override_values.normalize_color(value)
+  end
+end
+for _, key in ipairs(store.style_keys) do
+  local style_key = key
+  field_normalizers[key] = function(value)
+    return override_values.normalize_style(style_key, value)
+  end
+end
+field_normalizers.blend = function(value)
+  return override_values.normalize_blend(value)
 end
 
 function M.is_color_key(key)
@@ -65,32 +80,14 @@ function M.normalize(patch)
     normalized.group = override_values.is_unset(patch.group) and vim.NIL or vim.trim(tostring(patch.group))
   end
 
-  for _, key in ipairs(store.color_keys) do
+  for _, key in ipairs(store.override_keys) do
     if patch[key] ~= nil then
-      local value, err = override_values.normalize_color(patch[key])
+      local value, err = field_normalizers[key](patch[key])
       if err then
         return nil, err
       end
       normalized[key] = value
     end
-  end
-
-  for _, key in ipairs(store.style_keys) do
-    if patch[key] ~= nil then
-      local value, err = override_values.normalize_style(key, patch[key])
-      if err then
-        return nil, err
-      end
-      normalized[key] = value
-    end
-  end
-
-  if patch.blend ~= nil then
-    local value, err = override_values.normalize_blend(patch.blend)
-    if err then
-      return nil, err
-    end
-    normalized.blend = value
   end
 
   if patch.dynamic ~= nil then
@@ -110,20 +107,10 @@ function M.normalize(patch)
 end
 
 function M.apply_entry(entry, patch)
-  for _, key in ipairs(store.color_keys) do
+  for _, key in ipairs(store.override_keys) do
     if patch[key] ~= nil then
       entry[key] = override_values.entry_value(patch[key])
     end
-  end
-
-  for _, key in ipairs(store.style_keys) do
-    if patch[key] ~= nil then
-      entry[key] = override_values.entry_value(patch[key])
-    end
-  end
-
-  if patch.blend ~= nil then
-    entry.blend = override_values.entry_value(patch.blend)
   end
 
   if type(patch.dynamic) == 'table' then
@@ -137,16 +124,7 @@ function M.apply_entry(entry, patch)
 end
 
 function M.changes_entry(patch)
-  if patch.blend ~= nil then
-    return true
-  end
-
-  for _, key in ipairs(store.color_keys) do
-    if patch[key] ~= nil then
-      return true
-    end
-  end
-  for _, key in ipairs(store.style_keys) do
+  for _, key in ipairs(store.override_keys) do
     if patch[key] ~= nil then
       return true
     end
