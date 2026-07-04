@@ -31,6 +31,7 @@ local tests = {
   'tests/ui_line_model.lua',
   'tests/ui_line_highlights.lua',
   'tests/ui_placeholders.lua',
+  'tests/ui_detail_info.lua',
   'tests/ui_render.lua',
   'tests/persistence_codec.lua',
   'tests/storage.lua',
