@@ -249,6 +249,11 @@ h.assert_true(files.file_path(persist_dir, nil) == nil, 'nil group file path sho
 
 local numeric_filename_ok = pcall(files.sanitize_filename, 1)
 h.assert_true(not numeric_filename_ok, 'filename sanitizer accepted a non-string name', scope)
+h.assert_true(
+  files.sanitize_filename('main/group') ~= files.sanitize_filename('main_2Fgroup'),
+  'filename sanitizer allows escaped-name collisions',
+  scope
+)
 local numeric_path_ok = pcall(files.file_path, 1, 'group')
 h.assert_true(not numeric_path_ok, 'file_path accepted a non-string directory path', scope)
 local invalid_toml_dir_opts_ok = pcall(files.toml_files_in_dir, persist_dir, false)
