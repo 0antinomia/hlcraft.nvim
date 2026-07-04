@@ -46,6 +46,8 @@ h.assert_equal(sequence.next_name(inputs, 'missing'), 'name', 'next missing curr
 h.assert_equal(sequence.next_name({}, 'name'), nil, 'next on empty inputs returned a name', scope)
 local bad_next_current_ok = pcall(sequence.next_name, inputs, 1)
 h.assert_true(not bad_next_current_ok, 'input sequence accepted non-string next current name', scope)
+local empty_next_current_ok = pcall(sequence.next_name, inputs, '')
+h.assert_true(not empty_next_current_ok, 'input sequence accepted empty next current name', scope)
 
 h.assert_equal(sequence.prev_name(inputs, nil), 'blend', 'prev without current should use last input', scope)
 h.assert_equal(sequence.prev_name(inputs, 'blend'), 'fg', 'prev input did not move backward', scope)
@@ -54,5 +56,7 @@ h.assert_equal(sequence.prev_name(inputs, 'missing'), 'blend', 'prev missing cur
 h.assert_equal(sequence.prev_name({}, 'name'), nil, 'prev on empty inputs returned a name', scope)
 local bad_prev_inputs_ok = pcall(sequence.prev_name, nil, 'name')
 h.assert_true(not bad_prev_inputs_ok, 'input sequence accepted nil prev inputs', scope)
+local empty_prev_current_ok = pcall(sequence.prev_name, inputs, '')
+h.assert_true(not empty_prev_current_ok, 'input sequence accepted empty prev current name', scope)
 
 print('hlcraft ui input sequence: OK')

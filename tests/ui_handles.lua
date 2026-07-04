@@ -16,6 +16,8 @@ h.assert_true(not handles.is_valid_buf(buf), 'deleted buffer stayed valid', scop
 h.assert_true(handles.is_valid_win(vim.api.nvim_get_current_win()), 'current window was not valid', scope)
 local invalid_instance_name_ok = pcall(ui.get_instance, false)
 h.assert_true(not invalid_instance_name_ok, 'UI accepted non-string instance name', scope)
+local empty_instance_name_ok = pcall(ui.get_instance, '')
+h.assert_true(not empty_instance_name_ok, 'UI accepted empty instance name', scope)
 local invalid_open_opts_ok = pcall(ui.open, false)
 h.assert_true(not invalid_open_opts_ok, 'UI open accepted non-table options', scope)
 

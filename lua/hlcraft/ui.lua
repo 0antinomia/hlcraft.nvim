@@ -5,8 +5,8 @@ local M = {}
 local instances = {}
 
 local function assert_instance_name(name)
-  if name ~= nil and type(name) ~= 'string' then
-    error('UI instance name must be a string', 3)
+  if name ~= nil and (type(name) ~= 'string' or name == '') then
+    error('UI instance name must be a non-empty string or nil', 3)
   end
   return name
 end
