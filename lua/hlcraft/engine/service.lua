@@ -1,9 +1,9 @@
 local M = {}
 
-local dynamic_model = require('hlcraft.dynamic.model')
 local storage = require('hlcraft.persistence.repository')
 local applier = require('hlcraft.engine.applier')
 local mutations = require('hlcraft.engine.mutations')
+local patch_model = require('hlcraft.engine.patch')
 local snapshot = require('hlcraft.engine.snapshot')
 local store = require('hlcraft.engine.store')
 
@@ -122,7 +122,7 @@ end
 --- @return boolean ok
 --- @return string|nil err
 function M.set_color(name, key, value)
-  if not vim.tbl_contains(store.color_keys, key) then
+  if not patch_model.is_color_key(key) then
     return false, ('Unsupported override key: %s'):format(tostring(key))
   end
 
@@ -136,7 +136,7 @@ end
 --- @return boolean ok
 --- @return string|nil err
 function M.set_dynamic(name, key, spec)
-  if not dynamic_model.channel_set[key] then
+  if not patch_model.is_dynamic_key(key) then
     return false, ('Unsupported dynamic key: %s'):format(tostring(key))
   end
 
@@ -150,7 +150,7 @@ end
 --- @return boolean ok
 --- @return string|nil err
 function M.set_style(name, key, value)
-  if not vim.tbl_contains(store.style_keys, key) then
+  if not patch_model.is_style_key(key) then
     return false, ('Unsupported style key: %s'):format(tostring(key))
   end
 
@@ -164,7 +164,7 @@ end
 --- @return boolean|nil value
 --- @return string|nil err
 function M.toggle_style(name, key)
-  if not vim.tbl_contains(store.style_keys, key) then
+  if not patch_model.is_style_key(key) then
     return false, nil, ('Unsupported style key: %s'):format(tostring(key))
   end
 
