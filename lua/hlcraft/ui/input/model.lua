@@ -1,6 +1,20 @@
+local input_sequence = require('hlcraft.ui.input.sequence')
 local window = require('hlcraft.ui.workspace.window')
 
 local M = {}
+
+local function field_name(field)
+  return input_sequence.name(field)
+end
+
+local function find_input_field(instance, name)
+  for _, input in ipairs(instance.state.geometry.inputs or {}) do
+    if field_name(input) == name then
+      return input
+    end
+  end
+  return nil
+end
 
 --- Determine which UI area (name, color, detail, results) the cursor is in
 --- @param instance table The Instance object holding UI state
@@ -52,7 +66,7 @@ function M.set_input_extmarks(instance)
   instance.state.extmark_ids = {}
   local inputs = instance.state.geometry.inputs or {}
   for _, field in ipairs(inputs) do
-    local name = field.key or field.name
+    local name = field_name(field)
     instance.state.extmark_ids[name .. ':start'] =
       vim.api.nvim_buf_set_extmark(instance.state.buf, instance.ns, field.line - 1, 0, {
         right_gravity = false,
@@ -71,16 +85,7 @@ end
 --- @return number|nil end_row 0-based boundary row (one past last content line)
 --- @return table|nil field Field descriptor
 function M.get_input_pos(instance, name)
-  local field = nil
-
-  for _, input in ipairs(instance.state.geometry.inputs or {}) do
-    local input_name = input.key or input.name
-    if input_name == name then
-      field = input
-      break
-    end
-  end
-
+  local field = find_input_field(instance, name)
   if not field then
     return nil, nil, field
   end
@@ -149,7 +154,7 @@ end
 --- @return table|nil Input data with name, value, start_row, end_row, field keys
 function M.get_input_at_row(instance, row0)
   for _, field in ipairs(instance.state.geometry.inputs or {}) do
-    local name = field.key or field.name
+    local name = field_name(field)
     local start_row, end_boundary_row = M.get_input_pos(instance, name)
     if start_row and end_boundary_row then
       local end_row = end_boundary_row - 1
