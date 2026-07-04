@@ -16,15 +16,8 @@ local function assert_name(name)
   return name
 end
 
-local function entry_or_empty(entries, name, label)
-  local entry = entries[name]
-  if entry == nil then
-    return {}
-  end
-  if type(entry) ~= 'table' then
-    error(('%s must be a table'):format(label), 3)
-  end
-  return entry
+local function normalized_entry_or_empty(entries, name, label)
+  return snapshot.normalize_entry(entries[name], label) or {}
 end
 
 --- Bootstrap draft overrides and automatic reapplication after colorscheme changes.
@@ -47,7 +40,7 @@ end
 --- @return table
 function M.get(name)
   name = assert_name(name)
-  return snapshot.deepcopy(entry_or_empty(data.draft, name, 'draft entry'))
+  return snapshot.deepcopy(normalized_entry_or_empty(data.draft, name, 'draft entry'))
 end
 
 --- Return the persisted override for a group.
@@ -55,7 +48,7 @@ end
 --- @return table
 function M.get_persisted(name)
   name = assert_name(name)
-  return snapshot.deepcopy(entry_or_empty(data.persisted, name, 'persisted entry'))
+  return snapshot.deepcopy(normalized_entry_or_empty(data.persisted, name, 'persisted entry'))
 end
 
 --- Return the current draft TOML section for a highlight group.
@@ -203,7 +196,7 @@ end
 --- @return boolean
 function M.has_draft(name)
   name = assert_name(name)
-  return data.draft[name] ~= nil and next(data.draft[name]) ~= nil
+  return next(normalized_entry_or_empty(data.draft, name, 'draft entry')) ~= nil
 end
 
 --- Return whether a group currently has persisted overrides.
@@ -211,7 +204,7 @@ end
 --- @return boolean
 function M.has_persisted(name)
   name = assert_name(name)
-  return data.persisted[name] ~= nil and next(data.persisted[name]) ~= nil
+  return next(normalized_entry_or_empty(data.persisted, name, 'persisted entry')) ~= nil
 end
 
 --- Return the storage path used for persisted overrides.

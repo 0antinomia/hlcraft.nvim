@@ -30,9 +30,36 @@ with_entry_state(function()
   local bad_draft_ok = pcall(engine.get, 'HlcraftEngineServiceBrokenDraft')
   h.assert_true(not bad_draft_ok, 'engine service accepted invalid draft entry', scope)
 
+  store.data.draft.HlcraftEngineServiceInvalidDynamic = {
+    dynamic = {
+      fg = {
+        version = 1,
+        timeline = {},
+      },
+    },
+  }
+  local invalid_dynamic_ok = pcall(engine.get, 'HlcraftEngineServiceInvalidDynamic')
+  h.assert_true(not invalid_dynamic_ok, 'engine service accepted invalid draft dynamic entry', scope)
+
+  store.data.draft.HlcraftEngineServiceNormalizeDraft = {
+    fg = '#ABCDEF',
+  }
+  h.assert_equal(
+    engine.get('HlcraftEngineServiceNormalizeDraft').fg,
+    '#abcdef',
+    'engine service did not normalize draft reads',
+    scope
+  )
+
   store.data.persisted.HlcraftEngineServiceBrokenPersisted = false
   local bad_persisted_ok = pcall(engine.get_persisted, 'HlcraftEngineServiceBrokenPersisted')
   h.assert_true(not bad_persisted_ok, 'engine service accepted invalid persisted entry', scope)
+
+  store.data.persisted.HlcraftEngineServiceUnknownPersisted = {
+    unknown = true,
+  }
+  local unknown_persisted_ok = pcall(engine.has_persisted, 'HlcraftEngineServiceUnknownPersisted')
+  h.assert_true(not unknown_persisted_ok, 'engine service accepted unknown persisted fields', scope)
 
   local nil_name_ok = pcall(engine.get, nil)
   h.assert_true(not nil_name_ok, 'engine service accepted nil highlight name', scope)

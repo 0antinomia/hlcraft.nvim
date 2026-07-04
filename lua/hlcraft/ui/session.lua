@@ -88,6 +88,9 @@ end
 function M.dynamic_value(name, key)
   local entry = M.draft_entry(name)
   local dynamic = dynamic_model.normalize_dynamic(entry.dynamic)
+  if entry.dynamic ~= nil and not dynamic then
+    error('session entry has invalid dynamic override', 2)
+  end
   return dynamic and dynamic[key] or nil
 end
 

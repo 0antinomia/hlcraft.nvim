@@ -17,6 +17,16 @@ local fake_engine = {
     if name == 'dirty' then
       return { fg = '#202020' }
     end
+    if name == 'invalid-dynamic' then
+      return {
+        dynamic = {
+          fg = {
+            version = 1,
+            timeline = {},
+          },
+        },
+      }
+    end
     return { fg = '#101010' }
   end,
   get_persisted = function(name)
@@ -88,6 +98,8 @@ local bad_draft_ok = pcall(session.draft_entry, 'invalid-draft')
 h.assert_true(not bad_draft_ok, 'session accepted invalid draft entry', scope)
 local bad_persisted_ok = pcall(session.persisted_entry, 'invalid-persisted')
 h.assert_true(not bad_persisted_ok, 'session accepted invalid persisted entry', scope)
+local bad_dynamic_ok = pcall(session.dynamic_value, 'invalid-dynamic', 'fg')
+h.assert_true(not bad_dynamic_ok, 'session accepted invalid dynamic entry', scope)
 local bad_save_name_ok = pcall(session.save, {}, nil)
 h.assert_true(not bad_save_name_ok, 'session save accepted nil highlight name', scope)
 saved = false
