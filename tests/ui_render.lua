@@ -12,6 +12,7 @@ local engine = require('hlcraft.engine.service')
 local editor_layout = require('hlcraft.ui.render.editor_layout')
 local editor_rows = require('hlcraft.ui.render.editor_rows')
 local field_editor_renderer = require('hlcraft.ui.render.field_editor')
+local render_util = require('hlcraft.render.util')
 local theme = require('hlcraft.ui.theme')
 
 local persist_dir = h.temp_dir('hlcraft-ui-render')
@@ -48,6 +49,23 @@ h.assert_equal(editor_row.line, 1, 'editor row helper returned wrong line', scop
 h.assert_equal(editor_row.key, 'sample_row', 'editor row helper returned wrong key', scope)
 h.assert_equal(editor_geometry.editor_rows.sample_row, editor_row, 'editor row helper did not register geometry', scope)
 h.assert_equal(editor_lines[1], 'Sample', 'editor row helper did not append line', scope)
+h.assert_equal(render_util.truncate('abcdef', 4), 'abc…', 'render truncate lost ellipsis budget', scope)
+h.assert_equal(
+  render_util.truncate('你好世界', 5),
+  '你好…',
+  'render truncate split wide text incorrectly',
+  scope
+)
+h.assert_equal(render_util.truncate('abcdef', 0), '', 'render truncate ignored zero width', scope)
+h.assert_equal(render_util.pad('abc', 5), 'abc  ', 'render pad did not append display padding', scope)
+local strict_truncate_text_ok = pcall(render_util.truncate, nil, 4)
+h.assert_true(not strict_truncate_text_ok, 'render truncate accepted nil text', scope)
+local strict_truncate_width_ok = pcall(render_util.truncate, 'abc', math.huge)
+h.assert_true(not strict_truncate_width_ok, 'render truncate accepted non-finite width', scope)
+local strict_pad_text_ok = pcall(render_util.pad, 1, 4)
+h.assert_true(not strict_pad_text_ok, 'render pad accepted non-string text', scope)
+local strict_pad_width_ok = pcall(render_util.pad, 'abc', 1.5)
+h.assert_true(not strict_pad_width_ok, 'render pad accepted fractional width', scope)
 local layout_lines = editor_layout.finish({ 'Current: abcdefghijklmnop' }, 12, { 'Action  [x] go' })
 h.assert_equal(layout_lines[2], '', 'editor layout did not separate hints from content', scope)
 h.assert_true(vim.fn.strdisplaywidth(layout_lines[1]) <= 12, 'editor layout did not truncate content lines', scope)

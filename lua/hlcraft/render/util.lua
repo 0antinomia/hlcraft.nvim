@@ -1,5 +1,45 @@
+local numbers = require('hlcraft.core.number')
+
 --- @type table
 local M = {}
+
+local ellipsis = '…'
+
+local function assert_text(value)
+  if type(value) ~= 'string' then
+    error('render text must be a string', 3)
+  end
+  return value
+end
+
+local function assert_width(value)
+  if type(value) ~= 'number' then
+    error('render width must be a number', 3)
+  end
+  if not numbers.is_finite(value) or math.floor(value) ~= value or value < 0 then
+    error('render width must be a non-negative finite integer', 3)
+  end
+  return value
+end
+
+local function take_display_width(text, width)
+  if width <= 0 then
+    return ''
+  end
+
+  local taken = {}
+  local display_width = 0
+  for index = 0, vim.fn.strchars(text) - 1 do
+    local char = vim.fn.strcharpart(text, index, 1)
+    local char_width = vim.fn.strdisplaywidth(char)
+    if display_width + char_width > width then
+      break
+    end
+    taken[#taken + 1] = char
+    display_width = display_width + char_width
+  end
+  return table.concat(taken)
+end
 
 --- Format a color value for display in result rows and detail views.
 --- @param value string|nil Color value (#RRGGBB, NONE, etc.)
@@ -12,26 +52,28 @@ function M.display_color(value)
 end
 
 --- Truncate text to fit within a given display width, appending ellipsis.
---- @param text string|nil Text to truncate
+--- @param text string Text to truncate
 --- @param width integer Maximum display width
 --- @return string Truncated text
 function M.truncate(text, width)
-  text = tostring(text or '')
+  text = assert_text(text)
+  width = assert_width(width)
   if vim.fn.strdisplaywidth(text) <= width then
     return text
   end
-  if width <= 1 then
-    return text:sub(1, width)
+  if width == 0 then
+    return ''
   end
-  return text:sub(1, width - 1) .. '…'
+  return take_display_width(text, width - vim.fn.strdisplaywidth(ellipsis)) .. ellipsis
 end
 
 --- Pad text to a given display width by appending spaces.
---- @param text string|nil Text to pad
+--- @param text string Text to pad
 --- @param width integer Target display width
 --- @return string Padded text
 function M.pad(text, width)
-  text = tostring(text or '-')
+  text = assert_text(text)
+  width = assert_width(width)
   local display = vim.fn.strdisplaywidth(text)
   if display >= width then
     return text

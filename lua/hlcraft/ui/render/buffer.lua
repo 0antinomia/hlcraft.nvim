@@ -69,8 +69,8 @@ function M.append_input(lines, geometry, name, kind, value, extra)
   local field = M.new_input_field(name, kind, #lines + 1, extra)
   geometry[name] = field
   geometry.inputs[#geometry.inputs + 1] = field
-  lines[#lines + 1] =
-    render_util.truncate(buffer_fields.normalize_single_line(value), extra and extra.width or math.huge)
+  assert(extra and extra.width ~= nil, 'input field width is required')
+  lines[#lines + 1] = render_util.truncate(buffer_fields.normalize_single_line(value), extra.width)
   return field
 end
 
