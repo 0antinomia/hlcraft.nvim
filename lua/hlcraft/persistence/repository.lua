@@ -18,7 +18,7 @@ local function validate_save_inputs(overrides, groups)
   if type(overrides) ~= 'table' then
     return false, 'Overrides must be a table'
   end
-  if groups ~= nil and type(groups) ~= 'table' then
+  if type(groups) ~= 'table' then
     return false, 'Groups must be a table'
   end
 
@@ -31,7 +31,7 @@ local function validate_save_inputs(overrides, groups)
     end
   end
 
-  for highlight_name, group_name in pairs(groups or {}) do
+  for highlight_name, group_name in pairs(groups) do
     if not highlight_name_is_valid(highlight_name) then
       return false, 'Highlight name must be a non-empty string'
     end
@@ -77,28 +77,40 @@ function M.load(path)
   return schema.normalize_loaded_data(data)
 end
 
+local function ensure_section(sections, section_name)
+  if sections[section_name] == nil then
+    sections[section_name] = {}
+  end
+  return sections[section_name]
+end
+
+local function section_entry(sections, section_name, highlight_name, override)
+  local entries = ensure_section(sections, section_name)
+  if entries[highlight_name] == nil then
+    entries[highlight_name] = override or {}
+  end
+end
+
 local function build_sections(overrides, groups)
   local sections = {}
 
   for highlight_name, entry in pairs(overrides) do
     if next(entry) ~= nil then
-      local group_name = groups and groups[highlight_name] or nil
+      local group_name = groups[highlight_name]
       local section_name = codec.normalize_group_name(group_name)
       if not section_name then
         return nil, ('Highlight %s must have a group before saving'):format(highlight_name)
       end
-      sections[section_name] = sections[section_name] or {}
-      sections[section_name][highlight_name] = entry
+      section_entry(sections, section_name, highlight_name, entry)
     end
   end
 
-  for highlight_name, group_name in pairs(groups or {}) do
+  for highlight_name, group_name in pairs(groups) do
     local section_name = codec.normalize_group_name(group_name)
     if not section_name then
       return nil, ('Highlight %s must have a group before saving'):format(highlight_name)
     end
-    sections[section_name] = sections[section_name] or {}
-    sections[section_name][highlight_name] = sections[section_name][highlight_name] or overrides[highlight_name] or {}
+    section_entry(sections, section_name, highlight_name, overrides[highlight_name])
   end
 
   return sections, nil
@@ -106,7 +118,7 @@ end
 
 --- Save persisted highlight overrides into one TOML file per top-level group.
 --- @param overrides table
---- @param groups table|nil
+--- @param groups table
 --- @param path string|nil
 --- @return boolean ok
 --- @return string|nil err
