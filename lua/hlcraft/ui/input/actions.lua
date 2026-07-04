@@ -1,5 +1,6 @@
 local input_model = require('hlcraft.ui.input.model')
 local paste_plan = require('hlcraft.ui.input.paste_plan')
+local input_sequence = require('hlcraft.ui.input.sequence')
 local navigation = require('hlcraft.ui.navigation')
 local window = require('hlcraft.ui.workspace.window')
 
@@ -147,11 +148,11 @@ end
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.goto_first_input(instance)
-  for _, field in ipairs(instance.state.geometry.inputs or {}) do
-    if not instance.state.detail_index or field.kind == 'detail' then
-      M.goto_input(instance, field.key or field.name)
-      return
-    end
+  local name = input_sequence.first_name(instance.state.geometry.inputs, function(field)
+    return not instance.state.detail_index or field.kind == 'detail'
+  end)
+  if name then
+    M.goto_input(instance, name)
   end
 end
 
@@ -165,24 +166,11 @@ function M.goto_next_input(instance)
   end
 
   local inputs = instance.state.geometry.inputs or {}
-  if #inputs == 0 then
-    return
-  end
-
   local current = input_model.get_input_at_row(instance, vim.api.nvim_win_get_cursor(win)[1] - 1)
-  local next_name = inputs[1].key or inputs[1].name
-  if current then
-    for index, input in ipairs(inputs) do
-      local input_name = input.key or input.name
-      if input_name == current.name then
-        local next_input = inputs[index + 1] or inputs[1]
-        next_name = next_input.key or next_input.name
-        break
-      end
-    end
+  local next_name = input_sequence.next_name(inputs, current and current.name or nil)
+  if next_name then
+    M.goto_input(instance, next_name)
   end
-
-  M.goto_input(instance, next_name)
 end
 
 --- Move cursor to the previous input field, wrapping to last after first
@@ -195,24 +183,11 @@ function M.goto_prev_input(instance)
   end
 
   local inputs = instance.state.geometry.inputs or {}
-  if #inputs == 0 then
-    return
-  end
-
   local current = input_model.get_input_at_row(instance, vim.api.nvim_win_get_cursor(win)[1] - 1)
-  local prev_name = inputs[#inputs].key or inputs[#inputs].name
-  if current then
-    for index, input in ipairs(inputs) do
-      local input_name = input.key or input.name
-      if input_name == current.name then
-        local prev_input = inputs[index - 1] or inputs[#inputs]
-        prev_name = prev_input.key or prev_input.name
-        break
-      end
-    end
+  local prev_name = input_sequence.prev_name(inputs, current and current.name or nil)
+  if prev_name then
+    M.goto_input(instance, prev_name)
   end
-
-  M.goto_input(instance, prev_name)
 end
 
 return M
