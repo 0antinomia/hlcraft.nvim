@@ -105,7 +105,7 @@ h.assert_true(
   scope
 )
 
-local inflated = model.inflate_entry({
+local normalized_entry = model.normalize_entry({
   fg = '#101010',
   dynamic = {
     fg = {
@@ -120,13 +120,9 @@ local inflated = model.inflate_entry({
     },
   },
 })
-h.assert_equal(inflated.dynamic.fg.preset, 'pulse', 'dynamic fg did not inflate', scope)
-h.assert_equal(inflated.dynamic.fg.duration, 1500, 'dynamic duration did not inflate', scope)
-
-local flattened = model.flatten_entry(inflated)
-h.assert_true(type(flattened.dynamic.fg) == 'table', 'dynamic fg did not flatten as nested data', scope)
-h.assert_equal(flattened.dynamic.fg.preset, 'pulse', 'flattened preset changed', scope)
-h.assert_equal(flattened.dynamic.fg.duration, 1500, 'flattened duration changed', scope)
+h.assert_equal(normalized_entry.dynamic.fg.preset, 'pulse', 'dynamic fg did not normalize', scope)
+h.assert_equal(normalized_entry.dynamic.fg.duration, 1500, 'dynamic duration did not normalize', scope)
+h.assert_true(type(normalized_entry.dynamic.fg) == 'table', 'dynamic fg did not stay nested data', scope)
 
 for _, preset_name in ipairs({ 'pulse', 'breath', 'hue', 'gradient', 'blink', 'duotone' }) do
   local preset = presets.get(preset_name)

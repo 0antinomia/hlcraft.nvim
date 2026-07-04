@@ -247,13 +247,7 @@ function M.normalize_dynamic(dynamic)
   return next(normalized) and normalized or nil
 end
 
-function M.inflate_entry(entry)
-  local result = vim.deepcopy(entry or {})
-  result.dynamic = M.normalize_dynamic(result.dynamic)
-  return result
-end
-
-function M.flatten_entry(entry)
+function M.normalize_entry(entry)
   local result = vim.deepcopy(entry or {})
   result.dynamic = M.normalize_dynamic(result.dynamic)
   return result
