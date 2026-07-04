@@ -1,0 +1,54 @@
+local detail_scene = require('hlcraft.ui.scene.detail')
+local field_editor_scene = require('hlcraft.ui.scene.field_editor')
+local scene = require('hlcraft.ui.scene')
+local session = require('hlcraft.ui.session')
+local ui_fields = require('hlcraft.ui.fields')
+
+local M = {}
+
+function M.editor_scene_is_active(instance)
+  local current_scene = scene.current_name(instance)
+  return instance.state.detail_index ~= nil and (current_scene == 'detail' or current_scene == 'field_editor')
+end
+
+function M.current_field(instance)
+  return instance.state.field_editor and instance.state.field_editor.field or nil
+end
+
+function M.current_field_kind(instance)
+  if not M.editor_scene_is_active(instance) then
+    return nil
+  end
+  local field = M.current_field(instance)
+  if not field then
+    return nil
+  end
+  return ui_fields.detail_kinds[field]
+end
+
+function M.current_result(instance)
+  return detail_scene.current_result(instance)
+end
+
+function M.current_color_dynamic(instance)
+  local field = M.current_field(instance)
+  local result = M.current_result(instance)
+  if M.current_field_kind(instance) ~= 'color' or not result then
+    return nil
+  end
+  return session.dynamic_value(result.name, field)
+end
+
+function M.color_field_is_dynamic(instance)
+  return M.current_color_dynamic(instance) ~= nil
+end
+
+function M.current_dynamic_editor_row_key(instance)
+  if not M.color_field_is_dynamic(instance) then
+    return nil
+  end
+  local row = field_editor_scene.editor_row_at_cursor(instance)
+  return row and row.key or nil
+end
+
+return M

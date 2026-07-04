@@ -1,10 +1,8 @@
 local actions = require('hlcraft.ui.actions')
+local context = require('hlcraft.ui.context')
 local buffer_fields = require('hlcraft.ui.input.buffer_fields')
 local navigation = require('hlcraft.ui.navigation')
-local session = require('hlcraft.ui.session')
 local scene = require('hlcraft.ui.scene')
-local detail_scene = require('hlcraft.ui.scene.detail')
-local field_editor_scene = require('hlcraft.ui.scene.field_editor')
 local search_scene = require('hlcraft.ui.scene.search')
 local ui_fields = require('hlcraft.ui.fields')
 local lifecycle = require('hlcraft.ui.workspace.lifecycle')
@@ -84,52 +82,15 @@ function M.setup_workspace_keymaps(instance, buf)
     end
   end
 
-  local function editor_scene_is_active()
-    local current_scene = scene.current_name(instance)
-    return instance.state.detail_index ~= nil and (current_scene == 'detail' or current_scene == 'field_editor')
-  end
-
-  local function current_field_kind()
-    if not editor_scene_is_active() then
-      return nil
-    end
-    local field = instance.state.field_editor and instance.state.field_editor.field
-    if not field then
-      return nil
-    end
-    return ui_fields.detail_kinds[field]
-  end
-
-  local function current_color_dynamic()
-    local field = instance.state.field_editor and instance.state.field_editor.field
-    local result = detail_scene.current_result(instance)
-    if current_field_kind() ~= 'color' or not result then
-      return nil
-    end
-    return session.dynamic_value(result.name, field)
-  end
-
-  local function current_color_field_is_dynamic()
-    return current_color_dynamic() ~= nil
-  end
-
-  local function current_dynamic_editor_row_key()
-    if not current_color_field_is_dynamic() then
-      return nil
-    end
-    local row = field_editor_scene.editor_row_at_cursor(instance)
-    return row and row.key or nil
-  end
-
   local function toggle_dynamic_color()
-    if current_field_kind() ~= 'color' then
+    if context.current_field_kind(instance) ~= 'color' then
       return
     end
     run_action('toggle_dynamic')
   end
 
   local function cycle_dynamic_preset(fallback_key)
-    if not current_color_field_is_dynamic() then
+    if not context.color_field_is_dynamic(instance) then
       if fallback_key then
         feed_normal_key(fallback_key)
       end
@@ -138,11 +99,25 @@ function M.setup_workspace_keymaps(instance, buf)
     run_action('cycle_dynamic_preset')
   end
 
+  local function adjust_dynamic_color(delta)
+    if not context.color_field_is_dynamic(instance) then
+      return false
+    end
+
+    if context.current_dynamic_editor_row_key(instance) == 'dynamic_phase' then
+      local dynamic = context.current_color_dynamic(instance)
+      run_action('set_dynamic_phase', (tonumber(dynamic.phase) or 0) + (delta * ui_fields.dynamic_phase_step))
+    else
+      run_action('adjust_dynamic_duration', delta * ui_fields.dynamic_duration_step)
+    end
+    return true
+  end
+
   local function adjust_color(channel, delta, fallback_key)
-    if current_color_field_is_dynamic() then
+    if context.color_field_is_dynamic(instance) then
       return
     end
-    if current_field_kind() == 'color' then
+    if context.current_field_kind(instance) == 'color' then
       run_action('adjust_color', channel, delta)
       return
     end
@@ -152,7 +127,7 @@ function M.setup_workspace_keymaps(instance, buf)
   end
 
   local function set_color(value, fallback_key)
-    if current_field_kind() ~= 'color' then
+    if context.current_field_kind(instance) ~= 'color' then
       if fallback_key then
         feed_normal_key(fallback_key)
       end
@@ -162,7 +137,7 @@ function M.setup_workspace_keymaps(instance, buf)
   end
 
   local function adjust_blend(delta, fallback_key)
-    if current_field_kind() ~= 'blend' then
+    if context.current_field_kind(instance) ~= 'blend' then
       if fallback_key then
         feed_normal_key(fallback_key)
       end
@@ -172,7 +147,7 @@ function M.setup_workspace_keymaps(instance, buf)
   end
 
   local function unset_blend(fallback_key)
-    if current_field_kind() ~= 'blend' then
+    if context.current_field_kind(instance) ~= 'blend' then
       if fallback_key then
         feed_normal_key(fallback_key)
       end
@@ -182,14 +157,14 @@ function M.setup_workspace_keymaps(instance, buf)
   end
 
   local function input_current_editor_field()
-    local kind = current_field_kind()
+    local kind = context.current_field_kind(instance)
     if not kind then
       return false
     end
     local field = instance.state.field_editor and instance.state.field_editor.field
 
     if kind == 'color' then
-      if current_color_field_is_dynamic() then
+      if context.color_field_is_dynamic(instance) then
         run_action('input_dynamic_row', { default_raw = true })
         return true
       end
@@ -225,6 +200,19 @@ function M.setup_workspace_keymaps(instance, buf)
     return false
   end
 
+  local function jump_to_input_at_cursor(insert)
+    local win = window.get_win(instance)
+    if not window.is_valid_win(win) then
+      return false
+    end
+    local field = buffer_fields.get_field_at_row(instance, vim.api.nvim_win_get_cursor(win)[1] - 1)
+    if not field then
+      return false
+    end
+    navigation.jump_to_row(instance, field.line, insert)
+    return true
+  end
+
   vim.keymap.set('n', '<Esc>', function()
     actions.back(instance)
   end, opts)
@@ -253,7 +241,7 @@ function M.setup_workspace_keymaps(instance, buf)
     end
   end, opts)
   vim.keymap.set('n', 'G', function()
-    if current_field_kind() == 'color' then
+    if context.current_field_kind(instance) == 'color' then
       adjust_color('g', ui_fields.color_step)
       return
     end
@@ -306,7 +294,7 @@ function M.setup_workspace_keymaps(instance, buf)
     adjust_color('r', ui_fields.color_step, 'R')
   end, opts)
   vim.keymap.set('n', 'g', function()
-    if current_field_kind() ~= 'color' then
+    if context.current_field_kind(instance) ~= 'color' then
       feed_normal_key('g')
       return
     end
@@ -334,25 +322,13 @@ function M.setup_workspace_keymaps(instance, buf)
     feed_normal_key(']')
   end, opts)
   vim.keymap.set('n', '+', function()
-    if current_color_field_is_dynamic() then
-      if current_dynamic_editor_row_key() == 'dynamic_phase' then
-        local dynamic = current_color_dynamic()
-        run_action('set_dynamic_phase', (tonumber(dynamic.phase) or 0) + ui_fields.dynamic_phase_step)
-      else
-        run_action('adjust_dynamic_duration', ui_fields.dynamic_duration_step)
-      end
+    if adjust_dynamic_color(1) then
       return
     end
     adjust_blend(ui_fields.blend_small_step, '+')
   end, opts)
   vim.keymap.set('n', '-', function()
-    if current_color_field_is_dynamic() then
-      if current_dynamic_editor_row_key() == 'dynamic_phase' then
-        local dynamic = current_color_dynamic()
-        run_action('set_dynamic_phase', (tonumber(dynamic.phase) or 0) - ui_fields.dynamic_phase_step)
-      else
-        run_action('adjust_dynamic_duration', -ui_fields.dynamic_duration_step)
-      end
+    if adjust_dynamic_color(-1) then
       return
     end
     adjust_blend(-ui_fields.blend_small_step, '-')
@@ -370,17 +346,10 @@ function M.setup_workspace_keymaps(instance, buf)
     if input_current_editor_field() then
       return
     end
-    local win = window.get_win(instance)
-    if not window.is_valid_win(win) then
-      return
-    end
-    local field = buffer_fields.get_field_at_row(instance, vim.api.nvim_win_get_cursor(win)[1] - 1)
-    if field then
-      navigation.jump_to_row(instance, field.line, true)
-    end
+    jump_to_input_at_cursor(true)
   end, opts)
   vim.keymap.set('n', 'e', function()
-    if current_color_field_is_dynamic() then
+    if context.color_field_is_dynamic(instance) then
       run_action('open_dynamic_raw_json')
       return
     end
@@ -390,13 +359,7 @@ function M.setup_workspace_keymaps(instance, buf)
     feed_normal_key('x')
   end, opts)
   vim.keymap.set('n', 'a', function()
-    local win = window.get_win(instance)
-    if not window.is_valid_win(win) then
-      return
-    end
-    local field = buffer_fields.get_field_at_row(instance, vim.api.nvim_win_get_cursor(win)[1] - 1)
-    if field then
-      navigation.jump_to_row(instance, field.line, true)
+    if jump_to_input_at_cursor(true) then
       return
     end
     feed_normal_key('a')
