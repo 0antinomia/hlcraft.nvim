@@ -91,11 +91,18 @@ M.groups = {
   },
 }
 
-local function normalize_options(options)
-  if type(options) == 'table' then
-    return options
-  end
-  return { max_items = options }
+local function assert_table(value, message)
+  assert(type(value) == 'table', message)
+  return value
+end
+
+local function format_item(item)
+  assert_table(item, 'hint item must be a table')
+  local key = item[1]
+  local action = item[2]
+  assert(type(key) == 'string' and key ~= '', 'hint item requires a key')
+  assert(type(action) == 'string' and action ~= '', 'hint item requires an action')
+  return ('[%s] %s'):format(key, action)
 end
 
 local function format_range(items, first, last)
@@ -105,12 +112,7 @@ local function format_range(items, first, last)
   last = last or #items
 
   for index = first, last do
-    local item = items[index] or {}
-    local key = item[1] or item.key
-    local action = item[2] or item.action
-    if key and action then
-      parts[#parts + 1] = ('[%s] %s'):format(key, action)
-    end
+    parts[#parts + 1] = format_item(items[index])
   end
   return table.concat(parts, separator)
 end
@@ -124,7 +126,7 @@ local function line_display_width(label, items, first, last)
 end
 
 function M.section_lines(label, group, options)
-  options = normalize_options(options)
+  options = assert_table(options or {}, 'hint section options must be a table')
   local items = M.groups[group] or {}
   local max_items = math.max(1, options.max_items or default_max_items)
   local width = options.width
