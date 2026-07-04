@@ -1,10 +1,6 @@
-local blend_editor = require('hlcraft.ui.editor.blend')
-local color_editor = require('hlcraft.ui.editor.color')
 local detail_scene = require('hlcraft.ui.scene.detail')
-local dynamic_editor = require('hlcraft.ui.editor.dynamic')
-local group_editor = require('hlcraft.ui.editor.group')
+local field_editor_actions = require('hlcraft.ui.scene.field_editor_actions')
 local session = require('hlcraft.ui.session')
-local ui_fields = require('hlcraft.ui.fields')
 local window = require('hlcraft.ui.workspace.window')
 
 local M = {}
@@ -55,17 +51,6 @@ local function menu_row_at_cursor(instance)
       return row
     end
   end
-end
-
-local function finish_edit(instance, ok, err, preserve_field)
-  if not ok then
-    return false, err
-  end
-
-  if preserve_field then
-    instance.state.field_editor.field = preserve_field
-  end
-  return true, nil
 end
 
 local function dynamic_value(result, field)
@@ -224,56 +209,11 @@ function M.handle(instance, action, ...)
     return false, 'No field editor is active'
   end
 
-  if action == 'set_color' and color_fields[field] then
-    if session.dynamic_value(result.name, field) then
-      return false, 'Static color controls are disabled while dynamic is active'
-    end
-    local ok, err = color_editor.set(instance, result, field, ...)
-    return finish_edit(instance, ok, err, field)
+  local matched, ok, err = field_editor_actions.handle(instance, action, result, field, ...)
+  if matched then
+    return ok, err
   end
-  if action == 'adjust_color' and color_fields[field] then
-    if session.dynamic_value(result.name, field) then
-      return false, 'Static color controls are disabled while dynamic is active'
-    end
-    local ok, err = color_editor.adjust(instance, result, field, ...)
-    return finish_edit(instance, ok, err, field)
-  end
-  if action == 'toggle_dynamic' and color_fields[field] then
-    local ok, err = dynamic_editor.toggle(instance, result, field)
-    return finish_edit(instance, ok, err, field)
-  end
-  if action == 'cycle_dynamic_preset' and color_fields[field] then
-    local ok, err = dynamic_editor.cycle_preset(instance, result, field)
-    return finish_edit(instance, ok, err, field)
-  end
-  if action == 'adjust_dynamic_duration' and color_fields[field] then
-    local ok, err = dynamic_editor.adjust_duration(instance, result, field, ...)
-    return finish_edit(instance, ok, err, field)
-  end
-  if action == 'set_dynamic_loop' and color_fields[field] then
-    local ok, err = dynamic_editor.set_loop(instance, result, field, ...)
-    return finish_edit(instance, ok, err, field)
-  end
-  if action == 'set_dynamic_phase' and color_fields[field] then
-    local ok, err = dynamic_editor.set_phase(instance, result, field, ...)
-    return finish_edit(instance, ok, err, field)
-  end
-  if action == 'open_dynamic_raw_json' and color_fields[field] then
-    require('hlcraft.ui.raw_dynamic').open(instance, result, field)
-    return true, nil
-  end
-  if action == 'set_group' and ui_fields.detail_kinds[field] == 'group' then
-    local ok, err = group_editor.set(instance, result, ...)
-    return finish_edit(instance, ok, err, field)
-  end
-  if action == 'set_blend' and ui_fields.detail_kinds[field] == 'blend' then
-    local ok, err = blend_editor.set(instance, result, ...)
-    return finish_edit(instance, ok, err, field)
-  end
-  if action == 'adjust_blend' and ui_fields.detail_kinds[field] == 'blend' then
-    local ok, err = blend_editor.adjust(instance, result, ...)
-    return finish_edit(instance, ok, err, field)
-  end
+
   return false, ('unsupported field editor action: %s'):format(tostring(action))
 end
 

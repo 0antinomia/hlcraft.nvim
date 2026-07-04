@@ -3,6 +3,7 @@ local tests = {
   'tests/dynamic.lua',
   'tests/ui_dynamic.lua',
   'tests/ui_context.lua',
+  'tests/ui_field_editor_actions.lua',
   'tests/ui_render.lua',
   'tests/storage.lua',
   'tests/engine.lua',
