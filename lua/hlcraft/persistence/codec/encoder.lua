@@ -35,14 +35,37 @@ for _, key in ipairs({
   append_priority(key)
 end
 
+local function assert_section_name(section_name)
+  if type(section_name) ~= 'string' then
+    error('TOML section name must be a string', 3)
+  end
+  local normalized = vim.trim(section_name)
+  if normalized == '' then
+    error('TOML section name must be a non-empty string', 3)
+  end
+  return normalized
+end
+
+local function assert_highlight_name(highlight_name)
+  if type(highlight_name) ~= 'string' or vim.trim(highlight_name) == '' then
+    error('TOML highlight names must be non-empty strings', 3)
+  end
+  return highlight_name
+end
+
+local function assert_field_key(key)
+  if type(key) ~= 'string' or not key:match('^[%w_]+$') then
+    error('TOML field keys must be bare strings', 3)
+  end
+  return key
+end
+
 local function ordered_keys(entry)
   if type(entry) ~= 'table' then
     error('TOML inline table must be a table', 3)
   end
   for key in pairs(entry) do
-    if type(key) ~= 'string' then
-      error('TOML field keys must be strings', 3)
-    end
+    assert_field_key(key)
   end
 
   return tables.sorted_keys(entry, function(left, right)
@@ -96,13 +119,12 @@ encode_value = function(value)
 end
 
 function M.section(section_name, entries)
+  section_name = assert_section_name(section_name)
   if type(entries) ~= 'table' then
     error('TOML section entries must be a table', 2)
   end
   for highlight_name, entry in pairs(entries) do
-    if type(highlight_name) ~= 'string' then
-      error('TOML highlight names must be strings', 2)
-    end
+    assert_highlight_name(highlight_name)
     if type(entry) ~= 'table' then
       error('TOML highlight entries must be tables', 2)
     end
