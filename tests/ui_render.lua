@@ -7,6 +7,7 @@ local color_renderer = require('hlcraft.ui.render.editors.color')
 local decorations = require('hlcraft.ui.render.decorations')
 local detail_renderer = require('hlcraft.ui.render.detail')
 local dynamic_renderer = require('hlcraft.ui.render.editors.dynamic')
+local dynamic_model = require('hlcraft.dynamic.model')
 local engine = require('hlcraft.engine.service')
 local editor_rows = require('hlcraft.ui.render.editor_rows')
 local field_editor_renderer = require('hlcraft.ui.render.field_editor')
@@ -110,14 +111,14 @@ h.assert_true(not color_text:find('Keys:', 1, true), 'color editor kept crowded 
 h.assert_true(color_geometry.editor_rows.color_keys == nil, 'color hint row should not be selectable', scope)
 
 local dynamic_geometry = { editor_rows = {} }
-local dynamic = {
+local dynamic = dynamic_model.normalize_channel({
   version = 1,
   duration = 1000,
   loop = 'repeat',
   timeline = {
     { at = 0, color = 'base' },
   },
-}
+})
 local dynamic_lines = dynamic_renderer.build(instance, dynamic_geometry, result, 'fg', 80, 0, dynamic)
 local dynamic_text = table.concat(dynamic_lines, '\n')
 h.assert_true(dynamic_geometry.editor_rows.dynamic_loop ~= nil, 'dynamic loop row must stay editable', scope)

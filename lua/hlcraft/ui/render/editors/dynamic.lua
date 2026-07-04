@@ -1,6 +1,5 @@
 local ui_fields = require('hlcraft.ui.fields')
 local field_values = require('hlcraft.ui.field_values')
-local numbers = require('hlcraft.core.number')
 local render_util = require('hlcraft.render.util')
 local dynamic_preview = require('hlcraft.ui.dynamic_preview')
 local editor_rows = require('hlcraft.ui.render.editor_rows')
@@ -30,11 +29,11 @@ function M.build(instance, geometry, result, field, width, line_offset, dynamic)
     string.rep('─', math.max(20, math.min(width, 36))),
     'Mode: dynamic',
     ('Preset: %s'):format(dynamic.preset or 'custom'),
-    ('Duration: %dms'):format(dynamic.duration or 0),
+    ('Duration: %dms'):format(dynamic.duration),
   }
 
-  editor_rows.append(lines, geometry, 'dynamic_loop', ('Loop: %s'):format(dynamic.loop or 'repeat'))
-  editor_rows.append(lines, geometry, 'dynamic_phase', ('Phase: %.2f'):format(dynamic.phase or 0))
+  editor_rows.append(lines, geometry, 'dynamic_loop', ('Loop: %s'):format(dynamic.loop))
+  editor_rows.append(lines, geometry, 'dynamic_phase', ('Phase: %.2f'):format(dynamic.phase))
 
   local swatch_line = append_line(lines, ('Swatch: %s'):format(swatch))
 
@@ -71,7 +70,7 @@ function M.build(instance, geometry, result, field, width, line_offset, dynamic)
       field = field,
       base = fallback,
       dynamic = sample_dynamic,
-      now_ms = phase * math.max(1, numbers.to_finite(sample_dynamic.duration, 1)),
+      now_ms = phase * math.max(1, sample_dynamic.duration),
     })
   end
 

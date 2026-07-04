@@ -72,10 +72,10 @@ function M.input_dynamic_row(instance, opts)
 
   local row_key = selected_editor_row_key(instance)
   if row_key == 'dynamic_loop' then
-    return prompt_dynamic_value(instance, 'set_dynamic_loop', 'Loop: ', dynamic.loop or 'repeat')
+    return prompt_dynamic_value(instance, 'set_dynamic_loop', 'Loop: ', dynamic.loop)
   end
   if row_key == 'dynamic_phase' then
-    return prompt_dynamic_value(instance, 'set_dynamic_phase', 'Phase: ', ('%.2f'):format(dynamic.phase or 0))
+    return prompt_dynamic_value(instance, 'set_dynamic_phase', 'Phase: ', ('%.2f'):format(dynamic.phase))
   end
   if row_key == 'dynamic_raw_json' or opts.default_raw then
     require('hlcraft.ui.raw_dynamic').open(instance, result, field)
