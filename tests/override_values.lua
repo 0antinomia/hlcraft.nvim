@@ -17,7 +17,12 @@ h.assert_equal(
   'unset color did not normalize to sentinel',
   scope
 )
-h.assert_true(select(1, override_values.normalize_color(123)) == nil, 'numeric color normalized unexpectedly', scope)
+h.assert_equal(
+  select(2, override_values.normalize_color(123)),
+  'Color must be a string or nil, got number',
+  'numeric color error changed',
+  scope
+)
 
 local blend_value, blend_err = override_values.normalize_blend('42.9')
 h.assert_equal(blend_value, 42, blend_err or 'blend did not normalize', scope)
