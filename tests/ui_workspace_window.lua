@@ -64,6 +64,13 @@ local ok, err = xpcall(function()
   window.release_workspace_window(instance, win)
   h.assert_true(vim.wo[win].number, 'origin release did not restore number', scope)
   h.assert_true(instance.state.origin_win_options ~= nil, 'origin release cleared reusable origin snapshot', scope)
+
+  local invalid_snapshot_ok = pcall(window_options.restore, {
+    win = win,
+  })
+  h.assert_true(not invalid_snapshot_ok, 'window option restore accepted missing values', scope)
+  local invalid_workspace_values_ok = pcall(window_options.matches_workspace, nil)
+  h.assert_true(not invalid_workspace_values_ok, 'workspace option matcher accepted nil values', scope)
 end, debug.traceback)
 
 restore_original()

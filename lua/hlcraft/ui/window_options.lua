@@ -44,7 +44,11 @@ function M.restore(snapshot)
     return false
   end
 
-  for option, value in pairs(snapshot.values or {}) do
+  if type(snapshot.values) ~= 'table' then
+    error('window option snapshot values must be a table', 2)
+  end
+
+  for option, value in pairs(snapshot.values) do
     pcall(function()
       vim.wo[snapshot.win][option] = value
     end)
@@ -63,6 +67,10 @@ function M.apply(win, ns)
 end
 
 function M.matches_workspace(values)
+  if type(values) ~= 'table' then
+    error('window option values must be a table', 2)
+  end
+
   for option, expected in pairs(M.workspace_values) do
     if values[option] ~= expected then
       return false
