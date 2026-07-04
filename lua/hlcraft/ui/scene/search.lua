@@ -148,7 +148,10 @@ end
 function M.handle(instance, action)
   if action == 'activate' then
     local win = window.get_win(instance)
-    local row = window.is_valid_win(win) and vim.api.nvim_win_get_cursor(win)[1] or 0
+    if not window.is_valid_win(win) then
+      return false, nil
+    end
+    local row = vim.api.nvim_win_get_cursor(win)[1]
     local area = buffer_fields.current_area(instance, row)
     if area == 'results' then
       return M.open_detail(instance), nil

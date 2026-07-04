@@ -2,8 +2,15 @@ local tables = require('hlcraft.core.tables')
 
 local M = {}
 
+local function assert_indent(indent)
+  if type(indent) ~= 'number' or indent < 0 or math.floor(indent) ~= indent then
+    error('JSON indent must be a non-negative integer', 3)
+  end
+  return indent
+end
+
 local function format_value(value, indent)
-  indent = indent or 0
+  indent = assert_indent(indent)
   local pad = string.rep('  ', indent)
   local child_pad = string.rep('  ', indent + 1)
 

@@ -6,7 +6,7 @@ local hints = require('hlcraft.ui.render.hints')
 
 local M = {}
 
-function M.build(instance, geometry, result, field, width, line_offset)
+function M.build(geometry, result, field, width)
   local label = ui_fields.detail_labels[field] or field:upper()
   local fallback = field_values.fallback_value(result, field)
   local value = session.display_value(result.name, field, fallback)

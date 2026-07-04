@@ -1,6 +1,7 @@
 local ui_fields = require('hlcraft.ui.fields')
 local field_values = require('hlcraft.ui.field_values')
 local dynamic_preview = require('hlcraft.ui.dynamic_preview')
+local render_util = require('hlcraft.render.util')
 local editor_layout = require('hlcraft.ui.render.editor_layout')
 local editor_rows = require('hlcraft.ui.render.editor_rows')
 local hints = require('hlcraft.ui.render.hints')
@@ -21,6 +22,7 @@ local function append_line(lines, text)
 end
 
 function M.build(instance, geometry, result, field, width, line_offset, dynamic)
+  line_offset = render_util.line_offset(line_offset, 'dynamic editor')
   local label = ui_fields.detail_labels[field] or field:upper()
   local fallback = field_values.fallback_value(result, field)
   local swatch = ui_fields.dynamic_preview_swatch

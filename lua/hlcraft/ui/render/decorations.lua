@@ -216,6 +216,18 @@ function M.find_text_start(line, text, start_col)
   return first and (first - 1) or nil
 end
 
+function M.require_text_start(line, text, start_col, label)
+  if type(label) ~= 'string' or label == '' then
+    error('required text lookup label must be a non-empty string', 2)
+  end
+
+  local col = M.find_text_start(line, text, start_col)
+  if col == nil then
+    error(('%s did not contain %q'):format(label, text), 2)
+  end
+  return col
+end
+
 M.refresh_input_placeholders = placeholders.refresh
 
 return M

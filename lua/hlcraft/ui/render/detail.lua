@@ -54,7 +54,7 @@ function M.build(instance, geometry, result, width, line_offset)
   instance = render_instance(instance)
   geometry = detail_geometry(geometry)
   result = highlight_result(result)
-  line_offset = line_offset or 0
+  line_offset = render_util.line_offset(line_offset, 'detail renderer')
   local lines = {
     'Detail fields',
   }
