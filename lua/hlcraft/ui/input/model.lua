@@ -43,18 +43,6 @@ function M.normalize_single_line(value)
   return text
 end
 
---- Get the input field descriptor at a given 0-based row
---- @param instance table The Instance object holding UI state
---- @param row0 number 0-based row number
---- @return table|nil Field descriptor with name, kind, line, etc.
-function M.get_input_field_at_row(instance, row0)
-  for _, field in ipairs(instance.state.geometry.inputs or {}) do
-    if field.line - 1 == row0 then
-      return field
-    end
-  end
-end
-
 --- Set extmarks for all input fields to track their boundaries across re-renders
 --- @param instance table The Instance object holding UI state
 --- @return nil

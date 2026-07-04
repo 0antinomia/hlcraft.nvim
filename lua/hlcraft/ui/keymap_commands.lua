@@ -155,11 +155,11 @@ function M.jump_to_input_at_cursor(instance, insert)
   if not window.is_valid_win(win) then
     return false
   end
-  local field = buffer_fields.get_field_at_row(instance, vim.api.nvim_win_get_cursor(win)[1] - 1)
-  if not field then
+  local input = buffer_fields.get_at_row(instance, vim.api.nvim_win_get_cursor(win)[1] - 1)
+  if not input then
     return false
   end
-  navigation.jump_to_row(instance, field.line, insert)
+  navigation.jump_to_row(instance, input.start_row + 1, insert)
   return true
 end
 
