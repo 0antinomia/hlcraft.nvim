@@ -3,15 +3,24 @@ local numbers = require('hlcraft.core.number')
 
 local M = {}
 
-local function normalize_number(value, fallback, range)
-  local normalized = numbers.to_finite(value, fallback)
-  if range.min ~= nil and normalized < range.min then
-    return range.min
+local function assert_table(value, label)
+  if type(value) ~= 'table' then
+    error(('%s must be a table'):format(label), 3)
   end
-  if range.max ~= nil and normalized > range.max then
-    return range.max
+  return value
+end
+
+local function normalize_number(value, label, range)
+  if type(value) ~= 'number' or not numbers.is_finite(value) then
+    error(('%s must be a finite number'):format(label), 3)
   end
-  return normalized
+  if range.min ~= nil and value < range.min then
+    error(('%s must be >= %s'):format(label, range.min), 3)
+  end
+  if range.max ~= nil and value > range.max then
+    error(('%s must be <= %s'):format(label, range.max), 3)
+  end
+  return value
 end
 
 local function normalize_from_none(value)
@@ -22,13 +31,11 @@ local function normalize_from_none(value)
     }
   end
 
-  if type(value) ~= 'table' then
-    return vim.deepcopy(defaults.from_none)
-  end
+  value = assert_table(value, 'from_none config')
 
   return {
     enabled = value.enabled == true,
-    scope = value.scope == 'core' and 'core' or defaults.from_none.scope,
+    scope = value.scope,
   }
 end
 
@@ -40,27 +47,19 @@ local function normalize_reapply_events(value)
     }
   end
 
-  if type(value) ~= 'table' then
-    return vim.deepcopy(defaults.reapply_events)
-  end
-
-  local events = type(value.events) == 'table' and vim.deepcopy(value.events)
-    or vim.deepcopy(defaults.reapply_events.events)
+  value = assert_table(value, 'reapply_events config')
 
   return {
     enabled = value.enabled ~= false,
-    events = events,
+    events = vim.deepcopy(value.events),
   }
 end
 
 local function normalize_dynamic(value)
-  if type(value) ~= 'table' then
-    return vim.deepcopy(defaults.dynamic)
-  end
+  value = assert_table(value, 'dynamic config')
 
   local interval = defaults.dynamic_interval_ms
-  local interval_ms = math.floor(numbers.to_finite(value.interval_ms, defaults.dynamic.interval_ms))
-  interval_ms = numbers.clamp(interval_ms, interval.min, interval.max)
+  local interval_ms = math.floor(normalize_number(value.interval_ms, 'dynamic.interval_ms', interval))
 
   return {
     enabled = value.enabled == true,
@@ -75,14 +74,13 @@ local function normalize_preview_key(value)
   if type(value) == 'string' then
     return vim.trim(value)
   end
-  return defaults.values.preview_key
+  error('preview_key must be a string or false', 3)
 end
 
 function M.config(config)
-  local normalized = vim.deepcopy(config or defaults.values)
-  normalized.threshold = normalize_number(normalized.threshold, defaults.values.threshold, defaults.threshold_range)
-  normalized.debounce_ms =
-    normalize_number(normalized.debounce_ms, defaults.values.debounce_ms, defaults.debounce_ms_range)
+  local normalized = vim.deepcopy(assert_table(config, 'hlcraft config'))
+  normalized.threshold = normalize_number(normalized.threshold, 'threshold', defaults.threshold_range)
+  normalized.debounce_ms = normalize_number(normalized.debounce_ms, 'debounce_ms', defaults.debounce_ms_range)
   normalized.from_none = normalize_from_none(normalized.from_none)
   normalized.reapply_events = normalize_reapply_events(normalized.reapply_events)
   normalized.dynamic = normalize_dynamic(normalized.dynamic)

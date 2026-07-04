@@ -28,9 +28,19 @@ for _, case in ipairs({
     message = 'negative threshold was accepted',
   },
   {
+    value = { threshold = 1001 },
+    error = 'threshold: must be between 0 and 1000',
+    message = 'excessive threshold was accepted',
+  },
+  {
     value = { threshold = 0 / 0, debounce_ms = math.huge },
     error = 'threshold: must be finite',
     message = 'non-finite numeric config was accepted',
+  },
+  {
+    value = { debounce_ms = -1 },
+    error = 'debounce_ms: must be >= 0',
+    message = 'negative debounce_ms was accepted',
   },
   {
     value = { include_sp_in_color_search = 'yes' },
@@ -88,6 +98,16 @@ for _, case in ipairs({
     message = 'invalid dynamic config was accepted',
   },
   {
+    value = { dynamic = { interval_ms = 0 } },
+    error = 'dynamic.interval_ms: must be between 16 and 1000',
+    message = 'low dynamic interval was accepted',
+  },
+  {
+    value = { dynamic = { interval_ms = 1001 } },
+    error = 'dynamic.interval_ms: must be between 16 and 1000',
+    message = 'high dynamic interval was accepted',
+  },
+  {
     value = { dynamic = { unknown = true } },
     error = 'unknown config key: "dynamic.unknown"',
     message = 'unknown dynamic config key was accepted',
@@ -141,23 +161,17 @@ local function normalize_with(overrides)
   return schema.normalize(vim.tbl_deep_extend('force', vim.deepcopy(schema.defaults), overrides))
 end
 
-local low_dynamic = normalize_with({ dynamic = { interval_ms = 1 } })
-h.assert_equal(low_dynamic.dynamic.interval_ms, 16, 'dynamic interval did not clamp to minimum', scope)
-local high_dynamic = normalize_with({ dynamic = { interval_ms = 5000 } })
-h.assert_equal(high_dynamic.dynamic.interval_ms, 1000, 'dynamic interval did not clamp to maximum', scope)
-local low_threshold = normalize_with({ threshold = -1 })
-h.assert_equal(low_threshold.threshold, 0, 'threshold did not clamp to minimum', scope)
-local high_threshold = normalize_with({ threshold = 1001 })
-h.assert_equal(high_threshold.threshold, 1000, 'threshold did not clamp to maximum', scope)
-local low_debounce = normalize_with({ debounce_ms = -1 })
-h.assert_equal(low_debounce.debounce_ms, 0, 'debounce_ms did not clamp to minimum', scope)
-local non_finite_numbers = normalize_with({ threshold = 0 / 0, debounce_ms = math.huge })
-h.assert_equal(non_finite_numbers.threshold, 100, 'non-finite threshold did not fall back to default', scope)
-h.assert_equal(non_finite_numbers.debounce_ms, 100, 'non-finite debounce_ms did not fall back to default', scope)
+local fractional_dynamic = normalize_with({ dynamic = { interval_ms = 120.9 } })
+h.assert_equal(fractional_dynamic.dynamic.interval_ms, 120, 'dynamic interval did not floor fractional values', scope)
 local trimmed_preview_key = normalize_with({ preview_key = ' zz ' })
 h.assert_equal(trimmed_preview_key.preview_key, 'zz', 'preview_key did not trim', scope)
-local invalid_preview_key = normalize_with({ preview_key = 123 })
-h.assert_equal(invalid_preview_key.preview_key, 'z', 'invalid preview_key did not fall back to default', scope)
+local invalid_normalize_ok = pcall(
+  schema.normalize,
+  vim.tbl_extend('force', vim.deepcopy(schema.defaults), {
+    preview_key = 123,
+  })
+)
+h.assert_true(not invalid_normalize_ok, 'config normalization accepted an invalid preview_key', scope)
 
 local defaults = config.setup({})
 h.assert_equal(defaults.from_none.enabled, false, 'default from_none.enabled changed', scope)
