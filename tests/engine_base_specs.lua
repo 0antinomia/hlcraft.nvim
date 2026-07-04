@@ -10,6 +10,7 @@ local normalized = base_specs.normalized_set_hl_spec(name)
 h.assert_equal(normalized.fg, '#112233', 'normalized fg changed', scope)
 h.assert_equal(normalized.bold, true, 'normalized style changed', scope)
 h.assert_equal(normalized.underdashed, true, 'normalized extended style changed', scope)
+h.assert_equal(normalized.italic, nil, 'inactive style leaked into normalized spec', scope)
 h.assert_true(base_specs.group_exists(name), 'existing group was not detected', scope)
 h.assert_true(not base_specs.group_exists('HlcraftEngineMissingBaseSpecs'), 'missing group was detected', scope)
 

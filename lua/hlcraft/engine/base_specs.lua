@@ -17,7 +17,9 @@ function M.normalized_set_hl_spec(name)
   }
 
   for _, key in ipairs(store.style_keys) do
-    spec[key] = group[key] or nil
+    if group[key] then
+      spec[key] = true
+    end
   end
   for _, key in ipairs(store.numeric_keys) do
     spec[key] = group[key]
