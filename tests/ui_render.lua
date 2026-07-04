@@ -73,6 +73,12 @@ local layout_lines = editor_layout.finish({ 'Current: abcdefghijklmnop' }, 12, {
 h.assert_equal(layout_lines[2], '', 'editor layout did not separate hints from content', scope)
 h.assert_true(vim.fn.strdisplaywidth(layout_lines[1]) <= 12, 'editor layout did not truncate content lines', scope)
 h.assert_true(vim.fn.strdisplaywidth(layout_lines[3]) <= 12, 'editor layout did not truncate hint lines', scope)
+local nil_find_line_ok = pcall(decorations.find_text_start, nil, 'x', 0)
+h.assert_true(not nil_find_line_ok, 'text finder accepted nil line', scope)
+local nil_find_text_ok = pcall(decorations.find_text_start, 'x', nil, 0)
+h.assert_true(not nil_find_text_ok, 'text finder accepted nil text', scope)
+local invalid_find_start_ok = pcall(decorations.find_text_start, 'x', 'x', 0.5)
+h.assert_true(not invalid_find_start_ok, 'text finder accepted fractional start column', scope)
 
 local strict_detail_ok = pcall(detail_renderer.build, { detail_menu = {} }, result, 80)
 h.assert_true(not strict_detail_ok, 'detail renderer accepted a build call without instance', scope)
