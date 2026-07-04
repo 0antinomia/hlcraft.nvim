@@ -33,6 +33,41 @@ local function normalize_at(value)
   return numbers.unit(value, 0)
 end
 
+local function sort_stops(stops)
+  table.sort(stops, function(left, right)
+    return left.at < right.at
+  end)
+  return stops
+end
+
+local function normalize_stop_sequence(stops, normalize_stop)
+  if type(stops) ~= 'table' or #stops == 0 then
+    return nil
+  end
+
+  local normalized = {}
+  for _, stop in ipairs(stops) do
+    local normalized_stop = normalize_stop(stop)
+    if not normalized_stop then
+      return nil
+    end
+    normalized[#normalized + 1] = normalized_stop
+  end
+
+  return sort_stops(normalized)
+end
+
+local function table_has_only_sequence_keys(value)
+  local count = 0
+  for key, _ in pairs(value) do
+    if type(key) ~= 'number' or key < 1 or key % 1 ~= 0 then
+      return false
+    end
+    count = count + 1
+  end
+  return count == #value
+end
+
 function M.normalize_duration(value)
   local duration = numbers.to_finite(value, M.default_duration)
   duration = math.floor(duration)
@@ -91,12 +126,7 @@ local function normalize_value_stop(stop)
 end
 
 function M.normalize_timeline(timeline)
-  if type(timeline) ~= 'table' or #timeline == 0 then
-    return nil
-  end
-
-  local normalized = {}
-  for _, stop in ipairs(timeline) do
+  return normalize_stop_sequence(timeline, function(stop)
     if type(stop) ~= 'table' then
       return nil
     end
@@ -110,17 +140,11 @@ function M.normalize_timeline(timeline)
       return nil
     end
 
-    normalized[#normalized + 1] = {
+    return {
       at = at,
       color = color_ref,
     }
-  end
-
-  table.sort(normalized, function(left, right)
-    return left.at < right.at
   end)
-
-  return normalized
 end
 
 function M.normalize_transform(transform)
@@ -128,22 +152,10 @@ function M.normalize_transform(transform)
     return nil
   end
 
-  if type(transform.timeline) ~= 'table' or #transform.timeline == 0 then
+  local normalized_timeline = normalize_stop_sequence(transform.timeline, normalize_value_stop)
+  if not normalized_timeline then
     return nil
   end
-
-  local normalized_timeline = {}
-  for _, stop in ipairs(transform.timeline) do
-    local normalized_stop = normalize_value_stop(stop)
-    if not normalized_stop then
-      return nil
-    end
-    normalized_timeline[#normalized_timeline + 1] = normalized_stop
-  end
-
-  table.sort(normalized_timeline, function(left, right)
-    return left.at < right.at
-  end)
 
   return {
     type = transform.type,
@@ -156,7 +168,7 @@ function M.normalize_transforms(transforms)
   if transforms == nil then
     return {}
   end
-  if type(transforms) ~= 'table' then
+  if type(transforms) ~= 'table' or not table_has_only_sequence_keys(transforms) then
     return nil
   end
 
