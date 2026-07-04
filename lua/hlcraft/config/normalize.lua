@@ -1,4 +1,5 @@
 local defaults = require('hlcraft.config.defaults')
+local numbers = require('hlcraft.core.number')
 
 local M = {}
 
@@ -46,12 +47,7 @@ local function normalize_dynamic(value)
     return vim.deepcopy(defaults.dynamic)
   end
 
-  local interval_ms = tonumber(value.interval_ms)
-  if interval_ms == nil then
-    interval_ms = defaults.dynamic.interval_ms
-  else
-    interval_ms = math.floor(interval_ms)
-  end
+  local interval_ms = math.floor(numbers.to_finite(value.interval_ms, defaults.dynamic.interval_ms))
 
   return {
     enabled = value.enabled == true,

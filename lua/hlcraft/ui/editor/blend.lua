@@ -6,7 +6,7 @@ local M = {}
 function M.set(instance, result, value)
   local normalized = nil
   if value ~= nil and vim.trim(tostring(value)) ~= '' then
-    local number_value = tonumber(value)
+    local number_value = numbers.to_finite(value, nil)
     if number_value == nil or number_value < 0 or number_value > 100 then
       return false, 'Blend must be a number between 0 and 100'
     end

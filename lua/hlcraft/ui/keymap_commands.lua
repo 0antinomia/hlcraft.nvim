@@ -58,15 +58,16 @@ function M.adjust_dynamic_color(instance, delta)
     return false
   end
 
+  local step = numbers.to_finite(delta, 0)
   if context.current_dynamic_editor_row_key(instance) == 'dynamic_phase' then
     local dynamic = context.current_color_dynamic(instance)
     M.run_action(
       instance,
       'set_dynamic_phase',
-      numbers.to_finite(dynamic.phase, 0) + (delta * ui_fields.dynamic_phase_step)
+      numbers.to_finite(dynamic.phase, 0) + (step * ui_fields.dynamic_phase_step)
     )
   else
-    M.run_action(instance, 'adjust_dynamic_duration', delta * ui_fields.dynamic_duration_step)
+    M.run_action(instance, 'adjust_dynamic_duration', step * ui_fields.dynamic_duration_step)
   end
   return true
 end

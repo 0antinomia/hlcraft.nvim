@@ -9,6 +9,11 @@ function M.validate(user_config)
 end
 
 function M.setup(user_config)
+  local ok, err = schema.validate(user_config)
+  if not ok then
+    error(err, 2)
+  end
+
   local merged = vim.tbl_deep_extend('force', vim.deepcopy(schema.defaults), user_config or {})
   M.config = schema.normalize(merged)
   return M.config

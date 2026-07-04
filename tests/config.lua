@@ -21,6 +21,9 @@ for _, case in ipairs({
   h.assert_true(not ok, case.message, scope)
 end
 
+local invalid_setup_ok = pcall(config.setup, { threshold = 0 / 0 })
+h.assert_true(not invalid_setup_ok, 'config.setup accepted invalid config directly', scope)
+
 local valid_ok, valid_err = config.validate({
   from_none = { enabled = true, scope = 'core' },
   threshold = 42,
