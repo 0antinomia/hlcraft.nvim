@@ -74,6 +74,24 @@ local invalid_chain_result_ok = pcall(entry.from_attrs, 'InvalidLinked', { link 
   end,
 })
 h.assert_true(not invalid_chain_result_ok, 'entry accepted a non-table link chain result', scope)
+local empty_chain_result_ok = pcall(entry.from_attrs, 'InvalidLinked', { link = 'Target' }, {
+  resolve_chain = function()
+    return {}
+  end,
+})
+h.assert_true(not empty_chain_result_ok, 'entry accepted an empty link chain result', scope)
+local sparse_chain_result_ok = pcall(entry.from_attrs, 'InvalidLinked', { link = 'Target' }, {
+  resolve_chain = function()
+    return { [2] = 'Target' }
+  end,
+})
+h.assert_true(not sparse_chain_result_ok, 'entry accepted a sparse link chain result', scope)
+local invalid_chain_entry_ok = pcall(entry.from_attrs, 'InvalidLinked', { link = 'Target' }, {
+  resolve_chain = function()
+    return { 'InvalidLinked', false }
+  end,
+})
+h.assert_true(not invalid_chain_entry_ok, 'entry accepted a non-string link chain entry', scope)
 local invalid_attrs_result_ok = pcall(entry.from_attrs, 'InvalidLinked', { link = 'Target' }, {
   resolve_attrs = function()
     return false

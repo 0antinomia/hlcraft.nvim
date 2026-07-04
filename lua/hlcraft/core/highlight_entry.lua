@@ -2,10 +2,10 @@ local M = {}
 
 local color = require('hlcraft.core.color')
 local fields = require('hlcraft.core.fields')
+local tables = require('hlcraft.core.tables')
 
 local function terminal_name(chain)
-  local terminal = chain and chain[#chain] or nil
-  return terminal and terminal:gsub(' %(circular%)$', '') or nil
+  return chain[#chain]:gsub(' %(circular%)$', '')
 end
 
 local function assert_name(name)
@@ -49,6 +49,14 @@ end
 local function link_chain(value)
   if type(value) ~= 'table' then
     error('highlight link chain resolver must return a table', 3)
+  end
+  if not tables.is_sequence(value) or #value == 0 then
+    error('highlight link chain resolver must return a non-empty sequence', 3)
+  end
+  for index, name in ipairs(value) do
+    if type(name) ~= 'string' or name == '' then
+      error(('highlight link chain entry %d must be a non-empty string'):format(index), 3)
+    end
   end
   return value
 end
