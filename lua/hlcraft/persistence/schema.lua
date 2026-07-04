@@ -4,6 +4,13 @@ local override_values = require('hlcraft.core.override_values')
 
 local M = {}
 
+local function assert_table(value, label)
+  if type(value) ~= 'table' then
+    error(('%s must be a table'):format(label), 3)
+  end
+  return value
+end
+
 local entry_keys = {
   dynamic = true,
 }
@@ -37,8 +44,8 @@ local function normalize_dynamic_fields(entry, normalized, opts)
 end
 
 function M.normalize_entry(entry, opts)
-  entry = entry or {}
-  opts = opts or {}
+  entry = assert_table(entry, 'persistence entry')
+  opts = opts == nil and {} or assert_table(opts, 'persistence entry options')
   local normalized = {}
 
   normalize_override_fields(entry, normalized)
@@ -81,15 +88,21 @@ function M.compact_entry_strict(name, entry)
 end
 
 function M.normalize_loaded_data(data)
+  data = assert_table(data, 'loaded persistence data')
+  data.entries = assert_table(data.entries, 'loaded persistence entries')
+  data.sections = assert_table(data.sections, 'loaded persistence sections')
+  data.groups = assert_table(data.groups, 'loaded persistence groups')
+
   local normalized_by_name = {}
-  for name, entry in pairs(data.entries or {}) do
+  for name, entry in pairs(data.entries) do
     local normalized = M.normalize_entry(entry)
     data.entries[name] = normalized
     normalized_by_name[name] = normalized
   end
 
-  for _, entries in pairs(data.sections or {}) do
-    for name, entry in pairs(entries or {}) do
+  for _, entries in pairs(data.sections) do
+    entries = assert_table(entries, 'loaded persistence section entries')
+    for name, entry in pairs(entries) do
       entries[name] = normalized_by_name[name] or M.normalize_entry(entry)
     end
   end
@@ -98,14 +111,16 @@ function M.normalize_loaded_data(data)
 end
 
 function M.normalize_entries(entries)
+  entries = assert_table(entries, 'persistence entries')
   local normalized = {}
-  for name, entry in pairs(entries or {}) do
+  for name, entry in pairs(entries) do
     normalized[name] = M.compact_entry(entry)
   end
   return normalized
 end
 
 function M.normalize_entries_strict(entries)
+  entries = assert_table(entries, 'persistence entries')
   local normalized = {}
   for name, entry in pairs(entries) do
     local compacted, err = M.compact_entry_strict(name, entry)

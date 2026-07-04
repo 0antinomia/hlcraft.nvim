@@ -127,6 +127,17 @@ local invalid_groups_ok, invalid_groups_err = storage.save({}, false, persist_di
 h.assert_true(not invalid_groups_ok, 'storage.save accepted non-table groups', scope)
 h.assert_equal(invalid_groups_err, 'Groups must be a table', 'non-table groups error changed', scope)
 
+local missing_group_ok, missing_group_err = storage.save({
+  MissingGroup = { fg = '#111111' },
+}, nil, persist_dir)
+h.assert_true(not missing_group_ok, 'storage.save accepted an override without a group table', scope)
+h.assert_equal(
+  missing_group_err,
+  'Highlight MissingGroup must have a group before saving',
+  'missing group error changed',
+  scope
+)
+
 local invalid_name_ok, invalid_name_err = storage.save({
   [1] = { fg = '#111111' },
 }, {
