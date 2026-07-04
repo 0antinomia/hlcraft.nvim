@@ -1,18 +1,9 @@
 local M = {}
 
-function M.stop(timer)
-  if not timer then
-    return
-  end
+local core_timers = require('hlcraft.core.timers')
 
-  if timer.stop then
-    timer:stop()
-  end
-  if timer.close then
-    pcall(function()
-      timer:close()
-    end)
-  end
+function M.stop(timer)
+  core_timers.stop(timer)
 end
 
 function M.stop_debounce(instance)
