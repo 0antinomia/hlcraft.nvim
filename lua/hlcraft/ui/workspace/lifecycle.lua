@@ -1,4 +1,5 @@
 local help = require('hlcraft.ui.help')
+local ui_state = require('hlcraft.ui.state')
 local window_options = require('hlcraft.ui.window_options')
 local buffer = require('hlcraft.ui.workspace.buffer')
 local window = require('hlcraft.ui.workspace.window')
@@ -53,35 +54,7 @@ end
 --- @return nil
 local function reset_view_state(instance)
   close_unsaved_prompt(instance)
-  instance.state.results = {}
-  instance.state.detail_index = nil
-  instance.state.list_cursor = 1
-  instance.state.name_query = ''
-  instance.state.color_query = ''
-  instance.state.geometry = {
-    inputs = {},
-    result_lines = {},
-    detail_menu = {},
-    editor_rows = {},
-  }
-  instance.state.field_editor = {
-    field = nil,
-    palette_index = nil,
-  }
-  instance.state.rendering = false
-  instance.state.input_marks = {}
-  instance.state.placeholder_marks = {}
-  instance.state.extmark_ids = {}
-  instance.state.clamping_cursor = false
-  instance.state.preview = {
-    name = nil,
-    spec = nil,
-    timer = nil,
-    keymap = nil,
-  }
-  instance.state.scene = {
-    name = 'search',
-  }
+  ui_state.reset_view(instance.state)
 end
 
 --- Toggle the help floating window open or closed
@@ -164,14 +137,7 @@ function M.cleanup(instance)
     end
 
     instance.group = nil
-    instance.state.buf = nil
-    instance.state.help_buf = nil
-    instance.state.help_win = nil
-    instance.state.origin_buf = nil
-    instance.state.origin_win = nil
-    instance.state.origin_win_options = nil
-    instance.state.workspace_win_options = {}
-    instance.state.last_workspace_win = nil
+    ui_state.reset_workspace_handles(instance.state)
   end)
   instance.state.closing = false
   if not ok then
