@@ -31,7 +31,6 @@ end
 
 local function keycap_spans(line, first, last, spans)
   local search_start = first
-  local applied = false
 
   while search_start <= last do
     local key_start, key_end = line:find('%b[]', search_start)
@@ -40,7 +39,6 @@ local function keycap_spans(line, first, last, spans)
     end
 
     span(spans, 'key', key_start - 1, key_end)
-    applied = true
 
     local action_start = key_end + 1
     while action_start <= last and line:sub(action_start, action_start) == ' ' do
@@ -56,8 +54,6 @@ local function keycap_spans(line, first, last, spans)
 
     search_start = next_key_start or (last + 1)
   end
-
-  return applied
 end
 
 local function hint_segment_spans(line, first, last, spans)
@@ -66,32 +62,7 @@ local function hint_segment_spans(line, first, last, spans)
     return
   end
 
-  local segment = line:sub(first, last)
-  if segment:find('%b[]') and keycap_spans(line, first, last, spans) then
-    return
-  end
-
-  local delimiter_start, delimiter_end = segment:find('%s%s+')
-  if delimiter_start then
-    span(spans, 'key', first - 1, first + delimiter_start - 2)
-    span(spans, 'action', first + delimiter_end - 1, last)
-    return
-  end
-
-  local key_start, key_end = segment:find('%S+')
-  if not key_start then
-    return
-  end
-
-  span(spans, 'key', first + key_start - 2, first + key_end - 1)
-
-  local action_start = first + key_end
-  while action_start <= last and line:sub(action_start, action_start) == ' ' do
-    action_start = action_start + 1
-  end
-  if action_start <= last then
-    span(spans, 'action', action_start - 1, last)
-  end
+  keycap_spans(line, first, last, spans)
 end
 
 local function hint_prefix(line)
@@ -99,12 +70,6 @@ local function hint_prefix(line)
   local label = line:match('^(%S+)%s%s+')
   if label and hint_labels[label] then
     return label, #label, #label + 1
-  end
-
-  local colon_label = line:match('^(%S+):%s+')
-  if colon_label and hint_labels[colon_label] then
-    local prefix_start, prefix_end = line:find(': ', 1, true)
-    return colon_label, prefix_start, prefix_end + 1
   end
 
   return nil, nil, 1
@@ -116,7 +81,7 @@ end
 
 local function is_hint_line(line)
   line = tostring(line or '')
-  return M.hint_label(line) ~= nil or line:find(' | ', 1, true) ~= nil or line:find('^%s*%b[]%s+') ~= nil
+  return M.hint_label(line) ~= nil or line:find('^%s*%b[]%s+') ~= nil
 end
 
 local function is_rule_line(line)
@@ -159,22 +124,7 @@ function M.hint_spans(line)
     span(spans, 'section', 0, section_end)
   end
 
-  local prefix_start, prefix_end = line:find(': ', 1, true)
-  if prefix_start and not label then
-    span(spans, 'section', 0, prefix_start)
-    search_start = prefix_end + 1
-  end
-
-  while search_start <= #line do
-    local pipe_start = line:find('|', search_start, true)
-    local segment_end = pipe_start and pipe_start - 1 or #line
-    hint_segment_spans(line, search_start, segment_end, spans)
-    if not pipe_start then
-      break
-    end
-    span(spans, 'separator', pipe_start - 1, pipe_start)
-    search_start = pipe_start + 1
-  end
+  hint_segment_spans(line, search_start, #line, spans)
 
   return spans
 end

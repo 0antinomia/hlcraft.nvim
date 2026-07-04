@@ -101,7 +101,6 @@ for _, group_name in ipairs({
   theme.groups.section,
   theme.groups.hint,
   theme.groups.hint_action,
-  theme.groups.hint_separator,
   theme.groups.value,
   theme.groups.key,
   theme.groups.title,

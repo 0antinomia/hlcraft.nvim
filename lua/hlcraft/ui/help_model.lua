@@ -97,7 +97,7 @@ end
 
 function M.is_item_line(line)
   line = tostring(line or '')
-  return line:find('^%s*%b[]%s+') ~= nil or line:find('%s%s+') ~= nil
+  return line:find('^%s*%b[]%s+') ~= nil
 end
 
 return M
