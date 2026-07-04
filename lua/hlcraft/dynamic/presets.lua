@@ -1,12 +1,14 @@
 local M = {}
 
+local constants = require('hlcraft.dynamic.constants')
+
 local ordered_names = { 'pulse', 'breath', 'hue', 'gradient', 'blink', 'duotone' }
 
 local templates = {
   pulse = {
-    version = 1,
+    version = constants.version,
     preset = 'pulse',
-    duration = 2000,
+    duration = constants.default_duration,
     loop = 'pingpong',
     interpolation = 'smooth',
     timeline = {
@@ -15,9 +17,9 @@ local templates = {
     },
   },
   breath = {
-    version = 1,
+    version = constants.version,
     preset = 'breath',
-    duration = 2000,
+    duration = constants.default_duration,
     loop = 'pingpong',
     timeline = {
       { at = 0, color = 'base' },
@@ -34,10 +36,10 @@ local templates = {
     },
   },
   hue = {
-    version = 1,
+    version = constants.version,
     preset = 'hue',
     duration = 3000,
-    loop = 'repeat',
+    loop = constants.default_loop,
     timeline = {
       { at = 0, color = 'base' },
     },
@@ -52,10 +54,10 @@ local templates = {
     },
   },
   gradient = {
-    version = 1,
+    version = constants.version,
     preset = 'gradient',
     duration = 3000,
-    loop = 'repeat',
+    loop = constants.default_loop,
     timeline = {
       { at = 0, color = '#ff0000' },
       { at = 0.3333333333333333, color = '#00ff00' },
@@ -64,10 +66,10 @@ local templates = {
     },
   },
   blink = {
-    version = 1,
+    version = constants.version,
     preset = 'blink',
     duration = 1000,
-    loop = 'repeat',
+    loop = constants.default_loop,
     interpolation = 'step',
     timeline = {
       { at = 0, color = 'base' },
@@ -76,7 +78,7 @@ local templates = {
     },
   },
   duotone = {
-    version = 1,
+    version = constants.version,
     preset = 'duotone',
     duration = 2400,
     loop = 'pingpong',

@@ -1,4 +1,5 @@
 local color = require('hlcraft.core.color')
+local constants = require('hlcraft.dynamic.constants')
 local fields = require('hlcraft.core.fields')
 local numbers = require('hlcraft.core.number')
 
@@ -7,14 +8,11 @@ local M = {}
 M.channels = vim.deepcopy(fields.color_keys)
 M.channel_set = vim.deepcopy(fields.color_set)
 
-M.version = 1
-M.default_duration = 2000
-M.default_interpolation = 'linear'
-M.default_loop = 'repeat'
-M.default_phase = 0
-
-local min_duration = 250
-local max_duration = 10000
+M.version = constants.version
+M.default_duration = constants.default_duration
+M.default_interpolation = constants.default_interpolation
+M.default_loop = constants.default_loop
+M.default_phase = constants.default_phase
 local color_refs = { base = true }
 for _, key in ipairs(fields.color_keys) do
   color_refs[key] = true
@@ -71,11 +69,11 @@ end
 function M.normalize_duration(value)
   local duration = numbers.to_finite(value, M.default_duration)
   duration = math.floor(duration)
-  if duration < min_duration then
-    return min_duration
+  if duration < constants.min_duration then
+    return constants.min_duration
   end
-  if duration > max_duration then
-    return max_duration
+  if duration > constants.max_duration then
+    return constants.max_duration
   end
   return duration
 end
