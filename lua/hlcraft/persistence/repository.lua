@@ -136,7 +136,7 @@ function M.save(overrides, groups, path)
 
   files.ensure_directory(target)
 
-  local normalized_overrides, normalize_err = schema.normalize_entries_strict(overrides)
+  local normalized_overrides, normalize_err = schema.normalize_entries(overrides)
   if not normalized_overrides then
     return false, normalize_err
   end

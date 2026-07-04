@@ -61,20 +61,26 @@ function M.decode_lines(lines, data)
   data = assert_data(data)
   local current_section = nil
 
-  for _, line in ipairs(lines) do
+  for line_number, line in ipairs(lines) do
     local text = vim.trim(line)
     if text ~= '' and not text:match('^#') then
       local section_name = parser.section_header(text)
       if section_name then
         current_section = section_name
         ensure_section(data, current_section)
-      elseif current_section then
-        local highlight_name, entry = parser.entry_line(text)
-        if highlight_name and entry then
-          data.sections[current_section][highlight_name] = entry
-          data.entries[highlight_name] = entry
-          data.groups[highlight_name] = current_section
+      elseif text:sub(1, 1) == '[' then
+        error(('Invalid TOML section at line %d'):format(line_number), 2)
+      else
+        if not current_section then
+          error(('TOML entry before section at line %d'):format(line_number), 2)
         end
+        local highlight_name, entry = parser.entry_line(text)
+        if not highlight_name or not entry then
+          error(('Invalid TOML entry at line %d'):format(line_number), 2)
+        end
+        data.sections[current_section][highlight_name] = entry
+        data.entries[highlight_name] = entry
+        data.groups[highlight_name] = current_section
       end
     end
   end
