@@ -31,9 +31,23 @@ function M.compact_entry(entry)
   return entry
 end
 
+local function assert_group_name(value, label)
+  if value == nil then
+    return nil
+  end
+  if type(value) ~= 'string' then
+    error(('%s must be a string'):format(label), 3)
+  end
+  if vim.trim(value) == '' then
+    error(('%s must be a non-empty string'):format(label), 3)
+  end
+  return value
+end
+
 function M.ensure_draft_group(name)
-  if data.draft_groups[name] == nil or vim.trim(tostring(data.draft_groups[name])) == '' then
-    data.draft_groups[name] = data.persisted_groups[name]
+  local draft_group = assert_group_name(data.draft_groups[name], 'draft group')
+  if draft_group == nil then
+    data.draft_groups[name] = assert_group_name(data.persisted_groups[name], 'persisted group')
   end
 end
 
