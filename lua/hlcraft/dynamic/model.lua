@@ -30,30 +30,6 @@ local function is_finite_number(value)
   return type(value) == 'number' and value == value and value ~= math.huge and value ~= -math.huge
 end
 
-local function decode_extension(value)
-  if type(value) ~= 'string' or value == '' then
-    return nil
-  end
-
-  local ok, decoded = pcall(vim.json.decode, value)
-  if ok and type(decoded) == 'table' then
-    return decoded
-  end
-  return nil
-end
-
-local function encode_extension(value)
-  if type(value) ~= 'table' then
-    return nil
-  end
-
-  local ok, encoded = pcall(vim.json.encode, value)
-  if ok and type(encoded) == 'string' then
-    return encoded
-  end
-  return nil
-end
-
 local function valid_loop(value)
   return value == 'repeat' or value == 'pingpong' or value == 'once'
 end
@@ -273,39 +249,13 @@ end
 
 function M.inflate_entry(entry)
   local result = vim.deepcopy(entry or {})
-  local dynamic = type(result.dynamic) == 'table' and vim.deepcopy(result.dynamic) or {}
-
-  for _, channel in ipairs(M.channels) do
-    local dynamic_key = ('dyn_%s'):format(channel)
-
-    local decoded = decode_extension(result[dynamic_key])
-    if decoded then
-      dynamic[channel] = decoded
-    end
-
-    result[dynamic_key] = nil
-  end
-
-  result.dynamic = M.normalize_dynamic(dynamic)
+  result.dynamic = M.normalize_dynamic(result.dynamic)
   return result
 end
 
 function M.flatten_entry(entry)
   local result = vim.deepcopy(entry or {})
-  local dynamic = M.normalize_dynamic(result.dynamic)
-
-  result.dynamic = nil
-  for _, channel in ipairs(M.channels) do
-    local dynamic_key = ('dyn_%s'):format(channel)
-
-    result[dynamic_key] = nil
-
-    local spec = dynamic and dynamic[channel] or nil
-    if spec then
-      result[dynamic_key] = encode_extension(spec)
-    end
-  end
-
+  result.dynamic = M.normalize_dynamic(result.dynamic)
   return result
 end
 

@@ -110,29 +110,28 @@ h.assert_true(
   scope
 )
 
-local encoded_fg = vim.json.encode({
-  version = 1,
-  preset = 'pulse',
-  duration = 1500,
-  loop = 'pingpong',
-  timeline = {
-    { at = 0, color = 'base' },
-    { at = 1, color = '#ffffff' },
-  },
-})
 local inflated = model.inflate_entry({
   fg = '#101010',
-  dyn_fg = encoded_fg,
+  dynamic = {
+    fg = {
+      version = 1,
+      preset = 'pulse',
+      duration = 1500,
+      loop = 'pingpong',
+      timeline = {
+        { at = 0, color = 'base' },
+        { at = 1, color = '#ffffff' },
+      },
+    },
+  },
 })
-h.assert_equal(inflated.dynamic.fg.preset, 'pulse', 'dyn_fg JSON did not inflate', scope)
-h.assert_equal(inflated.dynamic.fg.duration, 1500, 'dyn_fg duration did not inflate', scope)
-h.assert_true(inflated.dyn_fg == nil, 'dyn_fg key leaked after inflate', scope)
+h.assert_equal(inflated.dynamic.fg.preset, 'pulse', 'dynamic fg did not inflate', scope)
+h.assert_equal(inflated.dynamic.fg.duration, 1500, 'dynamic duration did not inflate', scope)
 
 local flattened = model.flatten_entry(inflated)
-h.assert_true(type(flattened.dyn_fg) == 'string', 'dynamic fg did not flatten to JSON', scope)
-local decoded_flat = vim.json.decode(flattened.dyn_fg)
-h.assert_equal(decoded_flat.preset, 'pulse', 'flattened preset changed', scope)
-h.assert_equal(decoded_flat.duration, 1500, 'flattened duration changed', scope)
+h.assert_true(type(flattened.dynamic.fg) == 'table', 'dynamic fg did not flatten as nested data', scope)
+h.assert_equal(flattened.dynamic.fg.preset, 'pulse', 'flattened preset changed', scope)
+h.assert_equal(flattened.dynamic.fg.duration, 1500, 'flattened duration changed', scope)
 
 for _, preset_name in ipairs({ 'pulse', 'breath', 'hue', 'gradient', 'blink', 'duotone' }) do
   local preset = presets.get(preset_name)

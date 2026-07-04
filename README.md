@@ -240,11 +240,11 @@ vim.fn.stdpath('config') .. '/hlcraft'
 
 Each file stores one top-level TOML section. Section names come from groups you explicitly select or create in the detail view. If an override has no group, hlcraft asks you to choose or create one before saving.
 
-Dynamic color settings are stored as hlcraft-specific flat keys such as `dyn_fg`, `dyn_bg`, and `dyn_sp`. Each value is a JSON string containing the complete channel model:
+Dynamic color settings are stored directly in the `dynamic` table for each highlight entry. Each channel (`fg`, `bg`, or `sp`) contains the same declarative model used by the raw JSON editor:
 
 ```toml
 ["demo.group"]
-"Normal" = { fg = "#d7d7ff", dyn_fg = "{\"version\":1,\"preset\":\"pulse\",\"duration\":2000,\"loop\":\"pingpong\",\"timeline\":[{\"at\":0,\"color\":\"base\"},{\"at\":1,\"color\":\"#ff6699\"}]}" }
+"Normal" = { fg = "#d7d7ff", dynamic = { fg = { version = 1, preset = "pulse", duration = 2000, loop = "pingpong", interpolation = "smooth", timeline = [{ at = 0, color = "base" }, { at = 1, color = "#ff6699" }] } } }
 ```
 
 Persisted overrides are loaded during `setup()` and replayed again on configured `reapply_events`.
