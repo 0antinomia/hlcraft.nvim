@@ -4,6 +4,8 @@ local M = {}
 local fields = require('hlcraft.core.fields')
 local highlight_entry = require('hlcraft.core.highlight_entry')
 
+local LINK_CHAIN_LIMIT = 20
+
 --- Module-level cache for highlight group enumeration.
 --- Invalidated on ColorScheme events.
 local cache = {
@@ -11,23 +13,44 @@ local cache = {
   raw_map = nil, -- table|nil mapping name -> raw attrs from nvim_get_hl(0, {})
 }
 
---- Resolve link chain using the bulk result map instead of per-name API calls.
---- Same algorithm as resolve_link_chain but reads from raw_map.
---- @param name string Starting group name
---- @param raw_map table Mapping name -> raw hl attrs from bulk call
---- @return string[] chain Chain of group names from start to terminal
-local function resolve_chain_from_map(name, raw_map)
+local function assert_name(name)
+  if type(name) ~= 'string' or name == '' then
+    error('highlight group name must be a non-empty string', 3)
+  end
+  return name
+end
+
+local function link_target(attrs)
+  if type(attrs) ~= 'table' then
+    return nil
+  end
+
+  local target = attrs.link
+  if target == nil then
+    return nil
+  end
+  if type(target) ~= 'string' or target == '' then
+    error('highlight link target must be a non-empty string', 3)
+  end
+  return target
+end
+
+local function resolve_chain(name, get_attrs)
+  name = assert_name(name)
+  if type(get_attrs) ~= 'function' then
+    error('highlight link chain attrs resolver must be a function', 3)
+  end
+
   local chain = { name }
   local visited = { [name] = true }
   local current = name
 
-  for _ = 1, 20 do
-    local attrs = raw_map[current]
-    if not attrs or not attrs.link then
+  for _ = 1, LINK_CHAIN_LIMIT do
+    local target = link_target(get_attrs(current))
+    if target == nil then
       break
     end
 
-    local target = attrs.link
     if visited[target] then
       chain[#chain + 1] = target .. ' (circular)'
       break
@@ -39,6 +62,19 @@ local function resolve_chain_from_map(name, raw_map)
   end
 
   return chain
+end
+
+--- Resolve link chain using the bulk result map instead of per-name API calls.
+--- @param name string Starting group name
+--- @param raw_map table Mapping name -> raw hl attrs from bulk call
+--- @return string[] chain Chain of group names from start to terminal
+local function resolve_chain_from_map(name, raw_map)
+  if type(raw_map) ~= 'table' then
+    error('highlight map must be a table', 3)
+  end
+  return resolve_chain(name, function(group_name)
+    return raw_map[group_name]
+  end)
 end
 
 --- Build a complete highlight entry from bulk data.
@@ -63,28 +99,9 @@ end
 --- @param name string Starting group name
 --- @return string[] chain Chain of group names from start to terminal
 function M.resolve_link_chain(name)
-  local chain = { name }
-  local visited = { [name] = true }
-  local current = name
-
-  for _ = 1, 20 do
-    local hl = vim.api.nvim_get_hl(0, { name = current, create = false })
-    if not hl or not hl.link then
-      break
-    end
-
-    local target = hl.link
-    if visited[target] then
-      chain[#chain + 1] = target .. ' (circular)'
-      break
-    end
-
-    visited[target] = true
-    chain[#chain + 1] = target
-    current = target
-  end
-
-  return chain
+  return resolve_chain(name, function(group_name)
+    return vim.api.nvim_get_hl(0, { name = group_name, create = false })
+  end)
 end
 
 --- Get a single highlight group with resolved attributes (per-name API call).
@@ -92,6 +109,7 @@ end
 --- @param name string Highlight group name
 --- @return table|nil Group data with name, attributes, link_chain, resolved colors
 function M.get_group(name)
+  name = assert_name(name)
   local hl = vim.api.nvim_get_hl(0, { name = name, create = false })
   if not hl or vim.tbl_isempty(hl) then
     return nil
