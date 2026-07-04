@@ -77,7 +77,7 @@ require('hlcraft').setup({
 
 #### `from_none`
 
-控制 hlcraft 是否会先应用一套透明背景的基础 preset，再叠加你自己的运行时 override 和持久化 override。
+控制 hlcraft 是否会先应用一套透明背景的基础 preset，再叠加你自己的草稿 override 和持久化 override。
 
 ```lua
 from_none = {

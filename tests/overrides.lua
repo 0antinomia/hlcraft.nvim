@@ -20,9 +20,9 @@ local group_ok, group_err = overrides.set_group('HlcraftTestNormal', 'main')
 h.assert_true(group_ok, group_err or 'set_group failed', scope)
 local color_ok, color_err = overrides.set_color('HlcraftTestNormal', 'fg', '#abcdef')
 h.assert_true(color_ok, color_err or 'set_color failed', scope)
-h.assert_equal(overrides.get('HlcraftTestNormal').fg, '#abcdef', 'runtime fg was not set', scope)
-h.assert_equal(overrides.get_runtime_group('HlcraftTestNormal'), 'main', 'runtime group was not set', scope)
-h.assert_true(overrides.get_persisted('HlcraftTestNormal').fg == nil, 'runtime edit was persisted before save', scope)
+h.assert_equal(overrides.get('HlcraftTestNormal').fg, '#abcdef', 'draft fg was not set', scope)
+h.assert_equal(overrides.get_draft_group('HlcraftTestNormal'), 'main', 'draft group was not set', scope)
+h.assert_true(overrides.get_persisted('HlcraftTestNormal').fg == nil, 'draft edit was persisted before save', scope)
 
 local save_ok, save_err = overrides.save()
 h.assert_true(save_ok, save_err or 'save failed', scope)
@@ -40,12 +40,7 @@ local dynamic_ok, dynamic_err = overrides.set_dynamic('HlcraftTestNormal', 'fg',
   },
 })
 h.assert_true(dynamic_ok, dynamic_err or 'set_dynamic failed', scope)
-h.assert_equal(
-  overrides.get('HlcraftTestNormal').dynamic.fg.preset,
-  'pulse',
-  'runtime dynamic preset was not set',
-  scope
-)
+h.assert_equal(overrides.get('HlcraftTestNormal').dynamic.fg.preset, 'pulse', 'draft dynamic preset was not set', scope)
 
 local before_bad_dynamic = vim.deepcopy(overrides.get('HlcraftTestNormal').dynamic)
 local bad_dynamic_ok = overrides.set_dynamic('HlcraftTestNormal', 'fg', {
@@ -65,7 +60,7 @@ local bad_dynamic_ok = overrides.set_dynamic('HlcraftTestNormal', 'fg', {
 h.assert_true(not bad_dynamic_ok, 'invalid dynamic mutation was accepted', scope)
 h.assert_true(
   vim.deep_equal(overrides.get('HlcraftTestNormal').dynamic, before_bad_dynamic),
-  'invalid dynamic mutation changed runtime dynamic config',
+  'invalid dynamic mutation changed draft dynamic config',
   scope
 )
 

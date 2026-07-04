@@ -26,8 +26,6 @@ function M.bootstrap(force)
   data.persisted_groups = snapshot.deepcopy(loaded.groups or {})
   data.draft = snapshot.deepcopy(data.persisted)
   data.draft_groups = snapshot.deepcopy(data.persisted_groups)
-  data.runtime = data.draft
-  data.runtime_groups = data.draft_groups
   data.preset = applier.build_preset_overrides()
   snapshot.rebuild_active()
   data.pending = {}
@@ -74,8 +72,6 @@ end
 function M.get_draft_group(name)
   return data.draft_groups[name]
 end
-
-M.get_runtime_group = M.get_draft_group
 
 --- Return the persisted TOML section for a highlight group.
 --- @param name string
@@ -221,8 +217,6 @@ end
 function M.has_draft(name)
   return data.draft[name] ~= nil and next(data.draft[name]) ~= nil
 end
-
-M.has_runtime = M.has_draft
 
 --- Return whether a group currently has persisted overrides.
 --- @param name string

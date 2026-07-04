@@ -94,7 +94,7 @@ local function build_entry_from_raw(name, attrs, all_hls)
 end
 
 --- Resolve the full link chain for a highlight group (per-name API calls).
---- Used by overrides.lua for single-group lookups.
+--- Used by the engine for single-group lookups.
 --- @param name string Starting group name
 --- @return string[] chain Chain of group names from start to terminal
 function M.resolve_link_chain(name)
@@ -123,7 +123,7 @@ function M.resolve_link_chain(name)
 end
 
 --- Get a single highlight group with resolved attributes (per-name API call).
---- Used by overrides.lua for single-group lookups. Does NOT use cache.
+--- Used by the engine for single-group lookups. Does NOT use cache.
 --- @param name string Highlight group name
 --- @return table|nil Group data with name, attributes, link_chain, resolved colors
 function M.get_group(name)

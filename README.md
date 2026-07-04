@@ -77,7 +77,7 @@ require('hlcraft').setup({
 
 #### `from_none`
 
-Controls whether hlcraft applies a transparent baseline preset before your own runtime and persisted overrides.
+Controls whether hlcraft applies a transparent baseline preset before your own draft and persisted overrides.
 
 ```lua
 from_none = {
