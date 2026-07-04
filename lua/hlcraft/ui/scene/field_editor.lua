@@ -103,12 +103,6 @@ function M.close(instance)
   instance:rerender()
 end
 
-function M.selected_param_name(instance)
-  return nil
-end
-
-M.selected_dynamic_param_name = M.selected_param_name
-
 function M.selected_dynamic_row_key(instance)
   local result = M.current_result(instance)
   local field = M.current_field(instance)
@@ -217,9 +211,6 @@ function M.handle(instance, action, ...)
   if action == 'save' then
     return require('hlcraft.ui.scene.detail').handle(instance, 'save')
   end
-  if action == 'selected_param_name' or action == 'selected_dynamic_param_name' then
-    return true, M.selected_param_name(instance)
-  end
   if action == 'selected_dynamic_row_key' then
     return true, M.selected_dynamic_row_key(instance)
   end
@@ -255,10 +246,6 @@ function M.handle(instance, action, ...)
     local ok, err = dynamic_editor.cycle_preset(instance, result, field)
     return finish_edit(instance, ok, err, field)
   end
-  if action == 'reset_dynamic_preset' and color_fields[field] then
-    local ok, err = dynamic_editor.reset_preset(instance, result, field)
-    return finish_edit(instance, ok, err, field)
-  end
   if action == 'adjust_dynamic_duration' and color_fields[field] then
     local ok, err = dynamic_editor.adjust_duration(instance, result, field, ...)
     return finish_edit(instance, ok, err, field)
@@ -269,10 +256,6 @@ function M.handle(instance, action, ...)
   end
   if action == 'set_dynamic_phase' and color_fields[field] then
     local ok, err = dynamic_editor.set_phase(instance, result, field, ...)
-    return finish_edit(instance, ok, err, field)
-  end
-  if action == 'set_dynamic_raw_json' and color_fields[field] then
-    local ok, err = dynamic_editor.set_raw_json(instance, result, field, ...)
     return finish_edit(instance, ok, err, field)
   end
   if action == 'open_dynamic_raw_json' and color_fields[field] then

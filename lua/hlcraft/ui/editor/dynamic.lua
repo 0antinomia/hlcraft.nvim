@@ -51,15 +51,6 @@ function M.cycle_preset(instance, result, key)
   return set_normalized(instance, result, key, presets.get(next_name))
 end
 
-function M.reset_preset(instance, result, key)
-  local dynamic = copy_dynamic(result, key)
-  if not dynamic then
-    return false, 'No dynamic color field is active'
-  end
-
-  return set_normalized(instance, result, key, presets.get(dynamic.preset or 'pulse'))
-end
-
 function M.adjust_duration(instance, result, key, delta)
   local dynamic = copy_dynamic(result, key)
   if not dynamic then
