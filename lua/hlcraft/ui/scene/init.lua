@@ -28,6 +28,9 @@ local function optional_opts(opts)
   if type(opts) ~= 'table' then
     error('scene options must be a table', 3)
   end
+  if opts.name ~= nil then
+    error('scene options must not define name', 3)
+  end
   return opts
 end
 
@@ -54,7 +57,7 @@ function M.set(instance, name, opts)
   if not scene then
     return false, ('unknown scene: %s'):format(tostring(name))
   end
-  instance.state.scene = vim.tbl_extend('force', { name = name }, opts)
+  instance.state.scene = vim.tbl_extend('force', opts, { name = name })
   if scene.enter then
     scene.enter(instance, opts)
   end

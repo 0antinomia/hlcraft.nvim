@@ -72,6 +72,10 @@ h.assert_equal(instance.state.field_editor.field, 'bg', 'field editor enter did 
 h.assert_equal(instance.state.scene.field, 'bg', 'field editor enter did not mirror scene field', scope)
 local invalid_enter_opts_ok = pcall(field_scene.enter, instance, false)
 h.assert_true(not invalid_enter_opts_ok, 'field editor enter accepted non-table options', scope)
+local invalid_enter_field_ok = pcall(field_scene.enter, instance, { field = false })
+h.assert_true(not invalid_enter_field_ok, 'field editor enter accepted non-string field', scope)
+local invalid_enter_kind_ok = pcall(field_scene.enter, instance, { kind = false })
+h.assert_true(not invalid_enter_kind_ok, 'field editor enter accepted non-string kind', scope)
 instance.state.field_editor.field = 'fg'
 instance.state.scene.field = 'fg'
 
