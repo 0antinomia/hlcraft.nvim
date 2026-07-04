@@ -15,8 +15,8 @@ local function assert_inputs(inputs)
 end
 
 local function assert_current_name(current_name)
-  if current_name ~= nil and type(current_name) ~= 'string' then
-    error('current input name must be a string or nil', 3)
+  if current_name ~= nil and (type(current_name) ~= 'string' or current_name == '') then
+    error('current input name must be a non-empty string or nil', 3)
   end
   return current_name
 end
