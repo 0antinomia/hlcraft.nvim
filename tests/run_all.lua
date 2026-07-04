@@ -16,6 +16,7 @@ local tests = {
   'tests/ui_timers.lua',
   'tests/ui_context.lua',
   'tests/ui_search_model.lua',
+  'tests/ui_json.lua',
   'tests/ui_input_sequence.lua',
   'tests/ui_input_paste_plan.lua',
   'tests/ui_style_editor.lua',

@@ -1,4 +1,5 @@
 local dynamic_model = require('hlcraft.dynamic.model')
+local json = require('hlcraft.ui.json')
 local numbers = require('hlcraft.core.number')
 local presets = require('hlcraft.dynamic.presets')
 local session = require('hlcraft.ui.session')
@@ -88,8 +89,8 @@ function M.set_phase(instance, result, key, value)
 end
 
 function M.set_raw_json(instance, result, key, text)
-  local ok, decoded = pcall(vim.json.decode, tostring(text or ''))
-  if not ok or type(decoded) ~= 'table' then
+  local decoded = json.decode_object(text)
+  if not decoded then
     return false, 'Dynamic JSON must be a JSON object'
   end
 
