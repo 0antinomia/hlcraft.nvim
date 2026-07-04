@@ -41,6 +41,13 @@ M.apply_hint_line = line_highlights.apply_hint_line
 M.apply_label_line = line_highlights.apply_label_line
 M.apply_workbench_line_highlights = line_highlights.apply_workbench_lines
 
+local function assert_detail_menu(detail_menu)
+  if type(detail_menu) ~= 'table' then
+    error('detail menu geometry must be a table', 3)
+  end
+  return detail_menu
+end
+
 --- Set the virtual text header (label and optional extra text) above an input field
 --- @param instance table The Instance object holding UI state
 --- @param field table Field descriptor with a `line` key
@@ -115,7 +122,7 @@ function M.apply_detail_menu_highlights(instance, detail_menu, dirty)
     return
   end
 
-  for _, row in pairs(detail_menu or {}) do
+  for _, row in pairs(assert_detail_menu(detail_menu)) do
     local line_idx = row.line - 1
     local line = vim.api.nvim_buf_get_lines(buf, line_idx, line_idx + 1, false)[1] or ''
     local line_len = #line
