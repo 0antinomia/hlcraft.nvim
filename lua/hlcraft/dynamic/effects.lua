@@ -49,6 +49,10 @@ function M.compute(spec, base_hex, now_ms, context)
   end
 
   local phase = timeline.phase(now_ms, spec.duration, spec.phase, spec.loop)
+  if phase == nil then
+    return nil
+  end
+
   local sampled = timeline.sample(spec.timeline, phase, spec.interpolation, function(left, right, amount)
     local left_color = resolve_color_ref(left.color, base_hex, context)
     local right_color = resolve_color_ref(right.color, base_hex, context)

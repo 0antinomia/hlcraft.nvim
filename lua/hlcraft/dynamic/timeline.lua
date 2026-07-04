@@ -1,9 +1,9 @@
 local M = {}
 
+local constants = require('hlcraft.dynamic.constants')
 local numbers = require('hlcraft.core.number')
 
 local function curve(amount, interpolation)
-  amount = numbers.unit(amount, 0)
   if interpolation == 'step' then
     return 0
   end
@@ -17,14 +17,19 @@ local function curve(amount, interpolation)
 end
 
 function M.phase(now_ms, duration, phase_offset, loop)
-  duration = numbers.to_finite(duration, 0)
-  if duration <= 0 then
-    return 0
+  if
+    not numbers.is_finite(now_ms)
+    or not numbers.is_finite(duration)
+    or duration <= 0
+    or not numbers.is_finite(phase_offset)
+    or not constants.loop_set[loop]
+  then
+    return nil
   end
 
-  local raw = (numbers.to_finite(now_ms, 0) / duration) + numbers.to_finite(phase_offset, 0)
+  local raw = (now_ms / duration) + phase_offset
   if loop == 'once' then
-    return numbers.unit(raw, 0)
+    return numbers.unit(raw)
   end
   if loop == 'pingpong' then
     local wrapped = raw % 2
@@ -37,14 +42,19 @@ function M.phase(now_ms, duration, phase_offset, loop)
 end
 
 function M.sample(stops, phase, interpolation, interpolate)
-  if type(stops) ~= 'table' or #stops == 0 then
+  if
+    type(stops) ~= 'table'
+    or #stops == 0
+    or not numbers.is_finite(phase)
+    or not constants.interpolation_set[interpolation]
+  then
     return nil
   end
   if #stops == 1 then
     return stops[1]
   end
 
-  phase = numbers.unit(phase, 0)
+  phase = numbers.unit(phase)
   if phase <= stops[1].at then
     return stops[1]
   end
