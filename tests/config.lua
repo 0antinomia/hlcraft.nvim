@@ -3,23 +3,23 @@ local scope = 'hlcraft config'
 
 local config = require('hlcraft.config')
 
-local invalid_config_ok = config.validate('bad')
-h.assert_true(not invalid_config_ok, 'non-table config was accepted', scope)
-
-local unknown_key_ok = config.validate({ unknown = true })
-h.assert_true(not unknown_key_ok, 'unknown config key was accepted', scope)
-
-local invalid_persist_dir_ok = config.validate({ persist_dir = '' })
-h.assert_true(not invalid_persist_dir_ok, 'empty persist_dir was accepted', scope)
-
-local invalid_threshold_ok = config.validate({ threshold = -1 })
-h.assert_true(not invalid_threshold_ok, 'negative threshold was accepted', scope)
-
-local invalid_finite_numbers_ok = config.validate({ threshold = 0 / 0, debounce_ms = math.huge })
-h.assert_true(not invalid_finite_numbers_ok, 'non-finite numeric config was accepted', scope)
-
-local invalid_dynamic_ok = config.validate({ dynamic = { enabled = 'yes', interval_ms = 0 } })
-h.assert_true(not invalid_dynamic_ok, 'invalid dynamic config was accepted', scope)
+for _, case in ipairs({
+  { value = 'bad', message = 'non-table config was accepted' },
+  { value = { unknown = true }, message = 'unknown config key was accepted' },
+  { value = { persist_dir = '' }, message = 'empty persist_dir was accepted' },
+  { value = { threshold = -1 }, message = 'negative threshold was accepted' },
+  { value = { threshold = 0 / 0, debounce_ms = math.huge }, message = 'non-finite numeric config was accepted' },
+  { value = { include_sp_in_color_search = 'yes' }, message = 'non-boolean color search config was accepted' },
+  { value = { from_none = { scope = 'bad' } }, message = 'invalid from_none scope was accepted' },
+  { value = { reapply_events = { events = { '' } } }, message = 'empty reapply event was accepted' },
+  { value = { reapply_events = { events = { { event = '' } } } }, message = 'empty table event was accepted' },
+  { value = { dynamic = { enabled = 'yes', interval_ms = 0 } }, message = 'invalid dynamic config was accepted' },
+  { value = { preview_key = true }, message = 'preview_key=true was accepted' },
+  { value = { preview_key = '' }, message = 'blank preview_key was accepted' },
+}) do
+  local ok = config.validate(case.value)
+  h.assert_true(not ok, case.message, scope)
+end
 
 local valid_ok, valid_err = config.validate({
   from_none = { enabled = true, scope = 'core' },
