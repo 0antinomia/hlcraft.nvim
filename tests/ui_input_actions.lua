@@ -99,6 +99,19 @@ h.with_temp_buf(function(buf)
   h.assert_true(not input_model.fill_input(instance, 'name', nil, false), 'nil fill without clear changed input', scope)
   h.assert_true(input_model.fill_input(instance, 'name', nil, true), 'nil fill with clear did not report change', scope)
   h.assert_equal(input_model.get_input_value(instance, 'name'), '', 'nil fill with clear did not empty input', scope)
+
+  local invalid_input_name_ok = pcall(input_model.get_input_value, instance, '')
+  h.assert_true(not invalid_input_name_ok, 'input model accepted an empty input name', scope)
+  local invalid_input_row_ok = pcall(input_model.get_input_at_row, instance, -1)
+  h.assert_true(not invalid_input_row_ok, 'input model accepted a negative row', scope)
+  local invalid_current_area_row_ok = pcall(input_model.current_area, instance, 0)
+  h.assert_true(not invalid_current_area_row_ok, 'input model accepted a zero current-area row', scope)
+  local missing_extmarks_ok = pcall(input_model.get_input_pos, {
+    state = {
+      geometry = instance.state.geometry,
+    },
+  }, 'name')
+  h.assert_true(not missing_extmarks_ok, 'input model accepted missing extmark ids', scope)
 end, { current = true })
 
 local invalid_geometry_ok = pcall(input_model.get_input_at_row, {
@@ -107,5 +120,7 @@ local invalid_geometry_ok = pcall(input_model.get_input_at_row, {
   },
 }, 0)
 h.assert_true(not invalid_geometry_ok, 'input model accepted missing geometry inputs', scope)
+local invalid_instance_ok = pcall(input_model.get_input_at_row, nil, 0)
+h.assert_true(not invalid_instance_ok, 'input model accepted missing instance', scope)
 
 print('hlcraft ui input actions: OK')

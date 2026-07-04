@@ -1,4 +1,5 @@
 local input_sequence = require('hlcraft.ui.input.sequence')
+local numbers = require('hlcraft.core.number')
 local window = require('hlcraft.ui.workspace.window')
 local buffer_lines = require('hlcraft.ui.buffer_lines')
 
@@ -14,15 +15,62 @@ local function assert_input_value(value)
   end
 end
 
+local function instance_state(instance)
+  if type(instance) ~= 'table' or type(instance.state) ~= 'table' then
+    error('input model requires an instance', 3)
+  end
+  return instance.state
+end
+
+local function assert_input_name(name)
+  if type(name) ~= 'string' or name == '' then
+    error('input name must be a non-empty string', 3)
+  end
+  return name
+end
+
+local function assert_row0(row0)
+  if type(row0) ~= 'number' then
+    error('input row must be a number', 3)
+  end
+  if not numbers.is_finite(row0) or math.floor(row0) ~= row0 or row0 < 0 then
+    error('input row must be a non-negative finite integer', 3)
+  end
+  return row0
+end
+
+local function assert_row1(row1)
+  if type(row1) ~= 'number' then
+    error('input row must be a number', 3)
+  end
+  if not numbers.is_finite(row1) or math.floor(row1) ~= row1 or row1 < 1 then
+    error('input row must be a positive finite integer', 3)
+  end
+  return row1
+end
+
 local function geometry_inputs(instance)
-  local inputs = instance.state.geometry.inputs
+  local state = instance_state(instance)
+  if type(state.geometry) ~= 'table' then
+    error('input geometry must be a table', 3)
+  end
+  local inputs = state.geometry.inputs
   if type(inputs) ~= 'table' then
     error('input geometry inputs must be a table', 3)
   end
   return inputs
 end
 
+local function extmark_ids(instance)
+  local ids = instance_state(instance).extmark_ids
+  if type(ids) ~= 'table' then
+    error('input extmark ids must be a table', 3)
+  end
+  return ids
+end
+
 local function find_input_field(instance, name)
+  name = assert_input_name(name)
   for _, input in ipairs(geometry_inputs(instance)) do
     if field_name(input) == name then
       return input
@@ -37,6 +85,7 @@ end
 --- @return string|nil Area name ('name', 'color', 'detail', 'results')
 --- @return table|nil Extra context: field for input areas, result index for results
 function M.current_area(instance, row1)
+  row1 = assert_row1(row1)
   local input = M.get_input_at_row(instance, row1 - 1)
   if input then
     local field = input.field
@@ -92,8 +141,9 @@ function M.get_input_pos(instance, name)
     return nil, nil, field
   end
 
-  local start_id = instance.state.extmark_ids[name .. ':start']
-  local end_id = instance.state.extmark_ids[name .. ':end']
+  local ids = extmark_ids(instance)
+  local start_id = ids[name .. ':start']
+  local end_id = ids[name .. ':end']
   if not start_id or not end_id then
     return nil, nil, field
   end
@@ -182,6 +232,7 @@ end
 --- @param row0 number 0-based row number
 --- @return table|nil Input data with name, value, start_row, end_row, field keys
 function M.get_input_at_row(instance, row0)
+  row0 = assert_row0(row0)
   for _, field in ipairs(geometry_inputs(instance)) do
     local name = field_name(field)
     local start_row, end_boundary_row = M.get_input_pos(instance, name)
