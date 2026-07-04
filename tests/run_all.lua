@@ -7,6 +7,7 @@ local tests = {
   'tests/ui_context.lua',
   'tests/ui_keymap_commands.lua',
   'tests/ui_field_editor_actions.lua',
+  'tests/ui_line_highlights.lua',
   'tests/ui_render.lua',
   'tests/persistence_codec.lua',
   'tests/storage.lua',
