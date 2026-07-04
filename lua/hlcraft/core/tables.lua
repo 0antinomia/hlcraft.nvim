@@ -24,7 +24,7 @@ end
 
 function M.sorted_keys(value, compare)
   if type(value) ~= 'table' then
-    return {}
+    error('sorted_keys value must be a table', 2)
   end
 
   local keys = {}

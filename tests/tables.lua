@@ -16,7 +16,8 @@ h.assert_true(not tables.is_sequence('not a table'), 'non-table value was accept
 
 local sorted = tables.sorted_keys({ b = true, a = true, c = true })
 h.assert_equal(table.concat(sorted, ','), 'a,b,c', 'keys were not sorted', scope)
-h.assert_equal(#tables.sorted_keys(nil), 0, 'nil keys did not return an empty list', scope)
+local nil_sorted_keys_ok = pcall(tables.sorted_keys, nil)
+h.assert_true(not nil_sorted_keys_ok, 'sorted_keys accepted nil table', scope)
 local custom_sorted = tables.sorted_keys({ short = true, longest = true }, function(left, right)
   return #left > #right
 end)
