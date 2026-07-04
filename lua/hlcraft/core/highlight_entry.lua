@@ -2,6 +2,7 @@ local M = {}
 
 local color = require('hlcraft.core.color')
 local fields = require('hlcraft.core.fields')
+local numbers = require('hlcraft.core.number')
 local tables = require('hlcraft.core.tables')
 
 local function terminal_name(chain)
@@ -46,6 +47,40 @@ local function style_value(attrs, key)
   return value == true
 end
 
+local function raw_color(attrs, key, label)
+  local value = attrs[key]
+  if value == nil then
+    return 'NONE'
+  end
+  if
+    type(value) ~= 'number'
+    or not numbers.is_finite(value)
+    or math.floor(value) ~= value
+    or value < 0
+    or value > 0xffffff
+  then
+    error(('highlight color %s must be a 24-bit RGB integer or nil'):format(label or key), 3)
+  end
+  return color.int_to_hex(value)
+end
+
+local function blend_value(attrs)
+  local value = attrs.blend
+  if value == nil then
+    return nil
+  end
+  if
+    type(value) ~= 'number'
+    or not numbers.is_finite(value)
+    or math.floor(value) ~= value
+    or value < 0
+    or value > 100
+  then
+    error('highlight blend must be an integer from 0 to 100 or nil', 3)
+  end
+  return value
+end
+
 local function link_chain(value)
   if type(value) ~= 'table' then
     error('highlight link chain resolver must return a table', 3)
@@ -84,10 +119,10 @@ function M.from_attrs(name, attrs, opts)
   end
   local entry = {
     name = name,
-    fg = color.int_to_hex(attrs.fg),
-    bg = color.int_to_hex(attrs.bg),
-    sp = color.int_to_hex(attrs.sp),
-    blend = attrs.blend,
+    fg = raw_color(attrs, 'fg'),
+    bg = raw_color(attrs, 'bg'),
+    sp = raw_color(attrs, 'sp'),
+    blend = blend_value(attrs),
     link_chain = {},
     resolved_fg = 'NONE',
     resolved_bg = 'NONE',
@@ -109,8 +144,8 @@ function M.from_attrs(name, attrs, opts)
       resolved = resolved_attrs(opts.resolve_attrs(terminal_name(entry.link_chain)))
     end
     if resolved then
-      entry.resolved_fg = color.int_to_hex(resolved.fg)
-      entry.resolved_bg = color.int_to_hex(resolved.bg)
+      entry.resolved_fg = raw_color(resolved, 'fg', 'resolved fg')
+      entry.resolved_bg = raw_color(resolved, 'bg', 'resolved bg')
     end
   else
     entry.resolved_fg = entry.fg

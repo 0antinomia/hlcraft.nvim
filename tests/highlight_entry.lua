@@ -39,6 +39,14 @@ local invalid_style_ok = pcall(entry.from_attrs, 'Invalid', { bold = 'yes' })
 h.assert_true(not invalid_style_ok, 'entry accepted non-boolean style attr', scope)
 local invalid_link_ok = pcall(entry.from_attrs, 'Invalid', { link = '' })
 h.assert_true(not invalid_link_ok, 'entry accepted empty link attr', scope)
+local invalid_color_ok = pcall(entry.from_attrs, 'Invalid', { fg = -1 })
+h.assert_true(not invalid_color_ok, 'entry accepted an invalid raw color', scope)
+local string_color_ok = pcall(entry.from_attrs, 'Invalid', { fg = '112233' })
+h.assert_true(not string_color_ok, 'entry accepted a string raw color', scope)
+local invalid_blend_ok = pcall(entry.from_attrs, 'Invalid', { blend = 101 })
+h.assert_true(not invalid_blend_ok, 'entry accepted an out-of-range blend', scope)
+local fractional_blend_ok = pcall(entry.from_attrs, 'Invalid', { blend = 12.5 })
+h.assert_true(not fractional_blend_ok, 'entry accepted a fractional blend', scope)
 
 local style_result = {}
 for _, key in ipairs(fields.style_keys) do
@@ -113,6 +121,14 @@ local invalid_attrs_result_ok = pcall(entry.from_attrs, 'InvalidLinked', { link 
   end,
 })
 h.assert_true(not invalid_attrs_result_ok, 'entry accepted a non-table resolved attrs result', scope)
+local invalid_resolved_color_ok = pcall(entry.from_attrs, 'InvalidResolvedColor', { link = 'Target' }, {
+  resolve_attrs = function()
+    return {
+      fg = 0x1000000,
+    }
+  end,
+})
+h.assert_true(not invalid_resolved_color_ok, 'entry accepted an invalid resolved color', scope)
 
 local circular = entry.from_attrs('Circular', { link = 'Circular' }, {
   resolve_chain = function()
