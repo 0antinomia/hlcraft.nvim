@@ -92,8 +92,18 @@ h.assert_true(not invalid_header_opts_ok, 'input header accepted non-table optio
 
 local strict_detail_ok = pcall(detail_renderer.build, { detail_menu = {} }, result, 80)
 h.assert_true(not strict_detail_ok, 'detail renderer accepted a build call without instance', scope)
+local strict_detail_geometry_ok = pcall(detail_renderer.build, instance, {}, result, 80)
+h.assert_true(not strict_detail_geometry_ok, 'detail renderer accepted missing detail geometry', scope)
+local strict_detail_result_ok = pcall(detail_renderer.build, instance, { detail_menu = {} }, {}, 80)
+h.assert_true(not strict_detail_result_ok, 'detail renderer accepted missing highlight result', scope)
 local strict_field_editor_ok = pcall(field_editor_renderer.build, { editor_rows = {} }, result, 'fg', 80)
 h.assert_true(not strict_field_editor_ok, 'field editor renderer accepted a build call without instance', scope)
+local strict_field_editor_geometry_ok = pcall(field_editor_renderer.build, instance, {}, result, 'fg', 80)
+h.assert_true(not strict_field_editor_geometry_ok, 'field editor renderer accepted missing editor geometry', scope)
+local strict_field_editor_result_ok = pcall(field_editor_renderer.build, instance, { editor_rows = {} }, {}, 'fg', 80)
+h.assert_true(not strict_field_editor_result_ok, 'field editor renderer accepted missing highlight result', scope)
+local strict_field_editor_field_ok = pcall(field_editor_renderer.build, instance, { editor_rows = {} }, result, nil, 80)
+h.assert_true(not strict_field_editor_field_ok, 'field editor renderer accepted missing field', scope)
 
 local detail_geometry = { detail_menu = {} }
 local detail_lines = detail_renderer.build(instance, detail_geometry, result, 80, 0)

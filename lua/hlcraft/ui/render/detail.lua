@@ -11,6 +11,27 @@ local detail_scene = require('hlcraft.ui.scene.detail')
 
 local M = {}
 
+local function render_instance(instance)
+  if type(instance) ~= 'table' or type(instance.state) ~= 'table' then
+    error('detail renderer requires an instance', 3)
+  end
+  return instance
+end
+
+local function detail_geometry(geometry)
+  if type(geometry) ~= 'table' or type(geometry.detail_menu) ~= 'table' then
+    error('detail renderer requires detail geometry', 3)
+  end
+  return geometry
+end
+
+local function highlight_result(result)
+  if type(result) ~= 'table' or type(result.name) ~= 'string' then
+    error('detail renderer requires a highlight result', 3)
+  end
+  return result
+end
+
 local function dynamic_metadata(dynamic)
   local preset = dynamic.preset or 'custom'
   return ('%s %dms %s'):format(preset, dynamic.duration, dynamic.loop)
@@ -30,9 +51,9 @@ local function color_display_value(result, key)
 end
 
 function M.build(instance, geometry, result, width, line_offset)
-  assert(instance and instance.state, 'detail renderer requires an instance')
-  assert(geometry and geometry.detail_menu, 'detail renderer requires detail geometry')
-  assert(result and result.name, 'detail renderer requires a highlight result')
+  instance = render_instance(instance)
+  geometry = detail_geometry(geometry)
+  result = highlight_result(result)
   line_offset = line_offset or 0
   local lines = {
     'Detail fields',
