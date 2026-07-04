@@ -105,6 +105,10 @@ h.assert_equal(entry.dynamic.fg.preset, 'pulse', 'dynamic channel was not applie
 h.assert_true(entry.dynamic.sp == nil, 'unset dynamic channel was not cleared', scope)
 h.assert_true(entry.dynamic.bg ~= nil, 'unpatched dynamic channel was removed', scope)
 
+local dynamic_entry = {}
+patch.apply_entry(dynamic_entry, { dynamic = { fg = dynamic_spec } })
+h.assert_equal(dynamic_entry.dynamic.fg.preset, 'pulse', 'dynamic patch did not create dynamic entry state', scope)
+
 local nil_entry_ok = pcall(patch.apply_entry, nil, normalized)
 h.assert_true(not nil_entry_ok, 'patch apply accepted nil entry', scope)
 local nil_patch_ok = pcall(patch.apply_entry, entry, nil)

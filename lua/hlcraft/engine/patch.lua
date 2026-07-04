@@ -129,7 +129,9 @@ function M.apply_entry(entry, patch)
     if entry.dynamic ~= nil and type(entry.dynamic) ~= 'table' then
       error('entry dynamic must be a table', 2)
     end
-    entry.dynamic = entry.dynamic or {}
+    if entry.dynamic == nil then
+      entry.dynamic = {}
+    end
     for _, key in ipairs(dynamic_model.channels) do
       if patch.dynamic[key] ~= nil then
         entry.dynamic[key] = override_values.entry_value(patch.dynamic[key])
