@@ -378,17 +378,4 @@ function M.compact_dynamic(dynamic)
   return compacted
 end
 
-function M.normalize_entry(entry)
-  if type(entry) ~= 'table' then
-    error('dynamic entry must be a table', 2)
-  end
-  local result = vim.deepcopy(entry)
-  result.dynamic = M.normalize_dynamic(result.dynamic)
-  return result
-end
-
-function M.has_dynamic(entry)
-  return type(entry) == 'table' and M.normalize_dynamic(entry.dynamic) ~= nil
-end
-
 return M
