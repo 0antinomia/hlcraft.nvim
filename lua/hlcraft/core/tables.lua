@@ -6,14 +6,16 @@ function M.is_sequence(value)
   end
 
   local count = 0
+  local max_index = 0
   for key in pairs(value) do
     if type(key) ~= 'number' or key < 1 or key % 1 ~= 0 then
       return false
     end
     count = count + 1
+    max_index = math.max(max_index, key)
   end
 
-  return count == #value
+  return count == max_index
 end
 
 return M
