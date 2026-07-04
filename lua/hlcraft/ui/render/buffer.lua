@@ -29,7 +29,7 @@ function M.prepare(instance)
   if not window.is_valid_win(win) then
     return nil
   end
-  instance.state.dynamic_preview_items = {}
+  require('hlcraft.ui.dynamic_preview').reset_items(instance)
   return math.max(50, vim.api.nvim_win_get_width(win) - 1)
 end
 

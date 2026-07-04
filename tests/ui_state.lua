@@ -15,6 +15,9 @@ h.assert_true(first.workspace_win_options ~= second.workspace_win_options, 'work
 h.assert_true(first.results ~= second.results, 'result state was shared', scope)
 h.assert_true(first.geometry.inputs ~= second.geometry.inputs, 'geometry state was shared', scope)
 h.assert_true(first.preview ~= second.preview, 'preview state was shared', scope)
+h.assert_true(first.dynamic_preview ~= second.dynamic_preview, 'dynamic preview state was shared', scope)
+h.assert_true(first.dynamic_preview.marks ~= second.dynamic_preview.marks, 'dynamic preview marks were shared', scope)
+h.assert_true(first.dynamic_preview.items ~= second.dynamic_preview.items, 'dynamic preview items were shared', scope)
 
 local timer = {}
 local state = ui_state.initial()
@@ -46,6 +49,12 @@ state.placeholder_marks = { color = 42 }
 state.extmark_ids = { dirty = 43 }
 state.clamping_cursor = true
 state.preview = { name = 'Changed', spec = {}, timer = {}, keymap = {} }
+state.dynamic_preview = {
+  marks = { [1] = 51 },
+  items = { { id = 1 } },
+  timer = {},
+  instance_id = 7,
+}
 state.scene = { name = 'detail', index = 2 }
 
 ui_state.reset_view(state)
@@ -83,6 +92,10 @@ h.assert_true(state.preview.name == nil, 'view reset kept preview name', scope)
 h.assert_true(state.preview.spec == nil, 'view reset kept preview spec', scope)
 h.assert_true(state.preview.timer == nil, 'view reset kept preview timer', scope)
 h.assert_true(state.preview.keymap == nil, 'view reset kept preview keymap', scope)
+h.assert_true(next(state.dynamic_preview.marks) == nil, 'view reset kept dynamic preview marks', scope)
+h.assert_true(next(state.dynamic_preview.items) == nil, 'view reset kept dynamic preview items', scope)
+h.assert_true(state.dynamic_preview.timer == nil, 'view reset kept dynamic preview timer', scope)
+h.assert_true(state.dynamic_preview.instance_id == nil, 'view reset kept dynamic preview instance id', scope)
 h.assert_equal(state.scene.name, 'search', 'view reset did not return to search scene', scope)
 
 state.closing = true
