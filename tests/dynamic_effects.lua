@@ -2,8 +2,17 @@ local h = require('tests.helpers')
 local scope = 'hlcraft dynamic effects'
 
 local effects = require('hlcraft.dynamic.effects')
+local model = require('hlcraft.dynamic.model')
 local timeline = require('hlcraft.dynamic.timeline')
 local transforms = require('hlcraft.dynamic.transforms')
+
+local function normalize(spec)
+  return assert(model.normalize_channel(spec), 'dynamic spec fixture did not normalize')
+end
+
+local function compute(spec, base_hex, now_ms, context)
+  return effects.compute(normalize(spec), base_hex, now_ms, context)
+end
 
 local numeric_stops = {
   { at = 0, value = 0 },
@@ -63,7 +72,7 @@ h.assert_equal(
 )
 
 h.assert_equal(
-  effects.compute({
+  compute({
     version = 1,
     duration = 2000,
     loop = 'repeat',
@@ -78,7 +87,7 @@ h.assert_equal(
   scope
 )
 h.assert_equal(
-  effects.compute({
+  compute({
     version = 1,
     duration = 2000,
     loop = 'repeat',
@@ -93,7 +102,7 @@ h.assert_equal(
   scope
 )
 h.assert_equal(
-  effects.compute({
+  compute({
     version = 1,
     duration = 2000,
     loop = 'pingpong',
@@ -108,7 +117,7 @@ h.assert_equal(
   scope
 )
 h.assert_equal(
-  effects.compute({
+  compute({
     version = 1,
     duration = 2000,
     loop = 'repeat',
@@ -132,7 +141,7 @@ h.assert_equal(
   scope
 )
 h.assert_equal(
-  effects.compute({
+  compute({
     version = 1,
     duration = 2000,
     loop = 'once',

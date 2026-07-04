@@ -43,14 +43,13 @@ local function interpolate_hex(left_hex, right_hex, amount)
 end
 
 function M.compute(spec, base_hex, now_ms, context)
-  local normalized = model.normalize_channel(spec)
   base_hex = normalize_hex(base_hex)
-  if not normalized or not base_hex then
+  if type(spec) ~= 'table' or type(spec.transforms) ~= 'table' or not base_hex then
     return nil
   end
 
-  local phase = timeline.phase(now_ms, normalized.duration, normalized.phase, normalized.loop)
-  local sampled = timeline.sample(normalized.timeline, phase, normalized.interpolation, function(left, right, amount)
+  local phase = timeline.phase(now_ms, spec.duration, spec.phase, spec.loop)
+  local sampled = timeline.sample(spec.timeline, phase, spec.interpolation, function(left, right, amount)
     local left_color = resolve_color_ref(left.color, base_hex, context)
     local right_color = resolve_color_ref(right.color, base_hex, context)
     if not left_color or not right_color then
@@ -67,7 +66,7 @@ function M.compute(spec, base_hex, now_ms, context)
     return nil
   end
 
-  for _, transform in ipairs(normalized.transforms) do
+  for _, transform in ipairs(spec.transforms) do
     local value = timeline.sample_numeric(transform.timeline, phase, transform.interpolation)
     computed = transforms.apply(computed, { type = transform.type, value = value })
     if not computed then

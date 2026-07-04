@@ -1,5 +1,6 @@
 local config = require('hlcraft.config')
 local effects = require('hlcraft.dynamic.effects')
+local model = require('hlcraft.dynamic.model')
 local timers = require('hlcraft.core.timers')
 
 local M = {}
@@ -105,8 +106,13 @@ function M.register(instance, item)
     return nil
   end
   ensure_state(instance)
+  local dynamic = model.normalize_channel(item and item.dynamic)
+  if not dynamic then
+    return nil
+  end
   local id = #instance.state.dynamic_preview_items + 1
   local next_item = vim.deepcopy(item)
+  next_item.dynamic = dynamic
   next_item.id = id
   instance.state.dynamic_preview_items[id] = next_item
   return id
