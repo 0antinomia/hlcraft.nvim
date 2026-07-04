@@ -24,7 +24,7 @@ local function resolve_color_ref(value, base_hex, context)
   if value == 'base' then
     return base_hex
   end
-  if value == 'fg' or value == 'bg' or value == 'sp' then
+  if model.channel_set[value] then
     return normalize_hex(context and context[value])
   end
   return normalize_hex(value)

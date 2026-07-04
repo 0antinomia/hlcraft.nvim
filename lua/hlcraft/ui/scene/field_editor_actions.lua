@@ -1,17 +1,12 @@
 local blend_editor = require('hlcraft.ui.editor.blend')
 local color_editor = require('hlcraft.ui.editor.color')
+local core_fields = require('hlcraft.core.fields')
 local dynamic_editor = require('hlcraft.ui.editor.dynamic')
 local group_editor = require('hlcraft.ui.editor.group')
 local session = require('hlcraft.ui.session')
 local ui_fields = require('hlcraft.ui.fields')
 
 local M = {}
-
-local color_fields = {
-  fg = true,
-  bg = true,
-  sp = true,
-}
 
 local function finish_edit(instance, ok, err, preserve_field)
   if not ok then
@@ -79,7 +74,7 @@ local field_kind_actions = {
 }
 
 function M.handle(instance, action, result, field, ...)
-  if color_fields[field] and color_actions[action] then
+  if core_fields.color_set[field] and color_actions[action] then
     local ok, err = color_actions[action](instance, result, field, ...)
     return true, finish_edit(instance, ok, err, field)
   end
