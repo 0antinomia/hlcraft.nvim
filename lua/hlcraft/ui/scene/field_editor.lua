@@ -37,6 +37,16 @@ local function prompt_dynamic_value(instance, action, prompt_text, default)
   end)
 end
 
+local function optional_opts(opts)
+  if opts == nil then
+    return {}
+  end
+  if type(opts) ~= 'table' then
+    error('dynamic row input options must be a table', 3)
+  end
+  return opts
+end
+
 local function selected_editor_row_key(instance)
   local row = M.editor_row_at_cursor(instance)
   return row and row.key or nil
@@ -62,7 +72,7 @@ function M.selected_dynamic_row_key(instance)
 end
 
 function M.input_dynamic_row(instance, opts)
-  opts = opts or {}
+  opts = optional_opts(opts)
   local result = M.current_result(instance)
   local field = M.current_field(instance)
   local dynamic = dynamic_value(result, field)

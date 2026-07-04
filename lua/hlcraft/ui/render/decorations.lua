@@ -49,6 +49,16 @@ local function assert_detail_menu(detail_menu)
   return detail_menu
 end
 
+local function optional_opts(opts, label)
+  if opts == nil then
+    return {}
+  end
+  if type(opts) ~= 'table' then
+    error(('%s must be a table'):format(label), 3)
+  end
+  return opts
+end
+
 --- Set the virtual text header (label and optional extra text) above an input field
 --- @param instance table The Instance object holding UI state
 --- @param field table Field descriptor with a `line` key
@@ -56,7 +66,7 @@ end
 --- @param opts table|nil Options: top_virt_lines (table[]), extra (string)
 --- @return nil
 function M.set_input_header(instance, field, label, opts)
-  opts = opts or {}
+  opts = optional_opts(opts, 'input header options')
   local virt_lines = {}
   if opts.top_virt_lines then
     for _, line in ipairs(opts.top_virt_lines) do

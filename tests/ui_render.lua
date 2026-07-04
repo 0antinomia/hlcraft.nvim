@@ -82,6 +82,8 @@ local nil_find_text_ok = pcall(decorations.find_text_start, 'x', nil, 0)
 h.assert_true(not nil_find_text_ok, 'text finder accepted nil text', scope)
 local invalid_find_start_ok = pcall(decorations.find_text_start, 'x', 'x', 0.5)
 h.assert_true(not invalid_find_start_ok, 'text finder accepted fractional start column', scope)
+local invalid_header_opts_ok = pcall(decorations.set_input_header, {}, {}, 'Label', false)
+h.assert_true(not invalid_header_opts_ok, 'input header accepted non-table options', scope)
 
 local strict_detail_ok = pcall(detail_renderer.build, { detail_menu = {} }, result, 80)
 h.assert_true(not strict_detail_ok, 'detail renderer accepted a build call without instance', scope)
