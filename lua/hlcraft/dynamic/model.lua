@@ -2,6 +2,7 @@ local color = require('hlcraft.core.color')
 local constants = require('hlcraft.dynamic.constants')
 local fields = require('hlcraft.core.fields')
 local numbers = require('hlcraft.core.number')
+local tables = require('hlcraft.core.tables')
 
 local M = {}
 
@@ -47,17 +48,6 @@ local function normalize_stop_sequence(stops, normalize_stop)
   end
 
   return sort_stops(normalized)
-end
-
-local function table_has_only_sequence_keys(value)
-  local count = 0
-  for key, _ in pairs(value) do
-    if type(key) ~= 'number' or key < 1 or key % 1 ~= 0 then
-      return false
-    end
-    count = count + 1
-  end
-  return count == #value
 end
 
 function M.normalize_duration(value)
@@ -160,7 +150,7 @@ function M.normalize_transforms(transforms)
   if transforms == nil then
     return {}
   end
-  if type(transforms) ~= 'table' or not table_has_only_sequence_keys(transforms) then
+  if not tables.is_sequence(transforms) then
     return nil
   end
 

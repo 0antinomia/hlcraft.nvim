@@ -2,6 +2,7 @@ local tests = {
   'tests/config.lua',
   'tests/notify.lua',
   'tests/number.lua',
+  'tests/tables.lua',
   'tests/color.lua',
   'tests/fields.lua',
   'tests/highlight_entry.lua',

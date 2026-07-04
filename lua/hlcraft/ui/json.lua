@@ -1,3 +1,5 @@
+local tables = require('hlcraft.core.tables')
+
 local M = {}
 
 local function sorted_keys(tbl)
@@ -9,17 +11,6 @@ local function sorted_keys(tbl)
     return tostring(left) < tostring(right)
   end)
   return keys
-end
-
-local function is_array(tbl)
-  local count = 0
-  for key in pairs(tbl) do
-    if type(key) ~= 'number' or key < 1 or key % 1 ~= 0 then
-      return false
-    end
-    count = math.max(count, key)
-  end
-  return count == #tbl
 end
 
 local function format_value(value, indent)
@@ -36,7 +27,7 @@ local function format_value(value, indent)
   end
 
   local lines = {}
-  if is_array(value) then
+  if tables.is_sequence(value) then
     lines[#lines + 1] = '['
     for index, item in ipairs(value) do
       local comma = index < #value and ',' or ''
