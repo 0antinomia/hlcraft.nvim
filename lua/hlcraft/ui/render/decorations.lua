@@ -7,6 +7,42 @@ local theme = require('hlcraft.ui.theme')
 
 local M = {}
 
+local hint_labels = {
+  Action = true,
+  Adjust = true,
+  Edit = true,
+  Global = true,
+  Set = true,
+}
+
+local function hint_label(line)
+  local label = tostring(line or ''):match('^(%S+)%s%s+')
+  if label and hint_labels[label] then
+    return label
+  end
+  local colon_label = tostring(line or ''):match('^(%S+):%s+')
+  if colon_label and hint_labels[colon_label] then
+    return colon_label
+  end
+  return nil
+end
+
+local function is_hint_line(line)
+  return hint_label(line) ~= nil or tostring(line or ''):find(' | ', 1, true) ~= nil
+end
+
+local function is_rule_line(line)
+  return tostring(line or ''):match('^[─%-]+$') ~= nil
+end
+
+local function is_title_line(line)
+  line = tostring(line or '')
+  return line == 'Detail fields'
+    or line == 'Blend editor'
+    or line:find('^Color editor:', 1) ~= nil
+    or line:find('^Group editor:', 1) ~= nil
+end
+
 local function get_detail_scene()
   return require('hlcraft.ui.scene.detail')
 end
@@ -83,14 +119,28 @@ function M.apply_hint_line(instance, line_idx, line)
   vim.api.nvim_buf_add_highlight(instance.state.buf, instance.ns, theme.groups.hint, line_idx, 0, -1)
 
   local search_start = 1
+  local label = hint_label(line)
+  if label then
+    vim.api.nvim_buf_add_highlight(instance.state.buf, instance.ns, theme.groups.section, line_idx, 0, #label)
+    search_start = #label + 1
+  end
+
   local prefix_start, prefix_end = line:find(': ', 1, true)
-  if prefix_start then
+  if prefix_start and not label then
     vim.api.nvim_buf_add_highlight(instance.state.buf, instance.ns, theme.groups.section, line_idx, 0, prefix_start)
     search_start = prefix_end + 1
   end
 
   while search_start <= #line do
-    local separator_start = line:find('|', search_start, true)
+    while line:sub(search_start, search_start) == ' ' do
+      search_start = search_start + 1
+    end
+    local separator_start, separator_end = line:find('%s%s+', search_start)
+    local pipe_start = line:find('|', search_start, true)
+    if pipe_start and (not separator_start or pipe_start < separator_start) then
+      separator_start = pipe_start
+      separator_end = pipe_start
+    end
     local segment_end = separator_start and (separator_start - 1) or #line
     local segment = line:sub(search_start, segment_end)
     local leading_spaces, key = segment:match('^(%s*)(%S+)')
@@ -108,7 +158,7 @@ function M.apply_hint_line(instance, line_idx, line)
     if not separator_start then
       break
     end
-    search_start = separator_start + 1
+    search_start = separator_end + 1
   end
 end
 
@@ -132,7 +182,11 @@ function M.apply_workbench_line_highlights(instance, lines, start_line)
   for index, line in ipairs(lines or {}) do
     if index >= start_line then
       local line_idx = index - 1
-      if line:find(' | ', 1, true) then
+      if is_rule_line(line) then
+        vim.api.nvim_buf_add_highlight(instance.state.buf, instance.ns, theme.groups.rule, line_idx, 0, -1)
+      elseif is_title_line(line) then
+        vim.api.nvim_buf_add_highlight(instance.state.buf, instance.ns, theme.groups.title, line_idx, 0, -1)
+      elseif is_hint_line(line) then
         M.apply_hint_line(instance, line_idx, line)
       elseif line:find(':', 1, true) then
         M.apply_label_line(instance, line_idx, line)

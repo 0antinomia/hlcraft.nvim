@@ -69,8 +69,9 @@ function M.build(instance, geometry, result, field, width, line_offset, dynamic)
     })
   end
 
-  lines[#lines + 1] = hints.dynamic_edit()
-  lines[#lines + 1] = hints.dynamic_global()
+  for _, line in ipairs(hints.dynamic()) do
+    lines[#lines + 1] = line
+  end
 
   for index, line in ipairs(lines) do
     lines[index] = render_util.truncate(line, width)

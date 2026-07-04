@@ -5,6 +5,7 @@ local config = require('hlcraft.config')
 local hlcraft = require('hlcraft')
 local color_renderer = require('hlcraft.ui.render.editors.color')
 local decorations = require('hlcraft.ui.render.decorations')
+local detail_info = require('hlcraft.ui.detail')
 local detail_renderer = require('hlcraft.ui.render.detail')
 local dynamic_renderer = require('hlcraft.ui.render.editors.dynamic')
 local engine = require('hlcraft.engine.service')
@@ -46,13 +47,13 @@ h.assert_equal(
     { 'Tab', 'input' },
     { '?', 'more' },
   }),
-  'Enter open/apply  |  Tab input  |  ? more',
+  'Enter open/apply   Tab input   ? more',
   'compact hint formatter changed unexpectedly',
   scope
 )
-h.assert_equal(hints.search(), 'Enter open/apply  |  Tab input  |  ? more', 'search hint is too verbose', scope)
+h.assert_equal(hints.search(), 'Action  Enter open/apply   Tab input   ? help', 'search hint is too verbose', scope)
 h.assert_true(not hints.search():find('Keys:', 1, true), 'search hint kept the crowded Keys prefix', scope)
-h.assert_equal(hints.detail(), 'Enter edit/toggle  |  s save  |  ? more', 'detail hint is too verbose', scope)
+h.assert_equal(hints.detail(), 'Action  Enter edit/toggle   s save   ? help', 'detail hint is too verbose', scope)
 
 local editor_geometry = { editor_rows = {} }
 local editor_lines = {}
@@ -77,17 +78,32 @@ h.assert_true(top_help:find('Tab', 1, true) == nil, 'top help line should not re
 
 local ns = vim.api.nvim_create_namespace('hlcraft-ui-render-test')
 theme.apply(ns)
-for _, group_name in ipairs({ theme.groups.section, theme.groups.hint, theme.groups.value }) do
+for _, group_name in ipairs({
+  theme.groups.section,
+  theme.groups.hint,
+  theme.groups.value,
+  theme.groups.key,
+  theme.groups.title,
+}) do
   h.assert_true(type(group_name) == 'string' and group_name ~= '', 'missing visual hierarchy group', scope)
   local applied = vim.api.nvim_get_hl(ns, { name = group_name })
   h.assert_true(applied.fg ~= nil, ('theme group %s has no foreground'):format(group_name), scope)
 end
 
+local detail_info_lines = detail_info.build_virt_lines(result, function()
+  return theme.groups.value
+end, 80)
+h.assert_equal(detail_info_lines[2][1][2], theme.groups.section, 'detail info label lacks contrast', scope)
+h.assert_equal(detail_info_lines[2][2][2], theme.groups.title, 'detail info name lacks title contrast', scope)
+h.assert_equal(detail_info_lines[3][1][2], theme.groups.section, 'detail color label lacks contrast', scope)
+h.assert_equal(detail_info_lines[4][3][2], theme.groups.muted, 'detail attr metadata lacks muted contrast', scope)
+
 local color_geometry = { editor_rows = {} }
 local color_lines = color_renderer.build(instance, color_geometry, result, 'fg', 80, 0)
 local color_text = table.concat(color_lines, '\n')
-h.assert_true(color_text:find('Adjust:', 1, true) ~= nil, 'color editor lacks an action section', scope)
-h.assert_true(color_text:find('Global:', 1, true) ~= nil, 'color editor lacks a global section', scope)
+h.assert_true(color_text:find('Adjust  ', 1, true) ~= nil, 'color editor lacks an action section', scope)
+h.assert_true(color_text:find('Set     ', 1, true) ~= nil, 'color editor lacks a set section', scope)
+h.assert_true(color_text:find('Global  ', 1, true) ~= nil, 'color editor lacks a global section', scope)
 h.assert_true(not color_text:find('Keys:', 1, true), 'color editor kept crowded Keys hint', scope)
 h.assert_true(color_geometry.editor_rows.color_keys == nil, 'color hint row should not be selectable', scope)
 
@@ -104,8 +120,8 @@ local dynamic_lines = dynamic_renderer.build(instance, dynamic_geometry, result,
 local dynamic_text = table.concat(dynamic_lines, '\n')
 h.assert_true(dynamic_geometry.editor_rows.dynamic_loop ~= nil, 'dynamic loop row must stay editable', scope)
 h.assert_true(dynamic_geometry.editor_rows.dynamic_phase ~= nil, 'dynamic phase row must stay editable', scope)
-h.assert_true(dynamic_text:find('Edit:', 1, true) ~= nil, 'dynamic editor lacks an edit section', scope)
-h.assert_true(dynamic_text:find('Global:', 1, true) ~= nil, 'dynamic editor lacks a global section', scope)
+h.assert_true(dynamic_text:find('Edit    ', 1, true) ~= nil, 'dynamic editor lacks an edit section', scope)
+h.assert_true(dynamic_text:find('Global  ', 1, true) ~= nil, 'dynamic editor lacks a global section', scope)
 h.assert_true(not dynamic_text:find('Keys:', 1, true), 'dynamic editor kept crowded Keys hint', scope)
 h.assert_true(dynamic_geometry.editor_rows.dynamic_keys == nil, 'dynamic hint row should not be selectable', scope)
 
