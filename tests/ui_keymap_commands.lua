@@ -35,6 +35,12 @@ local instance = {
 h.assert_true(commands.set_color(instance, '#abcdef'), 'set_color command did not handle color field', scope)
 h.assert_equal(engine.get(result.name).fg, '#abcdef', 'set_color command did not update color draft', scope)
 
+local original_notify = vim.notify
+vim.notify = function() end
+h.assert_true(not commands.set_color(instance, 'bad-color'), 'set_color command reported invalid color success', scope)
+vim.notify = original_notify
+h.assert_equal(engine.get(result.name).fg, '#abcdef', 'invalid set_color command changed color draft', scope)
+
 h.assert_true(commands.toggle_dynamic_color(instance), 'toggle_dynamic_color did not handle color field', scope)
 h.assert_true(engine.get(result.name).dynamic.fg ~= nil, 'toggle_dynamic_color did not set dynamic draft', scope)
 
