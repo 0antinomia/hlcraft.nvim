@@ -29,6 +29,7 @@ end
 --- @param width integer Display width
 --- @return table[] Array of virtual line token arrays
 function M.build_virt_lines(result, get_color_hl, width)
+  local value_width = math.max(8, (width or 96) - label_width)
   local src_file, src_line = source.get_source(result.name)
   local source_text = src_file and ('%s:%s'):format(src_file, tostring(src_line or '?')) or '-'
   local chain = result.link_chain and #result.link_chain > 0 and table.concat(result.link_chain, ' -> ') or '-'
@@ -63,10 +64,10 @@ function M.build_virt_lines(result, get_color_hl, width)
       { '  Dist ', theme.groups.muted },
       value_token(dist_text),
     },
-    info_line('Source', render_util.truncate(source_text, 88), theme.groups.muted),
-    info_line('Links', render_util.truncate(chain, 88), theme.groups.muted),
+    info_line('Source', render_util.truncate(source_text, value_width), theme.groups.muted),
+    info_line('Links', render_util.truncate(chain, value_width), theme.groups.muted),
     { { '' } },
-    info_line('File', render_util.truncate(persist_path, 88), theme.groups.muted),
+    info_line('File', render_util.truncate(persist_path, value_width), theme.groups.muted),
     { { '' } },
   }
 end

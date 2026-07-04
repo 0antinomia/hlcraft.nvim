@@ -148,6 +148,26 @@ h.assert_equal(detail_info_lines[2][2][2], theme.groups.title, 'detail info name
 h.assert_equal(detail_info_lines[3][1][2], theme.groups.section, 'detail color label lacks contrast', scope)
 h.assert_equal(detail_info_lines[4][3][2], theme.groups.muted, 'detail attr metadata lacks muted contrast', scope)
 
+local narrow_detail_info_lines = detail_info.build_virt_lines({
+  name = 'HlcraftUiRenderNarrowInfo',
+  fg = 'NONE',
+  resolved_fg = 'NONE',
+  bg = 'NONE',
+  resolved_bg = 'NONE',
+  sp = 'NONE',
+  link_chain = {
+    'HlcraftUiRenderNarrowInfo',
+    'HlcraftUiRenderNarrowInfoLinkedTarget',
+  },
+}, function()
+  return theme.groups.value
+end, 40)
+h.assert_true(
+  vim.fn.strdisplaywidth(narrow_detail_info_lines[6][2][1]) <= 32,
+  'detail info link value ignored narrow width',
+  scope
+)
+
 local color_geometry = { editor_rows = {} }
 local color_lines = color_renderer.build(instance, color_geometry, result, 'fg', 80, 0)
 local color_text = table.concat(color_lines, '\n')
