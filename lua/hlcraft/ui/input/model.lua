@@ -114,6 +114,25 @@ function M.get_input_value(instance, name)
   return M.normalize_single_line(table.concat(lines, ' '))
 end
 
+--- Remove the trailing empty physical line from an input field.
+--- @param instance table The Instance object holding UI state
+--- @param name string Input field name
+--- @return boolean removed Whether a line was removed
+function M.remove_trailing_empty_line(instance, name)
+  local _, end_boundary_row, field = M.get_input_pos(instance, name)
+  if not (end_boundary_row and field) then
+    return false
+  end
+
+  local lines = M.get_input_lines(instance, name)
+  if #lines <= 1 or lines[#lines] ~= '' then
+    return false
+  end
+
+  vim.api.nvim_buf_set_lines(instance.state.buf, end_boundary_row - 1, end_boundary_row, true, {})
+  return true
+end
+
 --- Set the value of a named input field, replacing existing content
 --- @param instance table The Instance object holding UI state
 --- @param name string Input field name

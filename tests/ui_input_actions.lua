@@ -2,6 +2,7 @@ local h = require('tests.helpers')
 local scope = 'hlcraft ui input actions'
 
 local actions = require('hlcraft.ui.input.actions')
+local input_model = require('hlcraft.ui.input.model')
 local ui_state = require('hlcraft.ui.state')
 
 local function set_input_marks(instance, name, start_row, end_boundary_row)
@@ -64,6 +65,20 @@ h.with_temp_buf(function(buf)
   instance.state.detail_index = 1
   actions.goto_first_input(instance)
   h.assert_equal(vim.api.nvim_win_get_cursor(0)[1], 4, 'detail scene first input did not prefer detail rows', scope)
+
+  h.assert_equal(input_model.get_input_value(instance, 'name'), 'alpha ', 'input value did not normalize lines', scope)
+  h.assert_true(input_model.remove_trailing_empty_line(instance, 'name'), 'trailing empty line was not removed', scope)
+  h.assert_equal(
+    input_model.get_input_value(instance, 'name'),
+    'alpha',
+    'trailing line cleanup kept stale input value',
+    scope
+  )
+  h.assert_true(
+    not input_model.remove_trailing_empty_line(instance, 'name'),
+    'single physical input line was removed',
+    scope
+  )
 end, { current = true })
 
 print('hlcraft ui input actions: OK')
