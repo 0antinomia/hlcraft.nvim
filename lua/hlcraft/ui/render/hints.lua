@@ -107,7 +107,7 @@ end
 
 local function format_range(items, first, last)
   local parts = {}
-  items = items or {}
+  items = assert_table(items, 'hint items must be a table')
   first = first or 1
   last = last or #items
 
@@ -126,8 +126,9 @@ local function line_display_width(label, items, first, last)
 end
 
 function M.section_lines(label, group, options)
-  options = assert_table(options or {}, 'hint section options must be a table')
-  local items = M.groups[group] or {}
+  options = options == nil and {} or assert_table(options, 'hint section options must be a table')
+  local items = M.groups[group]
+  assert(items ~= nil, ('unknown hint group: %s'):format(tostring(group)))
   local max_items = math.max(1, options.max_items or default_max_items)
   local width = options.width
   local lines = {}

@@ -23,6 +23,12 @@ local keyed_item_ok = pcall(hints.format, {
   { key = 'x', action = 'legacy' },
 })
 h.assert_true(not keyed_item_ok, 'hint formatter accepted keyed item compatibility shape', scope)
+local nil_items_ok = pcall(hints.format, nil)
+h.assert_true(not nil_items_ok, 'hint formatter accepted nil items', scope)
+local false_options_ok = pcall(hints.section_lines, 'Action', 'search', false)
+h.assert_true(not false_options_ok, 'hint sections accepted false options', scope)
+local unknown_group_ok = pcall(hints.section_lines, 'Action', 'unknown')
+h.assert_true(not unknown_group_ok, 'hint sections accepted unknown groups', scope)
 
 local dynamic_hint_lines = hints.dynamic()
 h.assert_equal(dynamic_hint_lines[1], 'Edit    [i] row  [m] preset', 'dynamic edit hint first row changed', scope)
