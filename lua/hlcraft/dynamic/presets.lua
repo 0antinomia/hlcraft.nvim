@@ -3,6 +3,7 @@ local M = {}
 local constants = require('hlcraft.dynamic.constants')
 
 local ordered_names = { 'pulse', 'breath', 'hue', 'gradient', 'blink', 'duotone' }
+M.default_name = ordered_names[1]
 
 local templates = {
   pulse = {
@@ -95,7 +96,12 @@ function M.names()
 end
 
 function M.get(name)
-  return vim.deepcopy(templates[name] or templates.pulse)
+  local template = templates[name]
+  return template and vim.deepcopy(template) or nil
+end
+
+function M.default()
+  return M.get(M.default_name)
 end
 
 return M

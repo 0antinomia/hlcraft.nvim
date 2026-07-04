@@ -247,7 +247,7 @@ end
 
 function M.default_spec(preset)
   local presets = require('hlcraft.dynamic.presets')
-  return presets.get(preset or 'pulse')
+  return presets.get(preset or presets.default_name)
 end
 
 function M.normalize_channel(spec)

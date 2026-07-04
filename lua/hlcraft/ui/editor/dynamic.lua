@@ -37,7 +37,7 @@ local function set_normalized(instance, result, key, spec)
 end
 
 function M.toggle(instance, result, key)
-  local next_value = session.dynamic_value(result.name, key) and nil or presets.get('pulse')
+  local next_value = session.dynamic_value(result.name, key) and nil or presets.default()
   return session.set_dynamic(instance, result.name, key, next_value)
 end
 

@@ -55,7 +55,7 @@ end
 function M.open(instance, result, field)
   M.close(instance)
 
-  local dynamic = session.dynamic_value(result.name, field) or presets.get('pulse')
+  local dynamic = session.dynamic_value(result.name, field) or presets.default()
   local text = json.format(dynamic)
   local lines = vim.split(text, '\n', { plain = true })
   local width = math.max(48, math.min(96, math.floor(vim.o.columns * 0.7)))

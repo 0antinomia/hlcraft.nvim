@@ -4,6 +4,10 @@ local scope = 'hlcraft dynamic presets'
 local model = require('hlcraft.dynamic.model')
 local presets = require('hlcraft.dynamic.presets')
 
+local default_preset = presets.default()
+h.assert_equal(presets.default_name, 'pulse', 'default preset name changed', scope)
+h.assert_equal(default_preset.preset, 'pulse', 'default preset did not resolve', scope)
+
 local default_spec = model.default_spec('pulse')
 h.assert_equal(default_spec.version, 1, 'default dynamic version changed', scope)
 h.assert_equal(default_spec.preset, 'pulse', 'default dynamic preset changed', scope)
@@ -23,6 +27,7 @@ for _, preset_name in ipairs(presets.names()) do
 end
 
 local fallback_preset = presets.get('unknown')
-h.assert_equal(fallback_preset.preset, 'pulse', 'unknown preset did not fall back to pulse', scope)
+h.assert_true(fallback_preset == nil, 'unknown preset should not fall back', scope)
+h.assert_true(model.default_spec('unknown') == nil, 'unknown default spec should not fall back', scope)
 
 print('hlcraft dynamic presets: OK')
