@@ -54,8 +54,22 @@ local invalid_scene_name_ok = pcall(scene.current_name, {
   },
 })
 h.assert_true(not invalid_scene_name_ok, 'scene lookup accepted missing scene name', scope)
+local empty_scene_name_ok = pcall(scene.current_name, {
+  state = {
+    scene = {
+      name = '',
+    },
+  },
+})
+h.assert_true(not empty_scene_name_ok, 'scene lookup accepted an empty scene name', scope)
+local invalid_register_name_ok = pcall(scene.register, '', {})
+h.assert_true(not invalid_register_name_ok, 'scene register accepted an empty name', scope)
+local invalid_register_scene_ok = pcall(scene.register, 'broken', false)
+h.assert_true(not invalid_register_scene_ok, 'scene register accepted a non-table scene', scope)
 local invalid_scene_opts_ok = pcall(scene.set, instance, 'field_editor', false)
 h.assert_true(not invalid_scene_opts_ok, 'scene set accepted non-table options', scope)
+local empty_scene_set_ok = pcall(scene.set, instance, '', {})
+h.assert_true(not empty_scene_set_ok, 'scene set accepted an empty scene name', scope)
 
 instance.state.field_editor.field = 'blend'
 h.assert_equal(context.current_field_kind(instance), 'blend', 'blend field kind changed', scope)
