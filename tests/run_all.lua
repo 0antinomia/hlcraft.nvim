@@ -48,6 +48,7 @@ local tests = {
   'tests/engine_snapshot.lua',
   'tests/engine_mutations.lua',
   'tests/engine_service.lua',
+  'tests/engine_lifecycle.lua',
   'tests/engine_base_specs.lua',
   'tests/engine.lua',
   'tests/overrides.lua',

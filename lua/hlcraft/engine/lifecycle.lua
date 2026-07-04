@@ -8,6 +8,18 @@ local store = require('hlcraft.engine.store')
 
 local data = store.data
 
+local function assert_loaded_data(loaded)
+  if type(loaded) ~= 'table' then
+    error('loaded persistence data must be a table', 3)
+  end
+  for _, key in ipairs({ 'entries', 'groups' }) do
+    if type(loaded[key]) ~= 'table' then
+      error(('loaded persistence %s must be a table'):format(key), 3)
+    end
+  end
+  return loaded
+end
+
 function M.bootstrap(force, replay)
   if data.bootstrapped and not force then
     return
@@ -17,9 +29,9 @@ function M.bootstrap(force, replay)
     pcall(vim.api.nvim_del_augroup_by_id, data.group)
   end
 
-  local loaded = storage.load()
-  data.persisted = snapshot.deepcopy(loaded.entries or {})
-  data.persisted_groups = snapshot.deepcopy(loaded.groups or {})
+  local loaded = assert_loaded_data(storage.load())
+  data.persisted = snapshot.deepcopy(loaded.entries)
+  data.persisted_groups = snapshot.deepcopy(loaded.groups)
   data.draft = snapshot.deepcopy(data.persisted)
   data.draft_groups = snapshot.deepcopy(data.persisted_groups)
   data.preset = applier.build_preset_overrides()
