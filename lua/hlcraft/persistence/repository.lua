@@ -87,7 +87,11 @@ end
 local function section_entry(sections, section_name, highlight_name, override)
   local entries = ensure_section(sections, section_name)
   if entries[highlight_name] == nil then
-    entries[highlight_name] = override or {}
+    if override ~= nil then
+      entries[highlight_name] = override
+    else
+      entries[highlight_name] = {}
+    end
   end
 end
 
