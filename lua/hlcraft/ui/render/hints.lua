@@ -91,14 +91,6 @@ M.groups = {
   },
 }
 
-local function slice(items, first, last)
-  local result = {}
-  for index = first, last do
-    result[#result + 1] = items[index]
-  end
-  return result
-end
-
 local function normalize_options(options)
   if type(options) == 'table' then
     return options
@@ -106,9 +98,14 @@ local function normalize_options(options)
   return { max_items = options }
 end
 
-function M.format(items)
+local function format_range(items, first, last)
   local parts = {}
-  for _, item in ipairs(items or {}) do
+  items = items or {}
+  first = first or 1
+  last = last or #items
+
+  for index = first, last do
+    local item = items[index] or {}
     local key = item[1] or item.key
     local action = item[2] or item.action
     if key and action then
@@ -118,8 +115,12 @@ function M.format(items)
   return table.concat(parts, separator)
 end
 
-local function line_display_width(label, items)
-  return vim.fn.strdisplaywidth(pad_label(label) .. M.format(items))
+function M.format(items)
+  return format_range(items)
+end
+
+local function line_display_width(label, items, first, last)
+  return vim.fn.strdisplaywidth(pad_label(label) .. format_range(items, first, last))
 end
 
 function M.section_lines(label, group, options)
@@ -134,16 +135,12 @@ function M.section_lines(label, group, options)
     local chunk_size = math.min(max_items, #items - first + 1)
     local line_label = first == 1 and label or ''
 
-    while
-      width
-      and chunk_size > 1
-      and line_display_width(line_label, slice(items, first, first + chunk_size - 1)) > width
-    do
+    while width and chunk_size > 1 and line_display_width(line_label, items, first, first + chunk_size - 1) > width do
       chunk_size = chunk_size - 1
     end
 
     local last = math.min(#items, first + chunk_size - 1)
-    lines[#lines + 1] = pad_label(line_label) .. M.format(slice(items, first, last))
+    lines[#lines + 1] = pad_label(line_label) .. format_range(items, first, last)
     first = last + 1
   end
 
