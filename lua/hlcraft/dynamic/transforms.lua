@@ -70,11 +70,11 @@ function M.apply(hex, transform)
     return nil
   end
 
-  local amount = numbers.to_finite(transform.value, nil)
-  if not amount then
-    return hex
+  if not numbers.is_finite(transform.value) then
+    return nil
   end
 
+  local amount = transform.value
   local r, g, b = color.int_to_rgb(value)
   if transform.type == 'brightness' then
     amount = numbers.clamp(amount, 0, 2)
@@ -88,7 +88,7 @@ function M.apply(hex, transform)
     amount = numbers.clamp(amount, 0, 2)
     s = s * amount
   else
-    return hex
+    return nil
   end
 
   return color.rgb_to_hex(hsl_to_rgb(h, s, l))

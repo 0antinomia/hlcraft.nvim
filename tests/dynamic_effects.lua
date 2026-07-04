@@ -31,8 +31,11 @@ h.assert_equal(timeline.phase(1250, 1000, 0, 'repeat'), 0.25, 'repeat wrapped ph
 h.assert_equal(timeline.phase(1250, 1000, 0, 'pingpong'), 0.75, 'pingpong phase changed', scope)
 h.assert_equal(timeline.phase(1250, 1000, 0, 'once'), 1, 'once phase changed', scope)
 h.assert_equal(timeline.phase(250, 1000, 0.25, 'repeat'), 0.5, 'phase offset changed', scope)
-h.assert_equal(timeline.phase(0 / 0, 1000, 0, 'repeat'), 0, 'NaN phase time did not fall back', scope)
-h.assert_equal(timeline.sample_numeric(numeric_stops, 0 / 0, 'linear'), 0, 'NaN sample phase did not fall back', scope)
+h.assert_true(timeline.phase(0 / 0, 1000, 0, 'repeat') == nil, 'NaN phase time was accepted', scope)
+h.assert_true(timeline.phase(250, 0, 0, 'repeat') == nil, 'zero duration was accepted', scope)
+h.assert_true(timeline.phase(250, 1000, 0, 'bad') == nil, 'unknown loop was accepted', scope)
+h.assert_true(timeline.sample_numeric(numeric_stops, 0 / 0, 'linear') == nil, 'NaN sample phase was accepted', scope)
+h.assert_true(timeline.sample_numeric(numeric_stops, 0.5, 'bad') == nil, 'unknown interpolation was accepted', scope)
 
 h.assert_equal(
   transforms.apply('#808080', { type = 'brightness', value = 0.5 }),
@@ -48,8 +51,14 @@ h.assert_equal(
 )
 h.assert_equal(
   transforms.apply('#202020', { type = 'brightness', value = 0 / 0 }),
-  '#202020',
-  'NaN brightness should not change color',
+  nil,
+  'NaN brightness transform was accepted',
+  scope
+)
+h.assert_equal(
+  transforms.apply('#202020', { type = 'unknown', value = 1 }),
+  nil,
+  'unknown transform type was accepted',
   scope
 )
 h.assert_equal(
@@ -155,5 +164,15 @@ h.assert_equal(
   'unused unresolved color ref blocked effect sampling',
   scope
 )
+h.assert_true(compute({
+  version = 1,
+  duration = 2000,
+  loop = 'repeat',
+  interpolation = 'linear',
+  timeline = {
+    { at = 0, color = '#000000' },
+    { at = 1, color = '#ffffff' },
+  },
+}, '#123456', 0 / 0) == nil, 'effect accepted invalid sampling time', scope)
 
 print('hlcraft dynamic effects: OK')
