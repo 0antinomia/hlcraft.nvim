@@ -47,6 +47,20 @@ h.assert_equal(
   'style error changed',
   scope
 )
+h.assert_equal(
+  select(1, override_values.normalize_field('fg', '#ABCDEF')),
+  '#abcdef',
+  'field color did not normalize',
+  scope
+)
+h.assert_equal(select(1, override_values.normalize_field('bold', true)), true, 'field style did not normalize', scope)
+h.assert_equal(select(1, override_values.normalize_field('blend', '42.9')), 42, 'field blend did not normalize', scope)
+h.assert_equal(
+  select(2, override_values.normalize_field('unknown', true)),
+  'Unsupported override key: unknown',
+  'unknown field error changed',
+  scope
+)
 
 local dynamic_value, dynamic_err = override_values.normalize_dynamic_channel('fg', {
   version = 1,

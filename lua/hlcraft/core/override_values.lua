@@ -1,5 +1,6 @@
 local color = require('hlcraft.core.color')
 local dynamic_model = require('hlcraft.dynamic.model')
+local fields = require('hlcraft.core.fields')
 local numbers = require('hlcraft.core.number')
 
 local M = {}
@@ -54,6 +55,19 @@ function M.normalize_style(key, value)
   end
 
   return value == nil and vim.NIL or value, nil
+end
+
+function M.normalize_field(key, value)
+  if fields.color_set[key] then
+    return M.normalize_color(value)
+  end
+  if fields.style_set[key] then
+    return M.normalize_style(key, value)
+  end
+  if key == 'blend' then
+    return M.normalize_blend(value)
+  end
+  return nil, ('Unsupported override key: %s'):format(tostring(key))
 end
 
 function M.normalize_dynamic_channel(key, value)

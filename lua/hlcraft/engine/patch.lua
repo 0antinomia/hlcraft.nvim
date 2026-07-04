@@ -8,24 +8,9 @@ local patch_key_set = {
   group = true,
   dynamic = true,
 }
-local field_normalizers = {}
 
 for _, key in ipairs(store.override_keys) do
   patch_key_set[key] = true
-end
-for _, key in ipairs(store.color_keys) do
-  field_normalizers[key] = function(value)
-    return override_values.normalize_color(value)
-  end
-end
-for _, key in ipairs(store.style_keys) do
-  local style_key = key
-  field_normalizers[key] = function(value)
-    return override_values.normalize_style(style_key, value)
-  end
-end
-field_normalizers.blend = function(value)
-  return override_values.normalize_blend(value)
 end
 
 function M.is_color_key(key)
@@ -82,7 +67,7 @@ function M.normalize(patch)
 
   for _, key in ipairs(store.override_keys) do
     if patch[key] ~= nil then
-      local value, err = field_normalizers[key](patch[key])
+      local value, err = override_values.normalize_field(key, patch[key])
       if err then
         return nil, err
       end
