@@ -33,6 +33,11 @@ with_entry_state(function()
   store.data.persisted.HlcraftEngineServiceBrokenPersisted = false
   local bad_persisted_ok = pcall(engine.get_persisted, 'HlcraftEngineServiceBrokenPersisted')
   h.assert_true(not bad_persisted_ok, 'engine service accepted invalid persisted entry', scope)
+
+  local nil_name_ok = pcall(engine.get, nil)
+  h.assert_true(not nil_name_ok, 'engine service accepted nil highlight name', scope)
+  local empty_name_ok = pcall(engine.apply_patch, '', { fg = '#ffffff' })
+  h.assert_true(not empty_name_ok, 'engine service accepted empty highlight name', scope)
 end)
 
 print('hlcraft engine service: OK')

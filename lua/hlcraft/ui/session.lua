@@ -4,8 +4,8 @@ local engine = require('hlcraft.engine.service')
 local M = {}
 
 local function assert_name(name)
-  if type(name) ~= 'string' then
-    error('highlight name must be a string', 3)
+  if type(name) ~= 'string' or name == '' then
+    error('highlight name must be a non-empty string', 3)
   end
   return name
 end

@@ -82,6 +82,8 @@ h.assert_equal(restored_name, 'clean', 'session discard did not restore persiste
 
 local bad_name_ok = pcall(session.draft_entry, nil)
 h.assert_true(not bad_name_ok, 'session accepted nil highlight name', scope)
+local empty_name_ok = pcall(session.draft_entry, '')
+h.assert_true(not empty_name_ok, 'session accepted empty highlight name', scope)
 local bad_draft_ok = pcall(session.draft_entry, 'invalid-draft')
 h.assert_true(not bad_draft_ok, 'session accepted invalid draft entry', scope)
 local bad_persisted_ok = pcall(session.persisted_entry, 'invalid-persisted')
