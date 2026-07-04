@@ -11,6 +11,14 @@ local function assert_table(value, label)
   return value
 end
 
+local function normalize_entry_options(opts)
+  opts = opts == nil and {} or assert_table(opts, 'persistence entry options')
+  if opts.compact_dynamic ~= nil and type(opts.compact_dynamic) ~= 'boolean' then
+    error('persistence entry compact_dynamic option must be boolean', 3)
+  end
+  return opts
+end
+
 local entry_keys = {
   dynamic = true,
 }
@@ -45,7 +53,7 @@ end
 
 function M.normalize_entry(entry, opts)
   entry = assert_table(entry, 'persistence entry')
-  opts = opts == nil and {} or assert_table(opts, 'persistence entry options')
+  opts = normalize_entry_options(opts)
   local normalized = {}
 
   normalize_override_fields(entry, normalized)
