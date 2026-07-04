@@ -113,6 +113,19 @@ local function nearest_distance(group, hex, max_dist)
   return best
 end
 
+local function color_threshold(value)
+  if value == nil then
+    return config.config.threshold
+  end
+  if type(value) ~= 'number' or not numbers.is_finite(value) then
+    error('Color search threshold must be a finite number', 3)
+  end
+  if value < 0 then
+    error('Color search threshold must be >= 0', 3)
+  end
+  return value
+end
+
 --- Search highlight groups by color similarity (RGB Euclidean distance)
 --- @param hex string|nil Target color in #RRGGBB format
 --- @param threshold number|nil Optional distance threshold override (uses config default if nil)
@@ -132,7 +145,7 @@ function M.by_color(hex, threshold)
     return {}
   end
 
-  local max_dist = numbers.to_finite(threshold, config.config.threshold)
+  local max_dist = color_threshold(threshold)
   local all = highlights.get_all()
   local results = {}
 
