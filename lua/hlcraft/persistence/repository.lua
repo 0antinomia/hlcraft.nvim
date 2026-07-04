@@ -10,6 +10,42 @@ local function storage_dir()
   return config.config.persist_dir
 end
 
+local function highlight_name_is_valid(name)
+  return type(name) == 'string' and vim.trim(name) ~= ''
+end
+
+local function validate_save_inputs(overrides, groups)
+  if type(overrides) ~= 'table' then
+    return false, 'Overrides must be a table'
+  end
+  if groups ~= nil and type(groups) ~= 'table' then
+    return false, 'Groups must be a table'
+  end
+
+  for highlight_name, entry in pairs(overrides) do
+    if not highlight_name_is_valid(highlight_name) then
+      return false, 'Highlight name must be a non-empty string'
+    end
+    if type(entry) ~= 'table' then
+      return false, ('Override entry %s must be a table'):format(highlight_name)
+    end
+  end
+
+  for highlight_name, group_name in pairs(groups or {}) do
+    if not highlight_name_is_valid(highlight_name) then
+      return false, 'Highlight name must be a non-empty string'
+    end
+    if type(group_name) ~= 'string' then
+      return false, ('Group for highlight %s must be a string'):format(highlight_name)
+    end
+    if not codec.normalize_group_name(group_name) then
+      return false, ('Highlight %s must have a group before saving'):format(highlight_name)
+    end
+  end
+
+  return true, nil
+end
+
 --- Return the persisted override directory path.
 --- @return string
 function M.path()
@@ -44,11 +80,11 @@ end
 local function build_sections(overrides, groups)
   local sections = {}
 
-  for highlight_name, entry in pairs(overrides or {}) do
+  for highlight_name, entry in pairs(overrides) do
     if entry and next(entry) ~= nil then
       local section_name = codec.normalize_group_name(groups and groups[highlight_name])
       if not section_name then
-        return nil, ('Highlight %s must have a group before saving'):format(tostring(highlight_name))
+        return nil, ('Highlight %s must have a group before saving'):format(highlight_name)
       end
       sections[section_name] = sections[section_name] or {}
       sections[section_name][highlight_name] = entry
@@ -58,7 +94,7 @@ local function build_sections(overrides, groups)
   for highlight_name, group_name in pairs(groups or {}) do
     local section_name = codec.normalize_group_name(group_name)
     if not section_name then
-      return nil, ('Highlight %s must have a group before saving'):format(tostring(highlight_name))
+      return nil, ('Highlight %s must have a group before saving'):format(highlight_name)
     end
     sections[section_name] = sections[section_name] or {}
     sections[section_name][highlight_name] = sections[section_name][highlight_name]
@@ -77,6 +113,12 @@ end
 --- @return string|nil err
 function M.save(overrides, groups, path)
   local target = path or storage_dir()
+
+  local valid, validation_err = validate_save_inputs(overrides, groups)
+  if not valid then
+    return false, validation_err
+  end
+
   files.ensure_directory(target)
 
   local normalized_overrides = schema.normalize_entries(overrides)
