@@ -169,6 +169,16 @@ h.assert_equal(
 
 h.assert_file_exists(files.file_path(persist_dir, 'main/group'), 'main group file was not created', scope)
 h.assert_file_missing(persist_dir .. '/stale.toml', 'stale TOML file was not removed', scope)
+h.assert_true(files.file_path(persist_dir, nil) == nil, 'nil group file path should stay unset', scope)
+
+local numeric_filename_ok = pcall(files.sanitize_filename, 1)
+h.assert_true(not numeric_filename_ok, 'filename sanitizer accepted a non-string name', scope)
+local numeric_path_ok = pcall(files.file_path, 1, 'group')
+h.assert_true(not numeric_path_ok, 'file_path accepted a non-string directory path', scope)
+local invalid_atomic_lines_ok = pcall(files.atomic_write, persist_dir .. '/bad.toml', { false })
+h.assert_true(not invalid_atomic_lines_ok, 'atomic_write accepted a non-string content line', scope)
+local invalid_stale_sections_ok = pcall(files.remove_stale_toml_files, persist_dir, false)
+h.assert_true(not invalid_stale_sections_ok, 'stale TOML cleanup accepted non-table section names', scope)
 
 local saved = storage.load(persist_dir)
 h.assert_equal(saved.entries.Normal.fg, '#111111', 'saved override did not reload', scope)

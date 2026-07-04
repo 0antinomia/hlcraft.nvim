@@ -4,8 +4,27 @@ local M = {}
 
 local uv = vim.uv
 
+local function assert_string(value, label)
+  if type(value) ~= 'string' then
+    error(('%s must be a string'):format(label), 3)
+  end
+  return value
+end
+
+local function assert_lines(value)
+  if type(value) ~= 'table' then
+    error('File content lines must be a table', 3)
+  end
+  for index, line in ipairs(value) do
+    if type(line) ~= 'string' then
+      error(('File content line %d must be a string'):format(index), 3)
+    end
+  end
+  return value
+end
+
 function M.sanitize_filename(name)
-  local sanitized = tostring(name):gsub('[^%w._-]', function(char)
+  local sanitized = assert_string(name, 'Filename'):gsub('[^%w._-]', function(char)
     return ('_%02X'):format(string.byte(char))
   end)
 
@@ -17,10 +36,12 @@ function M.sanitize_filename(name)
 end
 
 function M.ensure_directory(path)
+  assert_string(path, 'Directory path')
   vim.fn.mkdir(path, 'p')
 end
 
 function M.file_path(path, group_name)
+  assert_string(path, 'Directory path')
   local section_name = codec.normalize_group_name(group_name)
   if not section_name then
     return nil
@@ -40,6 +61,7 @@ local function is_toml_file(path, file_type, include_links)
 end
 
 function M.toml_files_in_dir(path, opts)
+  assert_string(path, 'Directory path')
   opts = opts or {}
   local files = {}
   local fd = uv.fs_scandir(path)
@@ -64,6 +86,9 @@ function M.toml_files_in_dir(path, opts)
 end
 
 function M.atomic_write(filepath, content_lines)
+  assert_string(filepath, 'File path')
+  content_lines = assert_lines(content_lines)
+
   local tmp_path = filepath .. '.tmp'
   local file, open_err = io.open(tmp_path, 'w')
   if not file then
@@ -82,6 +107,11 @@ function M.atomic_write(filepath, content_lines)
 end
 
 function M.remove_stale_toml_files(path, active_section_names)
+  assert_string(path, 'Directory path')
+  if type(active_section_names) ~= 'table' then
+    error('Active section names must be a table', 2)
+  end
+
   local active_files = {}
   for _, section_name in ipairs(active_section_names) do
     active_files[M.sanitize_filename(section_name) .. '.toml'] = true
