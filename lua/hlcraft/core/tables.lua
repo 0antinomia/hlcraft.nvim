@@ -35,4 +35,17 @@ function M.sorted_keys(value, compare)
   return keys
 end
 
+function M.has_only_keys(value, allowed)
+  if type(value) ~= 'table' or type(allowed) ~= 'table' then
+    return false
+  end
+
+  for key in pairs(value) do
+    if not allowed[key] then
+      return false
+    end
+  end
+  return true
+end
+
 return M

@@ -22,4 +22,9 @@ local custom_sorted = tables.sorted_keys({ short = true, longest = true }, funct
 end)
 h.assert_equal(custom_sorted[1], 'longest', 'custom key comparator was ignored', scope)
 
+h.assert_true(tables.has_only_keys({ fg = true }, { fg = true, bg = true }), 'allowed key was rejected', scope)
+h.assert_true(not tables.has_only_keys({ sp = true }, { fg = true, bg = true }), 'unknown key was accepted', scope)
+h.assert_true(not tables.has_only_keys(nil, { fg = true }), 'nil value key check was accepted', scope)
+h.assert_true(not tables.has_only_keys({ fg = true }, nil), 'nil allowed key set was accepted', scope)
+
 print('hlcraft core tables: OK')

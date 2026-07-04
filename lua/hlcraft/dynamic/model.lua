@@ -19,6 +19,33 @@ for _, key in ipairs(fields.color_keys) do
   color_refs[key] = true
 end
 
+local channel_keys = {
+  version = true,
+  preset = true,
+  duration = true,
+  loop = true,
+  phase = true,
+  interpolation = true,
+  timeline = true,
+  transforms = true,
+}
+
+local color_stop_keys = {
+  at = true,
+  color = true,
+}
+
+local transform_keys = {
+  type = true,
+  interpolation = true,
+  timeline = true,
+}
+
+local value_stop_keys = {
+  at = true,
+  value = true,
+}
+
 local function normalize_at(value)
   if not numbers.is_finite(value) then
     return nil
@@ -93,7 +120,12 @@ function M.normalize_color_ref(value)
 end
 
 local function normalize_value_stop(stop)
-  if type(stop) ~= 'table' or type(stop.value) ~= 'number' or not numbers.is_finite(stop.value) then
+  if
+    type(stop) ~= 'table'
+    or not tables.has_only_keys(stop, value_stop_keys)
+    or type(stop.value) ~= 'number'
+    or not numbers.is_finite(stop.value)
+  then
     return nil
   end
   local at = normalize_at(stop.at)
@@ -109,7 +141,7 @@ end
 
 function M.normalize_timeline(timeline)
   return normalize_stop_sequence(timeline, function(stop)
-    if type(stop) ~= 'table' then
+    if type(stop) ~= 'table' or not tables.has_only_keys(stop, color_stop_keys) then
       return nil
     end
 
@@ -130,7 +162,11 @@ function M.normalize_timeline(timeline)
 end
 
 function M.normalize_transform(transform)
-  if type(transform) ~= 'table' or not constants.transform_type_set[transform.type] then
+  if
+    type(transform) ~= 'table'
+    or not tables.has_only_keys(transform, transform_keys)
+    or not constants.transform_type_set[transform.type]
+  then
     return nil
   end
 
@@ -171,7 +207,7 @@ function M.default_spec(preset)
 end
 
 function M.normalize_channel(spec)
-  if type(spec) ~= 'table' or spec.version ~= M.version then
+  if type(spec) ~= 'table' or not tables.has_only_keys(spec, channel_keys) or spec.version ~= M.version then
     return nil
   end
 
@@ -200,7 +236,7 @@ function M.normalize_channel(spec)
 end
 
 function M.normalize_dynamic(dynamic)
-  if type(dynamic) ~= 'table' then
+  if type(dynamic) ~= 'table' or not tables.has_only_keys(dynamic, M.channel_set) then
     return nil
   end
 
