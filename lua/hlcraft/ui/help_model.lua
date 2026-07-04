@@ -31,7 +31,9 @@ end
 
 local function item_line(item, width)
   item = assert_table(item, 'help item must be a table')
-  assert(type(width) == 'number', 'help item width must be a number')
+  if type(width) ~= 'number' then
+    error('help item width must be a number', 3)
+  end
   assert_string(item[2], 'help item action must be a string')
   local key = keycap(item)
   local padding = math.max(2, width - vim.fn.strdisplaywidth(key) + 2)

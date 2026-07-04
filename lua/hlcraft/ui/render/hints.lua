@@ -122,8 +122,12 @@ local function format_item(item)
   assert_table(item, 'hint item must be a table')
   local key = item[1]
   local action = item[2]
-  assert(type(key) == 'string' and key ~= '', 'hint item requires a key')
-  assert(type(action) == 'string' and action ~= '', 'hint item requires an action')
+  if type(key) ~= 'string' or key == '' then
+    error('hint item requires a key', 3)
+  end
+  if type(action) ~= 'string' or action == '' then
+    error('hint item requires an action', 3)
+  end
   return ('[%s] %s'):format(key, action)
 end
 
@@ -150,7 +154,9 @@ end
 function M.section_lines(label, group, options)
   local max_items, width = section_options(options)
   local items = M.groups[group]
-  assert(items ~= nil, ('unknown hint group: %s'):format(tostring(group)))
+  if items == nil then
+    error(('unknown hint group: %s'):format(tostring(group)), 2)
+  end
   local lines = {}
 
   local first = 1
