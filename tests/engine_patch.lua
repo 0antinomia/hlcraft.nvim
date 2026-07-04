@@ -93,4 +93,7 @@ h.assert_equal(entry.dynamic.fg.preset, 'pulse', 'dynamic channel was not applie
 h.assert_true(entry.dynamic.sp == nil, 'unset dynamic channel was not cleared', scope)
 h.assert_true(entry.dynamic.bg ~= nil, 'unpatched dynamic channel was removed', scope)
 
+patch.apply_entry(entry, { dynamic = { fg = vim.NIL, bg = vim.NIL } })
+h.assert_true(entry.dynamic == nil, 'clearing all dynamic channels left an empty dynamic table', scope)
+
 print('hlcraft engine patch: OK')

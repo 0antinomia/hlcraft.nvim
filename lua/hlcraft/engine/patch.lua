@@ -105,6 +105,9 @@ function M.apply_entry(entry, patch)
         entry.dynamic[key] = override_values.entry_value(patch.dynamic[key])
       end
     end
+    if next(entry.dynamic) == nil then
+      entry.dynamic = nil
+    end
   end
 end
 
