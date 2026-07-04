@@ -1,6 +1,10 @@
 --- @type table
 local M = {}
 
+local function is_finite_number(value)
+  return type(value) == 'number' and value == value and value ~= math.huge and value ~= -math.huge
+end
+
 local default_from_none = {
   enabled = false,
   scope = 'extended',
@@ -33,8 +37,9 @@ local defaults = {
 --- @type table
 M.config = vim.deepcopy(defaults)
 
-local function is_finite_number(value)
-  return type(value) == 'number' and value == value and value ~= math.huge and value ~= -math.huge
+local known_keys = {}
+for key, _ in pairs(defaults) do
+  known_keys[key] = true
 end
 
 local function normalize_from_none(value)
@@ -99,7 +104,7 @@ local function normalize_dynamic(value)
 end
 
 --- Validate user config before merging with defaults.
---- Aggregates ALL errors using per-field pcall(vim.validate) instead of stopping at first.
+--- Aggregates all errors instead of stopping at the first invalid field.
 --- @param user_config table|nil User configuration options
 --- @return boolean ok True if valid
 --- @return string|nil err Error message with all problems, or nil if valid
@@ -115,16 +120,6 @@ function M.validate(user_config)
   local errors = {}
 
   -- Unknown key check
-  local known_keys = {
-    from_none = true,
-    threshold = true,
-    include_sp_in_color_search = true,
-    persist_dir = true,
-    reapply_events = true,
-    dynamic = true,
-    debounce_ms = true,
-    preview_key = true,
-  }
   for key, _ in pairs(user_config) do
     if not known_keys[key] then
       errors[#errors + 1] = ('unknown config key: %q'):format(tostring(key))
@@ -133,9 +128,10 @@ function M.validate(user_config)
 
   -- threshold: number, >= 0 and <= 1000
   if user_config.threshold ~= nil then
-    local ok, err = pcall(vim.validate, { threshold = { user_config.threshold, 'number' } })
-    if not ok then
-      errors[#errors + 1] = err
+    if type(user_config.threshold) ~= 'number' then
+      errors[#errors + 1] = 'threshold: must be a number, got ' .. type(user_config.threshold)
+    elseif not is_finite_number(user_config.threshold) then
+      errors[#errors + 1] = 'threshold: must be finite'
     elseif user_config.threshold < 0 or user_config.threshold > 1000 then
       errors[#errors + 1] = 'threshold: must be between 0 and 1000'
     end
@@ -143,19 +139,16 @@ function M.validate(user_config)
 
   -- include_sp_in_color_search: boolean
   if user_config.include_sp_in_color_search ~= nil then
-    local ok, err = pcall(vim.validate, {
-      include_sp_in_color_search = { user_config.include_sp_in_color_search, 'boolean' },
-    })
-    if not ok then
-      errors[#errors + 1] = err
+    if type(user_config.include_sp_in_color_search) ~= 'boolean' then
+      errors[#errors + 1] = 'include_sp_in_color_search: must be boolean, got '
+        .. type(user_config.include_sp_in_color_search)
     end
   end
 
   -- persist_dir: non-empty string
   if user_config.persist_dir ~= nil then
-    local ok, err = pcall(vim.validate, { persist_dir = { user_config.persist_dir, 'string' } })
-    if not ok then
-      errors[#errors + 1] = err
+    if type(user_config.persist_dir) ~= 'string' then
+      errors[#errors + 1] = 'persist_dir: must be a string, got ' .. type(user_config.persist_dir)
     elseif vim.trim(user_config.persist_dir) == '' then
       errors[#errors + 1] = 'persist_dir: must be a non-empty string'
     end
@@ -243,6 +236,8 @@ function M.validate(user_config)
   if user_config.debounce_ms ~= nil then
     if type(user_config.debounce_ms) ~= 'number' then
       errors[#errors + 1] = 'debounce_ms: must be a number, got ' .. type(user_config.debounce_ms)
+    elseif not is_finite_number(user_config.debounce_ms) then
+      errors[#errors + 1] = 'debounce_ms: must be finite'
     elseif user_config.debounce_ms < 0 then
       errors[#errors + 1] = 'debounce_ms: must be >= 0'
     end

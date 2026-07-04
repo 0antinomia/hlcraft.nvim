@@ -15,6 +15,9 @@ h.assert_true(not invalid_persist_dir_ok, 'empty persist_dir was accepted', scop
 local invalid_threshold_ok = config.validate({ threshold = -1 })
 h.assert_true(not invalid_threshold_ok, 'negative threshold was accepted', scope)
 
+local invalid_finite_numbers_ok = config.validate({ threshold = 0 / 0, debounce_ms = math.huge })
+h.assert_true(not invalid_finite_numbers_ok, 'non-finite numeric config was accepted', scope)
+
 local invalid_dynamic_ok = config.validate({ dynamic = { enabled = 'yes', interval_ms = 0 } })
 h.assert_true(not invalid_dynamic_ok, 'invalid dynamic config was accepted', scope)
 
