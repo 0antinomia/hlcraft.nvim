@@ -11,6 +11,7 @@ local dynamic_renderer = require('hlcraft.ui.render.editors.dynamic')
 local engine = require('hlcraft.engine.service')
 local editor_rows = require('hlcraft.ui.render.editor_rows')
 local field_editor_renderer = require('hlcraft.ui.render.field_editor')
+local help_model = require('hlcraft.ui.help_model')
 local hints = require('hlcraft.ui.render.hints')
 local theme = require('hlcraft.ui.theme')
 
@@ -65,6 +66,13 @@ h.assert_equal(
 )
 h.assert_equal(dynamic_hint_lines[3], 'Global  d static  |  s save', 'dynamic global hint first row changed', scope)
 h.assert_equal(dynamic_hint_lines[4], '        q back  |  ? help', 'dynamic global hint continuation changed', scope)
+
+local help_lines = help_model.lines('z')
+h.assert_equal(help_lines[1], 'hlcraft help', 'help title changed', scope)
+h.assert_true(vim.tbl_contains(help_lines, 'Global'), 'help global section missing', scope)
+h.assert_true(vim.tbl_contains(help_lines, 'z        flash current result'), 'preview key help line missing', scope)
+h.assert_true(help_model.is_item_line('q / Esc  back or close'), 'help item line was not detected', scope)
+h.assert_true(not help_model.is_item_line('Global'), 'help section was treated as item line', scope)
 
 local editor_geometry = { editor_rows = {} }
 local editor_lines = {}

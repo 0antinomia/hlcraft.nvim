@@ -81,6 +81,13 @@ local function apply_hint_segment(instance, line_idx, line, first, last)
   end
 
   local segment = line:sub(first, last)
+  local delimiter_start, delimiter_end = segment:find('%s%s+')
+  if delimiter_start then
+    add_highlight(instance, line_idx, theme.groups.key, first - 1, first + delimiter_start - 2)
+    add_highlight(instance, line_idx, theme.groups.hint_action, first + delimiter_end - 1, last)
+    return
+  end
+
   local key_start, key_end = segment:find('%S+')
   if not key_start then
     return

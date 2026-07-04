@@ -1,5 +1,7 @@
 local M = {}
 
+local help_model = require('hlcraft.ui.help_model')
+local line_highlights = require('hlcraft.ui.render.line_highlights')
 local theme = require('hlcraft.ui.theme')
 
 local function is_valid_buf(buf)
@@ -17,55 +19,7 @@ local function refresh_buffer(buf)
 end
 
 function M.lines()
-  local lines = {
-    'hlcraft help',
-    '',
-    'Global',
-    'q / Esc  back or close',
-    '?        toggle this help',
-    's        save current draft when available',
-    'Tab      next input',
-    'S-Tab    previous input',
-    '',
-    'Search',
-    'Enter    open selected result or apply input',
-    'j/k      move',
-    '',
-    'Detail',
-    'Enter    edit field or toggle boolean',
-    '',
-    'Static color editor',
-    'i        input value',
-    'r/R      decrease/increase red',
-    'g/G      decrease/increase green',
-    'b/B      decrease/increase blue',
-    'n        set NONE',
-    'd        switch to dynamic',
-    '',
-    'Dynamic color editor',
-    'i        edit selected row or raw JSON',
-    'm        cycle preset',
-    '+/-      adjust duration, or phase on the Phase row',
-    'e        edit raw JSON',
-    'd        switch to static',
-    '',
-    'Blend editor',
-    '-/+      small adjustment',
-    '</>      large adjustment',
-    'u        unset blend',
-    'i        input value',
-    '',
-    'Group editor',
-    'Enter    select group',
-    'i        input new group',
-  }
-
-  local preview_key = require('hlcraft.config').config.preview_key
-  if preview_key and preview_key ~= false and preview_key ~= '' then
-    table.insert(lines, 7, ('%s        flash current result'):format(preview_key))
-  end
-
-  return lines
+  return help_model.lines(require('hlcraft.config').config.preview_key)
 end
 
 function M.ensure_buffer(instance)
@@ -146,9 +100,8 @@ function M.toggle(instance)
   for line_nr = 2, line_count - 1 do
     local line = vim.api.nvim_buf_get_lines(instance.state.help_buf, line_nr, line_nr + 1, false)[1]
     if line and line ~= '' then
-      local key = line:match('^(.-)%s%s+')
-      if key then
-        vim.api.nvim_buf_add_highlight(instance.state.help_buf, instance.ns, theme.groups.key, line_nr, 0, #key)
+      if help_model.is_item_line(line) then
+        line_highlights.apply_hint_line(instance, line_nr, line)
       else
         vim.api.nvim_buf_add_highlight(instance.state.help_buf, instance.ns, theme.groups.section, line_nr, 0, -1)
       end
