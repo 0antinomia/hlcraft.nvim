@@ -5,6 +5,23 @@ local label_width = 8
 local default_max_items = 3
 local relaxed_max_items = 2
 
+local function key_set(keys)
+  local result = {}
+  for _, key in ipairs(keys) do
+    result[key] = true
+  end
+  return result
+end
+
+M.section_labels = {
+  'Action',
+  'Adjust',
+  'Edit',
+  'Global',
+  'Set',
+}
+M.section_label_set = key_set(M.section_labels)
+
 local function pad_label(label)
   local display_width = vim.fn.strdisplaywidth(label)
   if display_width >= label_width then
