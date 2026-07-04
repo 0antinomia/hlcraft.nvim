@@ -71,6 +71,22 @@ local ok, err = xpcall(function()
   h.assert_true(not invalid_snapshot_ok, 'window option restore accepted missing values', scope)
   local invalid_workspace_values_ok = pcall(window_options.matches_workspace, nil)
   h.assert_true(not invalid_workspace_values_ok, 'workspace option matcher accepted nil values', scope)
+
+  local missing_snapshot_store_ok = pcall(window.restore_all_workspace_windows, {
+    state = {},
+  })
+  h.assert_true(not missing_snapshot_store_ok, 'workspace restore accepted missing snapshot store', scope)
+
+  window_options.apply(win, instance.ns)
+  local invalid_origin_snapshot_ok = pcall(window.capture_workspace_window, {
+    ns = instance.ns,
+    state = {
+      workspace_win_options = {},
+      last_workspace_win = nil,
+      origin_win_options = {},
+    },
+  }, win)
+  h.assert_true(not invalid_origin_snapshot_ok, 'workspace capture accepted invalid origin snapshot values', scope)
 end, debug.traceback)
 
 restore_original()

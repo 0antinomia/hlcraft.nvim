@@ -3,12 +3,20 @@ local window_options = require('hlcraft.ui.window_options')
 
 local M = {}
 
+local function workspace_window_options(instance)
+  local snapshots = instance.state.workspace_win_options
+  if type(snapshots) ~= 'table' then
+    error('workspace window option snapshots must be a table', 3)
+  end
+  return snapshots
+end
+
 local function clear_workspace_window_snapshot(instance, win)
   if win == nil then
     return
   end
 
-  instance.state.workspace_win_options[win] = nil
+  workspace_window_options(instance)[win] = nil
   if instance.state.last_workspace_win == win then
     instance.state.last_workspace_win = nil
   end
@@ -19,7 +27,7 @@ local function restore_workspace_window_options(instance, win)
     return false
   end
 
-  local snapshot = instance.state.workspace_win_options[win]
+  local snapshot = workspace_window_options(instance)[win]
   if not snapshot then
     return false
   end
@@ -107,7 +115,7 @@ end
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.restore_all_workspace_windows(instance)
-  local workspace_wins = vim.tbl_keys(instance.state.workspace_win_options or {})
+  local workspace_wins = vim.tbl_keys(workspace_window_options(instance))
   for _, workspace_win in ipairs(workspace_wins) do
     restore_workspace_window_options(instance, workspace_win)
   end
@@ -168,17 +176,21 @@ function M.capture_workspace_window(instance, win)
 
   instance.state.last_workspace_win = win
 
-  if instance.state.workspace_win_options[win] == nil then
+  local snapshots = workspace_window_options(instance)
+  if snapshots[win] == nil then
     local snapshot = window_options.snapshot(win)
     if snapshot == nil or snapshot.win == nil then
       return
     end
 
     if instance.state.origin_win_options ~= nil and window_options.matches_workspace(snapshot.values) then
-      snapshot.values = vim.deepcopy(instance.state.origin_win_options.values or {})
+      if type(instance.state.origin_win_options.values) ~= 'table' then
+        error('origin window option snapshot values must be a table', 2)
+      end
+      snapshot.values = vim.deepcopy(instance.state.origin_win_options.values)
     end
 
-    instance.state.workspace_win_options[win] = snapshot
+    snapshots[win] = snapshot
   end
 
   M.apply_window_options(instance, win)
