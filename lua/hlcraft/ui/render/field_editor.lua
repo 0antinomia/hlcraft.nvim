@@ -19,8 +19,8 @@ function M.build(instance, geometry, result, field, width, line_offset)
   assert(type(field) == 'string', 'field editor renderer requires a field')
   line_offset = line_offset or 0
 
-  if field == 'fg' or field == 'bg' or field == 'sp' then
-    local dynamic = dynamic_model.channel_set[field] and session.dynamic_value(result.name, field) or nil
+  if dynamic_model.channel_set[field] then
+    local dynamic = session.dynamic_value(result.name, field)
     if dynamic then
       return dynamic_renderer.build(instance, geometry, result, field, width, line_offset, dynamic)
     end
