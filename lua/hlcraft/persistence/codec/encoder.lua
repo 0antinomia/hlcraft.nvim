@@ -35,8 +35,7 @@ for _, key in ipairs({
 end
 
 local function ordered_keys(entry)
-  local keys = vim.tbl_keys(entry or {})
-  table.sort(keys, function(left, right)
+  return tables.sorted_keys(entry, function(left, right)
     local left_priority = key_priority[left] or math.huge
     local right_priority = key_priority[right] or math.huge
     if left_priority == right_priority then
@@ -44,7 +43,6 @@ local function ordered_keys(entry)
     end
     return left_priority < right_priority
   end)
-  return keys
 end
 
 local encode_value
@@ -95,8 +93,7 @@ function M.section(section_name, entries)
   local lines = {
     ('["%s"]'):format(util.escape_string(section_name)),
   }
-  local highlight_names = vim.tbl_keys(entries or {})
-  table.sort(highlight_names)
+  local highlight_names = tables.sorted_keys(entries)
 
   for _, highlight_name in ipairs(highlight_names) do
     lines[#lines + 1] = ('"%s" = %s'):format(

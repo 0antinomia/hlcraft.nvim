@@ -1,5 +1,6 @@
 local dynamic_model = require('hlcraft.dynamic.model')
 local store = require('hlcraft.engine.store')
+local tables = require('hlcraft.core.tables')
 
 local M = {}
 
@@ -50,9 +51,7 @@ function M.known_groups()
     end
   end
 
-  local names = vim.tbl_keys(groups)
-  table.sort(names)
-  return names
+  return tables.sorted_keys(groups)
 end
 
 function M.remove_empty_draft_entry(name)

@@ -14,4 +14,12 @@ h.assert_true(not tables.is_sequence({ [1.5] = 'half' }), 'fractional index tabl
 h.assert_true(not tables.is_sequence({ [1] = 'a', extra = 'b' }), 'mixed-key table was accepted', scope)
 h.assert_true(not tables.is_sequence('not a table'), 'non-table value was accepted', scope)
 
+local sorted = tables.sorted_keys({ b = true, a = true, c = true })
+h.assert_equal(table.concat(sorted, ','), 'a,b,c', 'keys were not sorted', scope)
+h.assert_equal(#tables.sorted_keys(nil), 0, 'nil keys did not return an empty list', scope)
+local custom_sorted = tables.sorted_keys({ short = true, longest = true }, function(left, right)
+  return #left > #right
+end)
+h.assert_equal(custom_sorted[1], 'longest', 'custom key comparator was ignored', scope)
+
 print('hlcraft core tables: OK')

@@ -1,6 +1,7 @@
 local M = {}
 
 local config = require('hlcraft.config')
+local tables = require('hlcraft.core.tables')
 local codec = require('hlcraft.persistence.codec')
 local files = require('hlcraft.persistence.files')
 local schema = require('hlcraft.persistence.schema')
@@ -84,8 +85,7 @@ function M.save(overrides, groups, path)
     return false, section_err
   end
 
-  local section_names = vim.tbl_keys(sections)
-  table.sort(section_names)
+  local section_names = tables.sorted_keys(sections)
 
   for _, section_name in ipairs(section_names) do
     local filepath = files.file_path(target, section_name)

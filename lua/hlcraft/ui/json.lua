@@ -2,17 +2,6 @@ local tables = require('hlcraft.core.tables')
 
 local M = {}
 
-local function sorted_keys(tbl)
-  local keys = {}
-  for key in pairs(tbl) do
-    keys[#keys + 1] = key
-  end
-  table.sort(keys, function(left, right)
-    return tostring(left) < tostring(right)
-  end)
-  return keys
-end
-
 local function format_value(value, indent)
   indent = indent or 0
   local pad = string.rep('  ', indent)
@@ -38,7 +27,7 @@ local function format_value(value, indent)
   end
 
   lines[#lines + 1] = '{'
-  local keys = sorted_keys(value)
+  local keys = tables.sorted_keys(value)
   for index, key in ipairs(keys) do
     local comma = index < #keys and ',' or ''
     lines[#lines + 1] = child_pad
