@@ -13,7 +13,7 @@ local function label_token(label)
 end
 
 local function value_token(value, hl)
-  return { tostring(value or '-'), hl or theme.groups.value }
+  return { value == nil and '-' or tostring(value), hl or theme.groups.value }
 end
 
 local function info_line(label, value, value_hl)
