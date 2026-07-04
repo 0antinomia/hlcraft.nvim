@@ -15,7 +15,7 @@ function M.build(geometry, result, width)
   end
   editor_rows.append(lines, geometry, 'new_group', '+ New group (i)')
   lines[#lines + 1] = ''
-  for _, line in ipairs(hints.group()) do
+  for _, line in ipairs(hints.group(width)) do
     lines[#lines + 1] = line
   end
   for index, line in ipairs(lines) do

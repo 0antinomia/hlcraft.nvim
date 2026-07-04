@@ -14,7 +14,7 @@ function M.build(geometry, result, width)
     ('Current: %s'):format(field_values.display_text(value)),
   }
   lines[#lines + 1] = ''
-  for _, line in ipairs(hints.blend()) do
+  for _, line in ipairs(hints.blend(width)) do
     lines[#lines + 1] = line
   end
 

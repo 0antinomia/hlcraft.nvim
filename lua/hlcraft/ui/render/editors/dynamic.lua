@@ -71,7 +71,7 @@ function M.build(instance, geometry, result, field, width, line_offset, dynamic)
   end
 
   lines[#lines + 1] = ''
-  for _, line in ipairs(hints.dynamic()) do
+  for _, line in ipairs(hints.dynamic(width)) do
     lines[#lines + 1] = line
   end
 
