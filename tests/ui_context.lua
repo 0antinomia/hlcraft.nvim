@@ -51,7 +51,7 @@ instance.state.scene.name = 'search'
 h.assert_true(not context.editor_scene_is_active(instance), 'search scene was treated as editor scene', scope)
 h.assert_true(context.current_field_kind(instance) == nil, 'inactive editor returned field kind', scope)
 
-vim.fn.delete(persist_dir, 'rf')
+h.cleanup_dir(persist_dir)
 config.setup({})
 
 print('hlcraft ui context: OK')

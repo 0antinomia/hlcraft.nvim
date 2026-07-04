@@ -76,7 +76,7 @@ h.assert_equal(engine.get_draft_group(result.name), 'next-group', 'set_group did
 local matched_unknown = actions.handle(instance, 'unknown_action', result, 'fg')
 h.assert_true(not matched_unknown, 'unknown action was matched', scope)
 
-vim.fn.delete(persist_dir, 'rf')
+h.cleanup_dir(persist_dir)
 config.setup({})
 
 print('hlcraft ui field editor actions: OK')

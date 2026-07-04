@@ -28,7 +28,7 @@ h.assert_equal(decoded.groups.InvalidManual, 'ui.group', 'invalid manual TOML gr
 h.assert_equal(next(decoded.entries.InvalidManual), nil, 'invalid manual TOML fields leaked after load', scope)
 
 local symlink_target = persist_dir .. '-linked-target.toml'
-vim.fn.delete(symlink_target, 'rf')
+h.cleanup_dir(symlink_target)
 h.write_file(symlink_target, {
   '["linked.group"]',
   '"LinkedNormal" = { fg = "#123456" }',
@@ -137,7 +137,7 @@ h.assert_true(
 h.assert_true(dynamic_content:find('dyn_', 1, true) == nil, 'saved TOML wrote non-declarative dynamic key', scope)
 h.assert_true(dynamic_content:find('unknown = ', 1, true) == nil, 'saved TOML wrote unknown field', scope)
 
-vim.fn.delete(persist_dir, 'rf')
-vim.fn.delete(symlink_target, 'rf')
+h.cleanup_dir(persist_dir)
+h.cleanup_dir(symlink_target)
 
 print('hlcraft storage: OK')

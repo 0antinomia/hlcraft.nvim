@@ -35,10 +35,13 @@ local instance = {
 h.assert_true(commands.set_color(instance, '#abcdef'), 'set_color command did not handle color field', scope)
 h.assert_equal(engine.get(result.name).fg, '#abcdef', 'set_color command did not update color draft', scope)
 
-local original_notify = vim.notify
-vim.notify = function() end
-h.assert_true(not commands.set_color(instance, 'bad-color'), 'set_color command reported invalid color success', scope)
-vim.notify = original_notify
+h.with_notify_stub(function()
+  h.assert_true(
+    not commands.set_color(instance, 'bad-color'),
+    'set_color command reported invalid color success',
+    scope
+  )
+end)
 h.assert_equal(engine.get(result.name).fg, '#abcdef', 'invalid set_color command changed color draft', scope)
 
 h.assert_true(commands.toggle_dynamic_color(instance), 'toggle_dynamic_color did not handle color field', scope)
@@ -57,20 +60,17 @@ h.assert_equal(
 h.assert_true(commands.cycle_dynamic_preset(instance), 'cycle_dynamic_preset did not handle dynamic field', scope)
 h.assert_equal(engine.get(result.name).dynamic.fg.preset, 'breath', 'cycle_dynamic_preset did not update preset', scope)
 
-local original_buf = vim.api.nvim_get_current_buf()
-local phase_buf = vim.api.nvim_create_buf(false, true)
-vim.api.nvim_set_current_buf(phase_buf)
-instance.state.buf = phase_buf
-instance.state.geometry.editor_rows.dynamic_phase = { line = 1, key = 'dynamic_phase' }
-vim.api.nvim_win_set_cursor(0, { 1, 0 })
-h.assert_true(
-  commands.adjust_dynamic_color(instance, 0 / 0),
-  'phase row dynamic adjustment did not handle NaN delta',
-  scope
-)
-h.assert_equal(engine.get(result.name).dynamic.fg.phase, 0, 'phase row NaN delta changed phase', scope)
-vim.api.nvim_set_current_buf(original_buf)
-vim.api.nvim_buf_delete(phase_buf, { force = true })
+h.with_temp_buf(function(phase_buf)
+  instance.state.buf = phase_buf
+  instance.state.geometry.editor_rows.dynamic_phase = { line = 1, key = 'dynamic_phase' }
+  vim.api.nvim_win_set_cursor(0, { 1, 0 })
+  h.assert_true(
+    commands.adjust_dynamic_color(instance, 0 / 0),
+    'phase row dynamic adjustment did not handle NaN delta',
+    scope
+  )
+  h.assert_equal(engine.get(result.name).dynamic.fg.phase, 0, 'phase row NaN delta changed phase', scope)
+end, { current = true })
 instance.state.buf = nil
 instance.state.geometry.editor_rows = {}
 
@@ -84,7 +84,7 @@ instance.state.field_editor.field = 'group'
 h.assert_true(not commands.toggle_dynamic_color(instance), 'toggle_dynamic_color handled non-color field', scope)
 h.assert_true(not commands.adjust_dynamic_color(instance, 1), 'adjust_dynamic_color handled non-dynamic field', scope)
 
-vim.fn.delete(persist_dir, 'rf')
+h.cleanup_dir(persist_dir)
 config.setup({})
 
 print('hlcraft ui keymap commands: OK')

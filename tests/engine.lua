@@ -136,6 +136,6 @@ h.assert_equal(
   scope
 )
 
-vim.fn.delete(persist_dir, 'rf')
+h.cleanup_dir(persist_dir)
 
 print('hlcraft engine: OK')

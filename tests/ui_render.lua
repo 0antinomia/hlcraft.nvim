@@ -148,7 +148,7 @@ h.assert_true(dynamic_text:find('Global  ', 1, true) ~= nil, 'dynamic editor lac
 h.assert_true(not dynamic_text:find('Keys:', 1, true), 'dynamic editor kept crowded Keys hint', scope)
 h.assert_true(dynamic_geometry.editor_rows.dynamic_keys == nil, 'dynamic hint row should not be selectable', scope)
 
-vim.fn.delete(persist_dir, 'rf')
+h.cleanup_dir(persist_dir)
 config.setup({})
 
 print('hlcraft ui render: OK')
