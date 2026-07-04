@@ -11,6 +11,20 @@ local state = {
   timer = nil,
 }
 
+local function assert_name(name)
+  if type(name) ~= 'string' or name == '' then
+    error('dynamic runtime group name must be a non-empty string', 3)
+  end
+  return name
+end
+
+local function assert_table(value, label)
+  if type(value) ~= 'table' then
+    error(('%s must be a table'):format(label), 3)
+  end
+  return value
+end
+
 local function task_count()
   local count = 0
   for _ in pairs(state.tasks) do
@@ -23,6 +37,7 @@ local function restore_group(name, spec)
   if not spec then
     return
   end
+  spec = assert_table(spec, 'dynamic runtime restore spec')
   pcall(store.data.original_set_hl, 0, name, vim.deepcopy(spec))
 end
 
@@ -38,7 +53,7 @@ function M.tick(now_ms)
   end
 
   for name, task in pairs(state.tasks) do
-    local spec = vim.deepcopy(task.base_spec or {})
+    local spec = vim.deepcopy(task.base_spec)
 
     for _, channel in ipairs(model.channels) do
       local channel_spec = task.dynamic[channel]
@@ -67,11 +82,16 @@ function M.start()
 end
 
 function M.base_spec(name)
+  name = assert_name(name)
   local task = state.tasks[name]
   return task and vim.deepcopy(task.base_spec) or nil
 end
 
 function M.clear_group(name, restore_spec)
+  name = assert_name(name)
+  if restore_spec ~= nil then
+    restore_spec = assert_table(restore_spec, 'dynamic runtime restore spec')
+  end
   local existed = state.tasks[name] ~= nil
   state.tasks[name] = nil
 
@@ -85,14 +105,17 @@ function M.clear_group(name, restore_spec)
 end
 
 function M.sync_group(name, base_spec, entry)
-  local dynamic = model.normalize_dynamic(entry and entry.dynamic)
+  name = assert_name(name)
+  base_spec = assert_table(base_spec, 'dynamic runtime base spec')
+  entry = assert_table(entry, 'dynamic runtime entry')
+  local dynamic = model.normalize_dynamic(entry.dynamic)
   if not config.config.dynamic.enabled or not dynamic then
     M.clear_group(name, base_spec)
     return
   end
 
   state.tasks[name] = {
-    base_spec = vim.deepcopy(base_spec or {}),
+    base_spec = vim.deepcopy(base_spec),
     dynamic = dynamic,
   }
   M.start()
