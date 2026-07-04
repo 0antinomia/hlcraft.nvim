@@ -24,7 +24,12 @@ h.assert_equal(select(1, color.normalize('NONE')), 'NONE', 'NONE color did not n
 h.assert_equal(select(1, color.normalize('#ABCDEF')), '#abcdef', 'hex color did not normalize', scope)
 h.assert_equal(color.int_to_rgb(0x123456), 0x12, 'red channel changed', scope)
 h.assert_true(color.hex_to_int(123) == nil, 'numeric hex input did not fail safely', scope)
+h.assert_true(color.name_to_int(123) == nil, 'numeric color name input did not fail safely', scope)
 h.assert_equal(color.contrast_fg(123), '#808080', 'numeric contrast input did not use fallback', scope)
+local invalid_rgb_ok = pcall(color.int_to_rgb, 0x1000000)
+h.assert_true(not invalid_rgb_ok, 'RGB splitter accepted an out-of-range color', scope)
+local fractional_rgb_ok = pcall(color.int_to_rgb, 1.5)
+h.assert_true(not fractional_rgb_ok, 'RGB splitter accepted a fractional color', scope)
 
 local _, green, blue = color.int_to_rgb(0x123456)
 h.assert_equal(green, 0x34, 'green channel changed', scope)
