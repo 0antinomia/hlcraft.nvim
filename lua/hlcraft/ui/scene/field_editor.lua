@@ -1,17 +1,12 @@
 local detail_scene = require('hlcraft.ui.scene.detail')
 local dynamic_model = require('hlcraft.dynamic.model')
+local notify = require('hlcraft.notify')
 local style_editor = require('hlcraft.ui.editor.style')
 local field_editor_actions = require('hlcraft.ui.scene.field_editor_actions')
 local rows = require('hlcraft.ui.scene.rows')
 local session = require('hlcraft.ui.session')
 
 local M = {}
-
-local function notify_error(message)
-  if message then
-    vim.notify(('hlcraft: %s'):format(message), vim.log.levels.ERROR)
-  end
-end
 
 function M.current_result(instance)
   return detail_scene.current_result(instance)
@@ -43,7 +38,7 @@ local function prompt_dynamic_value(instance, action, prompt, default)
     end
     local ok, err = M.handle(instance, action, value)
     if not ok and err then
-      notify_error(err)
+      notify.error(err)
     end
   end)
   return true, nil
@@ -137,7 +132,7 @@ function M.activate(instance)
         end
         local ok, err = M.handle(instance, 'set_group', value)
         if not ok and err then
-          notify_error(err)
+          notify.error(err)
         end
       end)
       return true, nil

@@ -1,3 +1,4 @@
+local notify = require('hlcraft.notify')
 local render_util = require('hlcraft.render.util')
 local buffer_fields = require('hlcraft.ui.input.buffer_fields')
 local ui_state = require('hlcraft.ui.state')
@@ -16,7 +17,7 @@ function M.set_lines(instance, lines)
   end)
   instance.state.rendering = false
   if not ok then
-    vim.notify(('hlcraft: buffer render failed: %s'):format(tostring(err)), vim.log.levels.WARN)
+    notify.warn(('buffer render failed: %s'):format(tostring(err)))
   end
 end
 

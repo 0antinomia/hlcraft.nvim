@@ -1,5 +1,6 @@
 local tests = {
   'tests/config.lua',
+  'tests/notify.lua',
   'tests/number.lua',
   'tests/color.lua',
   'tests/fields.lua',

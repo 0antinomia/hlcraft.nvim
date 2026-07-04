@@ -3,6 +3,7 @@ local M = {}
 
 local config = require('hlcraft.config')
 local highlights = require('hlcraft.core.highlights')
+local notify = require('hlcraft.notify')
 local source = require('hlcraft.core.source')
 local search = require('hlcraft.core.search')
 local ui = require('hlcraft.ui')
@@ -16,21 +17,18 @@ function M.setup(opts)
   -- Version guard
   if vim.version and vim.version.ge then
     if not vim.version.ge(vim.version(), '0.10.0') then
-      vim.notify(
-        'hlcraft.nvim requires Neovim >= 0.10.0. Current version: ' .. tostring(vim.version()),
-        vim.log.levels.ERROR
-      )
+      notify.error('requires Neovim >= 0.10.0. Current version: ' .. tostring(vim.version()))
       return M
     end
   else
-    vim.notify('hlcraft.nvim requires Neovim >= 0.10.0', vim.log.levels.ERROR)
+    notify.error('requires Neovim >= 0.10.0')
     return M
   end
 
   -- Validate config before merging to prevent partial init.
   local ok, err = config.validate(opts)
   if not ok then
-    vim.notify(err, vim.log.levels.ERROR)
+    notify.error(err)
     return M
   end
 

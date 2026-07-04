@@ -1,13 +1,10 @@
 local dynamic_editor = require('hlcraft.ui.editor.dynamic')
+local notify = require('hlcraft.notify')
 local presets = require('hlcraft.dynamic.presets')
 local session = require('hlcraft.ui.session')
 local window = require('hlcraft.ui.workspace.window')
 
 local M = {}
-
-local function notify_error(message)
-  vim.notify(('hlcraft: %s'):format(message), vim.log.levels.ERROR)
-end
 
 local function sorted_keys(tbl)
   local keys = {}
@@ -159,7 +156,7 @@ function M.open(instance, result, field)
   vim.keymap.set('n', 'w', function()
     local ok, err = dynamic_editor.set_raw_json(instance, result, field, buffer_text(buf))
     if not ok then
-      notify_error(err or 'Invalid dynamic JSON')
+      notify.error(err or 'Invalid dynamic JSON')
       return
     end
     M.close(instance)
@@ -168,7 +165,7 @@ function M.open(instance, result, field)
   vim.keymap.set('n', '=', function()
     local ok, decoded = pcall(vim.json.decode, buffer_text(buf))
     if not ok or type(decoded) ~= 'table' then
-      notify_error('Invalid dynamic JSON')
+      notify.error('Invalid dynamic JSON')
       return
     end
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, vim.split(pretty_json(decoded), '\n', { plain = true }))

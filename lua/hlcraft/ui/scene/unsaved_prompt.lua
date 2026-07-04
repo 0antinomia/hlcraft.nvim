@@ -1,3 +1,4 @@
+local notify = require('hlcraft.notify')
 local session = require('hlcraft.ui.session')
 local window = require('hlcraft.ui.workspace.window')
 
@@ -52,12 +53,6 @@ local function apply_window_options(win)
   vim.wo[win].relativenumber = false
 end
 
-local function notify_error(message)
-  if message then
-    vim.notify(('hlcraft: %s'):format(message), vim.log.levels.ERROR)
-  end
-end
-
 local function install_keymaps(instance, buf, name, on_done)
   local opts = { buffer = buf, silent = true, nowait = true }
   vim.keymap.set('n', 's', function()
@@ -65,7 +60,7 @@ local function install_keymaps(instance, buf, name, on_done)
     if ok then
       on_done()
     else
-      notify_error(err)
+      notify.error(err)
     end
   end, opts)
   vim.keymap.set('n', 'd', function()

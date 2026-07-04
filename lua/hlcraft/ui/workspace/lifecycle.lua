@@ -1,4 +1,5 @@
 local help = require('hlcraft.ui.help')
+local notify = require('hlcraft.notify')
 local ui_state = require('hlcraft.ui.state')
 local timers = require('hlcraft.ui.timers')
 local window_options = require('hlcraft.ui.window_options')
@@ -66,7 +67,7 @@ function M.hide(instance)
   end)
   instance.state.closing = false
   if not ok then
-    vim.notify(('hlcraft: close operation failed: %s'):format(tostring(err)), vim.log.levels.WARN)
+    notify.warn(('close operation failed: %s'):format(tostring(err)))
   end
 end
 
@@ -124,7 +125,7 @@ function M.cleanup(instance)
   end)
   instance.state.closing = false
   if not ok then
-    vim.notify(('hlcraft: cleanup failed: %s'):format(tostring(err)), vim.log.levels.WARN)
+    notify.warn(('cleanup failed: %s'):format(tostring(err)))
   end
 
   reset_view_state(instance)
