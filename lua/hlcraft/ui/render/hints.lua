@@ -3,6 +3,7 @@ local M = {}
 local separator = '  '
 local label_width = 8
 local default_max_items = 3
+local relaxed_max_items = 2
 
 local function pad_label(label)
   local display_width = vim.fn.strdisplaywidth(label)
@@ -135,9 +136,9 @@ end
 
 function M.color()
   return block({
-    { 'Adjust', 'color_adjust' },
-    { 'Set', 'color_set' },
-    { 'Global', 'color_global' },
+    { 'Adjust', 'color_adjust', max_items = relaxed_max_items },
+    { 'Set', 'color_set', max_items = relaxed_max_items },
+    { 'Global', 'color_global', max_items = relaxed_max_items },
   })
 end
 
@@ -150,9 +151,9 @@ end
 
 function M.blend()
   return block({
-    { 'Adjust', 'blend_adjust' },
-    { 'Set', 'blend_set' },
-    { 'Global', 'blend_global' },
+    { 'Adjust', 'blend_adjust', max_items = relaxed_max_items },
+    { 'Set', 'blend_set', max_items = relaxed_max_items },
+    { 'Global', 'blend_global', max_items = relaxed_max_items },
   })
 end
 

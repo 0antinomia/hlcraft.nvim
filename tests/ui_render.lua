@@ -70,7 +70,7 @@ h.assert_equal(dynamic_hint_lines[4], '        [q] back  [?] help', 'dynamic glo
 local help_lines = help_model.lines('z')
 h.assert_equal(help_lines[1], 'hlcraft help', 'help title changed', scope)
 h.assert_true(vim.tbl_contains(help_lines, 'Global'), 'help global section missing', scope)
-h.assert_true(vim.tbl_contains(help_lines, '[z] flash current result'), 'preview key help line missing', scope)
+h.assert_true(vim.tbl_contains(help_lines, '[z]        flash current result'), 'preview key help line missing', scope)
 h.assert_true(help_model.is_item_line('[q / Esc] back or close'), 'help item line was not detected', scope)
 h.assert_true(not help_model.is_item_line('Global'), 'help section was treated as item line', scope)
 
@@ -122,8 +122,11 @@ local color_geometry = { editor_rows = {} }
 local color_lines = color_renderer.build(instance, color_geometry, result, 'fg', 80, 0)
 local color_text = table.concat(color_lines, '\n')
 h.assert_true(color_text:find('Adjust  ', 1, true) ~= nil, 'color editor lacks an action section', scope)
+h.assert_true(color_text:find('        [b/B] blue', 1, true) ~= nil, 'color editor adjust hints stayed crowded', scope)
 h.assert_true(color_text:find('Set     ', 1, true) ~= nil, 'color editor lacks a set section', scope)
+h.assert_true(color_text:find('        [d] dynamic', 1, true) ~= nil, 'color editor set hints stayed crowded', scope)
 h.assert_true(color_text:find('Global  ', 1, true) ~= nil, 'color editor lacks a global section', scope)
+h.assert_true(color_text:find('        [?] help', 1, true) ~= nil, 'color editor global hints stayed crowded', scope)
 h.assert_true(not color_text:find('Keys:', 1, true), 'color editor kept crowded Keys hint', scope)
 h.assert_true(color_geometry.editor_rows.color_keys == nil, 'color hint row should not be selectable', scope)
 

@@ -1,18 +1,12 @@
 local render_util = require('hlcraft.render.util')
 local buffer_fields = require('hlcraft.ui.input.buffer_fields')
+local ui_state = require('hlcraft.ui.state')
 local theme = require('hlcraft.ui.theme')
 local window = require('hlcraft.ui.workspace.window')
 
 local M = {}
 
-function M.new_geometry()
-  return {
-    inputs = {},
-    result_lines = {},
-    detail_menu = {},
-    editor_rows = {},
-  }
-end
+M.new_geometry = ui_state.geometry
 
 function M.set_lines(instance, lines)
   instance.state.rendering = true
