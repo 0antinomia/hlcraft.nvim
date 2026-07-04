@@ -9,7 +9,10 @@ function M.unescape_string(value)
 end
 
 function M.normalize_group_name(name)
-  local normalized = vim.trim(tostring(name or ''))
+  if type(name) ~= 'string' then
+    return nil
+  end
+  local normalized = vim.trim(name)
   if normalized == '' then
     return nil
   end
