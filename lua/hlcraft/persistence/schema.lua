@@ -3,23 +3,6 @@ local override_values = require('hlcraft.core.override_values')
 
 local M = {}
 
-local field_normalizers = {}
-
-for _, key in ipairs(fields.color_keys) do
-  field_normalizers[key] = function(value)
-    return override_values.normalize_color(value)
-  end
-end
-for _, key in ipairs(fields.style_keys) do
-  local style_key = key
-  field_normalizers[key] = function(value)
-    return override_values.normalize_style(style_key, value)
-  end
-end
-field_normalizers.blend = function(value)
-  return override_values.normalize_blend(value)
-end
-
 local function set_normalized(entry, key, value)
   local field_value = override_values.entry_value(value)
   if field_value ~= nil then
@@ -30,7 +13,7 @@ end
 local function normalize_override_fields(entry, normalized)
   for _, key in ipairs(fields.override_keys) do
     if entry[key] ~= nil then
-      local value = field_normalizers[key](entry[key])
+      local value = override_values.normalize_field(key, entry[key])
       set_normalized(normalized, key, value)
     end
   end
