@@ -33,6 +33,14 @@ local function optional_opts(opts)
   return opts
 end
 
+local function toml_directory_opts(opts)
+  opts = optional_opts(opts)
+  if opts.include_links ~= nil and type(opts.include_links) ~= 'boolean' then
+    error('TOML directory include_links must be boolean', 3)
+  end
+  return opts
+end
+
 function M.sanitize_filename(name)
   local sanitized = assert_string(name, 'Filename'):gsub('[^%w._-]', function(char)
     return ('_%02X'):format(string.byte(char))
@@ -72,7 +80,7 @@ end
 
 function M.toml_files_in_dir(path, opts)
   assert_string(path, 'Directory path')
-  opts = optional_opts(opts)
+  opts = toml_directory_opts(opts)
   local files = {}
   local fd = uv.fs_scandir(path)
   if not fd then
