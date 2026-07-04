@@ -3,6 +3,23 @@ local override_values = require('hlcraft.core.override_values')
 
 local M = {}
 
+local field_normalizers = {}
+
+for _, key in ipairs(fields.color_keys) do
+  field_normalizers[key] = function(value)
+    return override_values.normalize_color(value)
+  end
+end
+for _, key in ipairs(fields.style_keys) do
+  local style_key = key
+  field_normalizers[key] = function(value)
+    return override_values.normalize_style(style_key, value)
+  end
+end
+field_normalizers.blend = function(value)
+  return override_values.normalize_blend(value)
+end
+
 local function set_normalized(entry, key, value)
   local field_value = override_values.entry_value(value)
   if field_value ~= nil then
@@ -10,28 +27,12 @@ local function set_normalized(entry, key, value)
   end
 end
 
-local function normalize_color_fields(entry, normalized)
-  for _, key in ipairs(fields.color_keys) do
+local function normalize_override_fields(entry, normalized)
+  for _, key in ipairs(fields.override_keys) do
     if entry[key] ~= nil then
-      local value = override_values.normalize_color(entry[key])
+      local value = field_normalizers[key](entry[key])
       set_normalized(normalized, key, value)
     end
-  end
-end
-
-local function normalize_style_fields(entry, normalized)
-  for _, key in ipairs(fields.style_keys) do
-    if entry[key] ~= nil then
-      local value = override_values.normalize_style(key, entry[key])
-      set_normalized(normalized, key, value)
-    end
-  end
-end
-
-local function normalize_numeric_fields(entry, normalized)
-  if entry.blend ~= nil then
-    local value = override_values.normalize_blend(entry.blend)
-    set_normalized(normalized, 'blend', value)
   end
 end
 
@@ -57,9 +58,7 @@ function M.normalize_entry(entry)
   entry = entry or {}
   local normalized = {}
 
-  normalize_color_fields(entry, normalized)
-  normalize_style_fields(entry, normalized)
-  normalize_numeric_fields(entry, normalized)
+  normalize_override_fields(entry, normalized)
   normalize_dynamic_fields(entry, normalized)
 
   return normalized
