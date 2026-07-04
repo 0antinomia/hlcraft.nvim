@@ -7,24 +7,13 @@ M.channel_set = { fg = true, bg = true, sp = true }
 
 M.version = 1
 M.presets = { 'pulse', 'breath', 'hue', 'gradient', 'blink', 'duotone' }
-M.preset_set = {
-  pulse = true,
-  breath = true,
-  hue = true,
-  gradient = true,
-  blink = true,
-  duotone = true,
-}
-M.loop_values = { 'repeat', 'pingpong', 'once' }
-M.interpolations = { 'linear', 'step', 'smooth', 'smoothstep', 'sine' }
-M.interpolation_set = { linear = true, step = true, smooth = true, smoothstep = true, sine = true }
-M.transform_types = { 'brightness', 'hue_shift', 'saturation' }
-M.transform_type_set = { brightness = true, hue_shift = true, saturation = true }
 M.default_duration = 2000
-M.min_duration = 250
-M.max_duration = 10000
 
+local min_duration = 250
+local max_duration = 10000
 local color_refs = { base = true, fg = true, bg = true, sp = true }
+local interpolation_set = { linear = true, step = true, smooth = true, smoothstep = true, sine = true }
+local transform_type_set = { brightness = true, hue_shift = true, saturation = true }
 
 local function is_finite_number(value)
   return type(value) == 'number' and value == value and value ~= math.huge and value ~= -math.huge
@@ -62,17 +51,17 @@ function M.normalize_duration(value)
   end
 
   duration = math.floor(duration)
-  if duration < M.min_duration then
-    return M.min_duration
+  if duration < min_duration then
+    return min_duration
   end
-  if duration > M.max_duration then
-    return M.max_duration
+  if duration > max_duration then
+    return max_duration
   end
   return duration
 end
 
 function M.normalize_interpolation(value)
-  if M.interpolation_set[value] then
+  if interpolation_set[value] then
     return value
   end
   return 'linear'
@@ -150,7 +139,7 @@ function M.normalize_timeline(timeline)
 end
 
 function M.normalize_transform(transform)
-  if type(transform) ~= 'table' or not M.transform_type_set[transform.type] then
+  if type(transform) ~= 'table' or not transform_type_set[transform.type] then
     return nil
   end
 

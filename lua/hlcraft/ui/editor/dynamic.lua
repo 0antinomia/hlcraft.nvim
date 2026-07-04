@@ -1,7 +1,6 @@
 local dynamic_model = require('hlcraft.dynamic.model')
 local presets = require('hlcraft.dynamic.presets')
 local session = require('hlcraft.ui.session')
-local ui_fields = require('hlcraft.ui.fields')
 
 local M = {}
 
@@ -11,7 +10,7 @@ local function copy_dynamic(result, key)
 end
 
 local function preset_index(name)
-  for index, candidate in ipairs(ui_fields.dynamic_presets) do
+  for index, candidate in ipairs(dynamic_model.presets) do
     if candidate == name then
       return index
     end
@@ -47,7 +46,7 @@ function M.cycle_preset(instance, result, key)
   end
 
   local current = preset_index(dynamic.preset) or 0
-  local next_name = ui_fields.dynamic_presets[current + 1] or ui_fields.dynamic_presets[1]
+  local next_name = dynamic_model.presets[current + 1] or dynamic_model.presets[1]
   return set_normalized(instance, result, key, presets.get(next_name))
 end
 
