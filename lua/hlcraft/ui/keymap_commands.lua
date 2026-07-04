@@ -3,6 +3,7 @@ local context = require('hlcraft.ui.context')
 local numbers = require('hlcraft.core.number')
 local buffer_fields = require('hlcraft.ui.input.buffer_fields')
 local navigation = require('hlcraft.ui.navigation')
+local prompt = require('hlcraft.ui.prompt')
 local scene = require('hlcraft.ui.scene')
 local search_scene = require('hlcraft.ui.scene.search')
 local ui_fields = require('hlcraft.ui.fields')
@@ -121,30 +122,21 @@ function M.input_current_editor_field(instance)
       M.run_action(instance, 'input_dynamic_row', { default_raw = true })
       return true
     end
-    vim.ui.input({ prompt = field .. ': ' }, function(value)
-      if value ~= nil then
-        M.set_color(instance, value)
-      end
-    end)
-    return true
+    return prompt.input({ prompt = field .. ': ' }, function(value)
+      return M.set_color(instance, value)
+    end, { notify_errors = false })
   end
 
   if kind == 'group' then
-    vim.ui.input({ prompt = 'Group: ' }, function(value)
-      if value ~= nil then
-        M.run_action(instance, 'set_group', value)
-      end
-    end)
-    return true
+    return prompt.input({ prompt = 'Group: ' }, function(value)
+      return M.run_action(instance, 'set_group', value)
+    end, { notify_errors = false })
   end
 
   if kind == 'blend' then
-    vim.ui.input({ prompt = 'Blend: ' }, function(value)
-      if value ~= nil then
-        M.run_action(instance, 'set_blend', value)
-      end
-    end)
-    return true
+    return prompt.input({ prompt = 'Blend: ' }, function(value)
+      return M.run_action(instance, 'set_blend', value)
+    end, { notify_errors = false })
   end
 
   return false

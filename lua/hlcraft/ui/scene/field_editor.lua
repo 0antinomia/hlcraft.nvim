@@ -1,8 +1,8 @@
 local detail_scene = require('hlcraft.ui.scene.detail')
 local dynamic_model = require('hlcraft.dynamic.model')
-local notify = require('hlcraft.notify')
 local style_editor = require('hlcraft.ui.editor.style')
 local field_editor_actions = require('hlcraft.ui.scene.field_editor_actions')
+local prompt = require('hlcraft.ui.prompt')
 local rows = require('hlcraft.ui.scene.rows')
 local session = require('hlcraft.ui.session')
 
@@ -31,17 +31,10 @@ local function dynamic_value(result, field)
   return session.dynamic_value(result.name, field)
 end
 
-local function prompt_dynamic_value(instance, action, prompt, default)
-  vim.ui.input({ prompt = prompt, default = default }, function(value)
-    if value == nil then
-      return
-    end
-    local ok, err = M.handle(instance, action, value)
-    if not ok and err then
-      notify.error(err)
-    end
+local function prompt_dynamic_value(instance, action, prompt_text, default)
+  return prompt.input({ prompt = prompt_text, default = default }, function(value)
+    return M.handle(instance, action, value)
   end)
-  return true, nil
 end
 
 local function selected_editor_row_key(instance)
@@ -126,16 +119,9 @@ function M.activate(instance)
       return M.handle(instance, 'set_group', row_key:sub(7))
     end
     if row_key == 'new_group' then
-      vim.ui.input({ prompt = 'Group: ' }, function(value)
-        if value == nil then
-          return
-        end
-        local ok, err = M.handle(instance, 'set_group', value)
-        if not ok and err then
-          notify.error(err)
-        end
+      return prompt.input({ prompt = 'Group: ' }, function(value)
+        return M.handle(instance, 'set_group', value)
       end)
-      return true, nil
     end
   end
 
