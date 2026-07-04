@@ -44,5 +44,8 @@ h.assert_true(not search_scene.open_detail(instance), 'open_detail reported succ
 local ok, err = search_scene.handle(instance, 'open_detail')
 h.assert_true(not ok, 'open_detail action succeeded without a window', scope)
 h.assert_true(err == nil, 'open_detail action reported an unexpected error', scope)
+local activate_ok, activate_err = search_scene.handle(instance, 'activate')
+h.assert_true(not activate_ok, 'activate action succeeded without a window', scope)
+h.assert_true(activate_err == nil, 'activate action reported an unexpected error', scope)
 
 print('hlcraft ui search scene: OK')

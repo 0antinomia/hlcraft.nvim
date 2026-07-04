@@ -17,12 +17,12 @@ h.assert_equal(
 h.assert_equal(hints.search(), 'Action  [Enter] open/apply  [Tab] input  [?] help', 'search hint is too verbose', scope)
 h.assert_true(not hints.search():find('Keys:', 1, true), 'search hint kept the crowded Keys prefix', scope)
 h.assert_equal(hints.detail(), 'Action  [Enter] edit/toggle  [s] save  [?] help', 'detail hint is too verbose', scope)
-local legacy_options_ok = pcall(hints.section_lines, 'Action', 'search', 2)
-h.assert_true(not legacy_options_ok, 'hint sections accepted legacy numeric options', scope)
-local keyed_item_ok = pcall(hints.format, {
-  { key = 'x', action = 'legacy' },
+local numeric_options_ok = pcall(hints.section_lines, 'Action', 'search', 2)
+h.assert_true(not numeric_options_ok, 'hint sections accepted numeric options', scope)
+local keyed_item_shape_ok = pcall(hints.format, {
+  { key = 'x', action = 'invalid-shape' },
 })
-h.assert_true(not keyed_item_ok, 'hint formatter accepted keyed item compatibility shape', scope)
+h.assert_true(not keyed_item_shape_ok, 'hint formatter accepted keyed item shape', scope)
 local nil_items_ok = pcall(hints.format, nil)
 h.assert_true(not nil_items_ok, 'hint formatter accepted nil items', scope)
 local false_options_ok = pcall(hints.section_lines, 'Action', 'search', false)

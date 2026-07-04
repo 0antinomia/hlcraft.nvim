@@ -108,4 +108,15 @@ function M.line_at(lines, line_nr, label)
   return line
 end
 
+function M.line_offset(value, label)
+  local prefix = label or 'render'
+  if type(value) ~= 'number' then
+    error(('%s line offset must be a number'):format(prefix), 2)
+  end
+  if not numbers.is_finite(value) or math.floor(value) ~= value or value < 0 then
+    error(('%s line offset must be a non-negative finite integer'):format(prefix), 2)
+  end
+  return value
+end
+
 return M

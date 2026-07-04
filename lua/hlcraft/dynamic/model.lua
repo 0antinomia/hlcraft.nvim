@@ -277,7 +277,7 @@ function M.normalize_channel(spec)
   local loop = normalize_optional_loop(spec.loop)
   local phase = normalize_optional_phase(spec.phase)
   local interpolation = normalize_optional_interpolation(spec.interpolation)
-  if not duration or not loop or phase == nil or not interpolation then
+  if duration == nil or loop == nil or phase == nil or interpolation == nil then
     return nil
   end
 

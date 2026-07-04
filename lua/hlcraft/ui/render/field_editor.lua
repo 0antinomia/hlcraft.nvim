@@ -41,14 +41,14 @@ function M.build(instance, geometry, result, field, width, line_offset)
   if type(field) ~= 'string' then
     error('field editor renderer requires a field', 2)
   end
-  line_offset = line_offset or 0
+  line_offset = render_util.line_offset(line_offset, 'field editor renderer')
 
   if dynamic_model.channel_set[field] then
     local dynamic = session.dynamic_value(result.name, field)
     if dynamic then
       return dynamic_renderer.build(instance, geometry, result, field, width, line_offset, dynamic)
     end
-    return color_renderer.build(instance, geometry, result, field, width, line_offset)
+    return color_renderer.build(geometry, result, field, width)
   end
   if field == 'group' then
     return group_renderer.build(geometry, result, width)
@@ -64,12 +64,12 @@ local function apply_color_marker(instance, lines, geometry, key)
     return
   end
   local line = render_util.line_at(lines, geometry[key].line, ('%s marker geometry'):format(key))
-  local start_col = decorations.find_text_start(line, geometry[key].text, 0)
+  local start_col = decorations.require_text_start(line, geometry[key].text, 0, ('%s marker geometry'):format(key))
   decorations.apply_color_cell(
     instance,
     instance.state.buf,
     geometry[key].line - 1,
-    start_col or 0,
+    start_col,
     geometry[key].text,
     geometry[key].value,
     geometry[key].field
