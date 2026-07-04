@@ -23,6 +23,16 @@ local function assert_lines(value)
   return value
 end
 
+local function optional_opts(opts)
+  if opts == nil then
+    return {}
+  end
+  if type(opts) ~= 'table' then
+    error('TOML directory options must be a table', 3)
+  end
+  return opts
+end
+
 function M.sanitize_filename(name)
   local sanitized = assert_string(name, 'Filename'):gsub('[^%w._-]', function(char)
     return ('_%02X'):format(string.byte(char))
@@ -62,7 +72,7 @@ end
 
 function M.toml_files_in_dir(path, opts)
   assert_string(path, 'Directory path')
-  opts = opts or {}
+  opts = optional_opts(opts)
   local files = {}
   local fd = uv.fs_scandir(path)
   if not fd then
