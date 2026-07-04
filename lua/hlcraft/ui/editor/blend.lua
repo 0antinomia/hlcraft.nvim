@@ -3,22 +3,52 @@ local session = require('hlcraft.ui.session')
 
 local M = {}
 
-function M.set(instance, result, value)
-  local normalized = nil
-  if value ~= nil and vim.trim(tostring(value)) ~= '' then
-    local number_value = numbers.to_finite(value, nil)
-    if number_value == nil or number_value < 0 or number_value > 100 then
-      return false, 'Blend must be a number between 0 and 100'
+local blend_error = 'Blend must be a number between 0 and 100'
+
+local function normalize_blend(value)
+  if value == nil then
+    return nil, nil
+  end
+
+  if type(value) == 'string' then
+    value = vim.trim(value)
+    if value == '' then
+      return nil, nil
     end
-    normalized = math.floor(number_value)
+  elseif type(value) ~= 'number' then
+    return nil, blend_error
+  end
+
+  local number_value = numbers.to_finite(value, nil)
+  if number_value == nil or number_value < 0 or number_value > 100 then
+    return nil, blend_error
+  end
+
+  return math.floor(number_value), nil
+end
+
+function M.set(instance, result, value)
+  local normalized, err = normalize_blend(value)
+  if err then
+    return false, err
   end
   return session.set_blend(instance, result.name, normalized)
 end
 
 function M.adjust(instance, result, delta)
+  if not numbers.is_finite(delta) then
+    return false, 'Blend adjustment delta must be a finite number'
+  end
+
   local draft_value = session.field_value(result.name, 'blend')
-  local current = numbers.to_finite(draft_value ~= nil and draft_value or result.blend, 0)
-  return M.set(instance, result, numbers.clamp(current + numbers.to_finite(delta, 0), 0, 100))
+  local current = draft_value ~= nil and draft_value or result.blend
+  if current == nil then
+    current = 0
+  elseif not numbers.is_finite(current) then
+    return false, 'Current blend must be a finite number'
+  end
+
+  return M.set(instance, result, numbers.clamp(current + delta, 0, 100))
 end
 
 return M
