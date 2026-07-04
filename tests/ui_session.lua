@@ -88,6 +88,17 @@ local bad_persisted_ok = pcall(session.persisted_entry, 'invalid-persisted')
 h.assert_true(not bad_persisted_ok, 'session accepted invalid persisted entry', scope)
 local bad_save_name_ok = pcall(session.save, {}, nil)
 h.assert_true(not bad_save_name_ok, 'session save accepted nil highlight name', scope)
+saved = false
+local bad_save_instance_ok = pcall(session.save, {}, 'clean')
+h.assert_true(not bad_save_instance_ok, 'session save accepted invalid refresh target', scope)
+h.assert_true(not saved, 'session save mutated engine before refresh target validation', scope)
+restored_name = nil
+local bad_discard_instance_ok = pcall(session.discard, {
+  state = false,
+  rerender = function() end,
+}, 'clean')
+h.assert_true(not bad_discard_instance_ok, 'session discard accepted invalid refresh state', scope)
+h.assert_true(restored_name == nil, 'session discard mutated engine before refresh target validation', scope)
 
 package.loaded[session_module] = original_session
 package.loaded[service_module] = original_service

@@ -32,10 +32,23 @@ local function same_entry(left, right)
   return vim.deep_equal(left, right)
 end
 
+local function assert_refresh_target(instance)
+  if type(instance) ~= 'table' then
+    error('session refresh requires an instance', 3)
+  end
+  if instance.state ~= nil and type(instance.state) ~= 'table' then
+    error('session refresh state must be a table', 3)
+  end
+  if type(instance.rerender) ~= 'function' then
+    error('session refresh requires a rerender callback', 3)
+  end
+  return instance
+end
+
 local function refresh(instance, name)
-  if instance and instance.state and type(instance.state.results) == 'table' then
+  if type(instance.state) == 'table' and type(instance.state.results) == 'table' then
     require('hlcraft.ui.scene.detail').refresh(instance, name, true)
-  elseif instance and instance.rerender then
+  else
     instance:rerender()
   end
 end
@@ -92,6 +105,7 @@ end
 
 function M.set_color(instance, name, key, value)
   name = assert_name(name)
+  instance = assert_refresh_target(instance)
   local ok, err = engine.set_color(name, key, value)
   if not ok then
     return false, err
@@ -103,6 +117,7 @@ end
 
 function M.set_dynamic(instance, name, key, dynamic)
   name = assert_name(name)
+  instance = assert_refresh_target(instance)
   local ok, err = engine.set_dynamic(name, key, dynamic)
   if not ok then
     return false, err
@@ -114,6 +129,7 @@ end
 
 function M.set_style(instance, name, key, value)
   name = assert_name(name)
+  instance = assert_refresh_target(instance)
   local ok, err = engine.set_style(name, key, value)
   if not ok then
     return false, err
@@ -125,6 +141,7 @@ end
 
 function M.set_group(instance, name, group_name)
   name = assert_name(name)
+  instance = assert_refresh_target(instance)
   local ok, err = engine.set_group(name, group_name)
   if not ok then
     return false, err
@@ -136,6 +153,7 @@ end
 
 function M.set_blend(instance, name, value)
   name = assert_name(name)
+  instance = assert_refresh_target(instance)
   local ok, err = engine.set_blend(name, value)
   if not ok then
     return false, err
@@ -147,6 +165,7 @@ end
 
 function M.save(instance, name)
   name = assert_name(name)
+  instance = assert_refresh_target(instance)
   local ok, err = engine.save()
   if not ok then
     return false, err
@@ -157,6 +176,7 @@ end
 
 function M.discard(instance, name)
   name = assert_name(name)
+  instance = assert_refresh_target(instance)
   engine.restore_persisted(name)
   refresh(instance, name)
   return true, nil
