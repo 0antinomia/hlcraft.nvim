@@ -56,6 +56,42 @@ h.assert_equal(detail_info_lines[2][1][2], theme.groups.section, 'detail info la
 h.assert_equal(detail_info_lines[2][2][2], theme.groups.title, 'detail info name lacks title contrast', scope)
 h.assert_equal(detail_info_lines[3][1][2], theme.groups.section, 'detail color label lacks contrast', scope)
 
+local missing_result_ok = pcall(detail_info.build_virt_lines, nil, function()
+  return theme.groups.value
+end, 80)
+h.assert_true(not missing_result_ok, 'detail info accepted missing result', scope)
+local nameless_result_ok = pcall(detail_info.build_virt_lines, {}, function()
+  return theme.groups.value
+end, 80)
+h.assert_true(not nameless_result_ok, 'detail info accepted nameless result', scope)
+local invalid_highlighter_ok = pcall(detail_info.build_virt_lines, result, false, 80)
+h.assert_true(not invalid_highlighter_ok, 'detail info accepted invalid highlighter callback', scope)
+local invalid_width_ok = pcall(detail_info.build_virt_lines, result, function()
+  return theme.groups.value
+end, 12.5)
+h.assert_true(not invalid_width_ok, 'detail info accepted fractional width', scope)
+local invalid_link_chain_ok = pcall(detail_info.build_virt_lines, {
+  name = 'HlcraftUiDetailInfoInvalidLinkChain',
+  link_chain = { 'Source', false },
+}, function()
+  return theme.groups.value
+end, 80)
+h.assert_true(not invalid_link_chain_ok, 'detail info accepted invalid link chain entries', scope)
+local invalid_blend_ok = pcall(detail_info.build_virt_lines, {
+  name = 'HlcraftUiDetailInfoInvalidBlend',
+  blend = '12',
+}, function()
+  return theme.groups.value
+end, 80)
+h.assert_true(not invalid_blend_ok, 'detail info accepted invalid blend metadata', scope)
+local invalid_distance_ok = pcall(detail_info.build_virt_lines, {
+  name = 'HlcraftUiDetailInfoInvalidDistance',
+  distance = 0 / 0,
+}, function()
+  return theme.groups.value
+end, 80)
+h.assert_true(not invalid_distance_ok, 'detail info accepted invalid distance metadata', scope)
+
 local style_line = virt_line_with_label(detail_info_lines, 'Style')
 h.assert_true(style_line ~= nil, 'detail style line missing', scope)
 h.assert_equal(style_line[1][2], theme.groups.section, 'detail style label lacks contrast', scope)
