@@ -26,7 +26,7 @@ local function detail_geometry(geometry)
 end
 
 local function highlight_result(result)
-  if type(result) ~= 'table' or type(result.name) ~= 'string' then
+  if type(result) ~= 'table' or type(result.name) ~= 'string' or result.name == '' then
     error('detail renderer requires a highlight result', 3)
   end
   return result
