@@ -163,6 +163,52 @@ h.assert_equal(
   'brightness custom effect transform changed',
   scope
 )
+local sparse_transform_spec = normalize({
+  version = 1,
+  duration = 2000,
+  loop = 'repeat',
+  interpolation = 'linear',
+  timeline = {
+    { at = 0, color = 'base' },
+  },
+  transforms = {
+    {
+      type = 'brightness',
+      interpolation = 'linear',
+      timeline = {
+        { at = 0, value = 0.5 },
+      },
+    },
+  },
+})
+sparse_transform_spec.transforms = {
+  [2] = sparse_transform_spec.transforms[1],
+}
+h.assert_true(
+  effects.compute(sparse_transform_spec, '#808080', 1000) == nil,
+  'effect accepted sparse transforms',
+  scope
+)
+local invalid_transform_spec = normalize({
+  version = 1,
+  timeline = {
+    { at = 0, color = 'base' },
+  },
+  transforms = {
+    {
+      type = 'brightness',
+      timeline = {
+        { at = 0, value = 0.5 },
+      },
+    },
+  },
+})
+invalid_transform_spec.transforms[1] = false
+h.assert_true(
+  effects.compute(invalid_transform_spec, '#808080', 0) == nil,
+  'effect accepted non-table transform state',
+  scope
+)
 h.assert_equal(
   compute({
     version = 1,

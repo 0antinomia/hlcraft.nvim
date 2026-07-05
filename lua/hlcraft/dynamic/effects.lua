@@ -1,5 +1,6 @@
 local color = require('hlcraft.core.color')
 local model = require('hlcraft.dynamic.model')
+local tables = require('hlcraft.core.tables')
 local timeline = require('hlcraft.dynamic.timeline')
 local transforms = require('hlcraft.dynamic.transforms')
 
@@ -45,7 +46,12 @@ end
 
 function M.compute(spec, base_hex, now_ms, context)
   base_hex = normalize_hex(base_hex)
-  if type(spec) ~= 'table' or type(spec.transforms) ~= 'table' or not base_hex then
+  if
+    type(spec) ~= 'table'
+    or type(spec.transforms) ~= 'table'
+    or not tables.is_sequence(spec.transforms)
+    or not base_hex
+  then
     return nil
   end
 
@@ -72,6 +78,9 @@ function M.compute(spec, base_hex, now_ms, context)
   end
 
   for _, transform in ipairs(spec.transforms) do
+    if type(transform) ~= 'table' then
+      return nil
+    end
     local value = timeline.sample_numeric(transform.timeline, phase, transform.interpolation)
     computed = transforms.apply(computed, { type = transform.type, value = value })
     if not computed then
