@@ -107,10 +107,46 @@ detail_scene.enter(detail_instance, { index = 2 })
 h.assert_equal(detail_instance.state.detail_index, 2, 'detail enter did not set index', scope)
 detail_scene.enter(detail_instance, {})
 h.assert_equal(detail_instance.state.detail_index, 2, 'detail enter did not preserve missing index', scope)
+assert_fails(function()
+  detail_scene.enter(nil, {})
+end, 'detail enter accepted missing instance')
 local invalid_detail_opts_ok = pcall(detail_scene.enter, detail_instance, false)
 h.assert_true(not invalid_detail_opts_ok, 'detail enter accepted non-table options', scope)
 local invalid_detail_index_ok = pcall(detail_scene.enter, detail_instance, { index = 0 })
 h.assert_true(not invalid_detail_index_ok, 'detail enter accepted invalid index', scope)
+assert_fails(function()
+  detail_scene.enter(detail_instance, { index = math.huge })
+end, 'detail enter accepted infinite index')
+assert_fails(function()
+  detail_scene.current_result(detail_instance)
+end, 'detail current_result accepted missing results')
+
+local refresh_instance = {
+  state = {
+    detail_index = 1,
+    field_editor = { field = 'fg' },
+    list_cursor = 1,
+    results = {
+      { name = 'HlcraftUiContextNormal' },
+    },
+    scene = { name = 'detail' },
+  },
+  rerender = function() end,
+}
+assert_fails(function()
+  detail_scene.refresh(refresh_instance, '', true)
+end, 'detail refresh accepted empty name')
+assert_fails(function()
+  detail_scene.refresh(refresh_instance, 'HlcraftUiContextNormal', 'yes')
+end, 'detail refresh accepted invalid reopen flag')
+assert_fails(function()
+  detail_scene.refresh({
+    state = refresh_instance.state,
+  }, 'HlcraftUiContextNormal', true)
+end, 'detail refresh accepted missing rerender callback')
+assert_fails(function()
+  detail_scene.handle(refresh_instance, '')
+end, 'detail handle accepted empty action')
 
 instance.state.field_editor.field = 'blend'
 h.assert_equal(context.current_field_kind(instance), 'blend', 'blend field kind changed', scope)

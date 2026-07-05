@@ -1,6 +1,7 @@
 local search_scene = require('hlcraft.ui.scene.search')
 local session = require('hlcraft.ui.session')
 local style_editor = require('hlcraft.ui.editor.style')
+local numbers = require('hlcraft.core.number')
 local ui_fields = require('hlcraft.ui.fields')
 local rows = require('hlcraft.ui.scene.rows')
 local unsaved_prompt = require('hlcraft.ui.scene.unsaved_prompt')
@@ -8,8 +9,32 @@ local window = require('hlcraft.ui.workspace.window')
 
 local M = {}
 
-local function result_lines(instance)
-  local lines = instance.state.geometry.result_lines
+local function instance_state(instance)
+  if type(instance) ~= 'table' or type(instance.state) ~= 'table' then
+    error('detail scene requires an instance', 3)
+  end
+  return instance.state
+end
+
+local function field_editor_state(state)
+  if type(state.field_editor) ~= 'table' then
+    error('detail scene field editor state must be a table', 3)
+  end
+  return state.field_editor
+end
+
+local function result_list(state)
+  if type(state.results) ~= 'table' then
+    error('detail scene results must be a table', 3)
+  end
+  return state.results
+end
+
+local function result_lines(state)
+  if type(state.geometry) ~= 'table' then
+    error('detail geometry must be a table', 3)
+  end
+  local lines = state.geometry.result_lines
   if type(lines) ~= 'table' then
     error('detail geometry result_lines must be a table', 3)
   end
@@ -31,25 +56,58 @@ local function optional_table(opts, label)
 end
 
 local function positive_integer(value, label)
-  if type(value) ~= 'number' or math.floor(value) ~= value or value < 1 then
-    error(('%s must be a positive integer'):format(label), 3)
+  if type(value) ~= 'number' then
+    error(('%s must be a number'):format(label), 3)
+  end
+  if not numbers.is_finite(value) or math.floor(value) ~= value or value < 1 then
+    error(('%s must be a positive finite integer'):format(label), 3)
   end
   return value
 end
 
+local function optional_boolean(value, label)
+  if value ~= nil and type(value) ~= 'boolean' then
+    error(('%s must be boolean or nil'):format(label), 3)
+  end
+  return value == true
+end
+
+local function assert_name(name)
+  if type(name) ~= 'string' or name == '' then
+    error('detail result name must be a non-empty string', 3)
+  end
+  return name
+end
+
+local function assert_action(action)
+  if type(action) ~= 'string' or action == '' then
+    error('detail action must be a non-empty string', 3)
+  end
+  return action
+end
+
+local function assert_rerender(instance)
+  if type(instance.rerender) ~= 'function' then
+    error('detail scene requires a rerender callback', 3)
+  end
+end
+
 function M.enter(instance, opts)
+  local state = instance_state(instance)
   opts = optional_table(opts, 'detail entry')
   if opts.index ~= nil then
-    instance.state.detail_index = positive_integer(opts.index, 'detail entry index')
+    state.detail_index = positive_integer(opts.index, 'detail entry index')
   end
 end
 
 function M.render(instance)
+  instance_state(instance)
   search_scene.update_results(instance)
   require('hlcraft.ui.render.detail').render(instance)
 end
 
 function M.back(instance)
+  instance_state(instance)
   M.close(instance)
   return true, nil
 end
@@ -58,11 +116,13 @@ end
 --- @param instance table The Instance object holding UI state
 --- @return table|nil Result entry, or nil if no detail is open
 function M.current_result(instance)
-  local index = instance.state.detail_index
+  local state = instance_state(instance)
+  local index = state.detail_index
   if not index then
     return nil
   end
-  return instance.state.results[index]
+  index = positive_integer(index, 'detail index')
+  return result_list(state)[index]
 end
 
 --- Re-render and navigate to a named result, optionally reopening detail view
@@ -71,14 +131,21 @@ end
 --- @param reopen_detail boolean Whether to reopen the detail view for this result
 --- @return nil
 function M.refresh(instance, name, reopen_detail)
-  local active_field = instance.state.field_editor and instance.state.field_editor.field or nil
+  local state = instance_state(instance)
+  local field_editor = field_editor_state(state)
+  local results = result_list(state)
+  name = assert_name(name)
+  reopen_detail = optional_boolean(reopen_detail, 'detail reopen flag')
+  assert_rerender(instance)
+
+  local active_field = field_editor.field
   instance:rerender()
-  for index, result in ipairs(instance.state.results) do
+  for index, result in ipairs(results) do
     if result.name == name then
-      instance.state.list_cursor = index
+      state.list_cursor = index
       if reopen_detail then
-        instance.state.detail_index = index
-        instance.state.field_editor.field = active_field
+        state.detail_index = index
+        field_editor.field = active_field
         instance:rerender()
       end
       return
@@ -86,9 +153,9 @@ function M.refresh(instance, name, reopen_detail)
   end
 
   if reopen_detail then
-    instance.state.detail_index = nil
-    instance.state.field_editor.field = nil
-    instance.state.list_cursor = math.min(math.max(instance.state.list_cursor, 1), math.max(#instance.state.results, 1))
+    state.detail_index = nil
+    field_editor.field = nil
+    state.list_cursor = math.min(math.max(state.list_cursor, 1), math.max(#results, 1))
     restore_search_scene(instance)
     instance:rerender()
   end
@@ -98,6 +165,7 @@ end
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.close_unsaved_prompt(instance)
+  instance_state(instance)
   unsaved_prompt.close(instance)
 end
 
@@ -105,17 +173,20 @@ end
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.force_close(instance)
+  local state = instance_state(instance)
+  local field_editor = field_editor_state(state)
+  assert_rerender(instance)
   M.close_unsaved_prompt(instance)
-  instance.state.detail_index = nil
-  instance.state.field_editor.field = nil
+  state.detail_index = nil
+  field_editor.field = nil
   restore_search_scene(instance)
   instance:rerender()
   local win = window.get_win(instance)
   if not window.is_valid_win(win) then
     return
   end
-  for line, index in pairs(result_lines(instance)) do
-    if index == instance.state.list_cursor then
+  for line, index in pairs(result_lines(state)) do
+    if index == state.list_cursor then
       vim.api.nvim_win_set_cursor(win, { line, 0 })
       break
     end
@@ -127,6 +198,8 @@ end
 --- @param name string Highlight group name
 --- @return nil
 function M.open_unsaved_prompt(instance, name)
+  instance_state(instance)
+  name = assert_name(name)
   unsaved_prompt.open(instance, name, function()
     M.force_close(instance)
   end)
@@ -136,7 +209,8 @@ end
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.close(instance)
-  if not instance.state.detail_index then
+  local state = instance_state(instance)
+  if not state.detail_index then
     return
   end
   local result = M.current_result(instance)
@@ -148,10 +222,12 @@ function M.close(instance)
 end
 
 function M.row_at_cursor(instance)
+  instance_state(instance)
   return rows.detail_menu_at_cursor(instance)
 end
 
 function M.activate(instance)
+  assert_rerender(instance)
   local row = M.row_at_cursor(instance)
   local result = M.current_result(instance)
   if not row or not result then
@@ -172,6 +248,8 @@ function M.activate(instance)
 end
 
 function M.handle(instance, action)
+  instance_state(instance)
+  action = assert_action(action)
   if action == 'activate' then
     return M.activate(instance)
   end
