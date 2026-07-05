@@ -11,6 +11,7 @@ end
 
 local function assert_non_empty_string(value, message)
   assert_string(value, message)
+  value = vim.trim(value)
   if value == '' then
     error(message, 3)
   end

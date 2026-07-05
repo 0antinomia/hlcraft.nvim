@@ -110,7 +110,11 @@ local function assert_positive_integer(value, message)
 end
 
 local function non_empty_string(value, label)
-  if type(value) ~= 'string' or value == '' then
+  if type(value) ~= 'string' then
+    error(('%s must be a non-empty string'):format(label), 3)
+  end
+  value = vim.trim(value)
+  if value == '' then
     error(('%s must be a non-empty string'):format(label), 3)
   end
   return value
@@ -118,6 +122,11 @@ end
 
 local function section_options(options)
   options = options == nil and {} or assert_table(options, 'hint section options must be a table')
+  for key in pairs(options) do
+    if key ~= 'max_items' and key ~= 'width' then
+      error(('unknown hint section option: %s'):format(tostring(key)), 3)
+    end
+  end
   local max_items = default_max_items
   if options.max_items ~= nil then
     max_items = assert_positive_integer(options.max_items, 'hint max_items must be a positive integer')
@@ -131,14 +140,8 @@ end
 
 local function format_item(item)
   assert_table(item, 'hint item must be a table')
-  local key = item[1]
-  local action = item[2]
-  if type(key) ~= 'string' or key == '' then
-    error('hint item requires a key', 3)
-  end
-  if type(action) ~= 'string' or action == '' then
-    error('hint item requires an action', 3)
-  end
+  local key = non_empty_string(item[1], 'hint item key')
+  local action = non_empty_string(item[2], 'hint item action')
   return ('[%s] %s'):format(key, action)
 end
 
