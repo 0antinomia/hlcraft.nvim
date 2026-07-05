@@ -42,5 +42,17 @@ local missing_instance_ok = pcall(timers.stop_debounce, nil)
 h.assert_true(not missing_instance_ok, 'debounce timer stop accepted missing instance', scope)
 local invalid_state_ok = pcall(timers.stop_debounce, { state = false })
 h.assert_true(not invalid_state_ok, 'debounce timer stop accepted invalid state', scope)
+local invalid_timer_instance = {
+  state = {
+    debounce_timer = {},
+  },
+}
+local invalid_timer_ok = pcall(timers.stop_debounce, invalid_timer_instance)
+h.assert_true(not invalid_timer_ok, 'debounce timer stop accepted invalid timer handle', scope)
+h.assert_true(
+  invalid_timer_instance.state.debounce_timer ~= nil,
+  'failed debounce timer stop cleared invalid timer',
+  scope
+)
 
 print('hlcraft ui timers: OK')

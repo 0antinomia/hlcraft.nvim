@@ -29,4 +29,14 @@ h.assert_true(not fractional_repeat_ok, 'repeating timer accepted fractional int
 local invalid_repeat_callback_ok = pcall(timers.repeating, 1, false)
 h.assert_true(not invalid_repeat_callback_ok, 'repeating timer accepted invalid callback', scope)
 
+timers.stop(nil)
+local invalid_timer_ok = pcall(timers.stop, false)
+h.assert_true(not invalid_timer_ok, 'timer stop accepted non-handle value', scope)
+local missing_timer_methods_ok = pcall(timers.stop, {})
+h.assert_true(not missing_timer_methods_ok, 'timer stop accepted handle without stop or close', scope)
+local invalid_timer_stop_ok = pcall(timers.stop, { stop = false })
+h.assert_true(not invalid_timer_stop_ok, 'timer stop accepted non-function stop method', scope)
+local invalid_timer_close_ok = pcall(timers.stop, { close = false })
+h.assert_true(not invalid_timer_close_ok, 'timer stop accepted non-function close method', scope)
+
 print('hlcraft core timers: OK')

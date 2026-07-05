@@ -22,16 +22,28 @@ local function assert_callback(callback)
 end
 
 function M.stop(timer)
-  if not timer then
+  if timer == nil then
     return
   end
 
-  if timer.stop then
+  local stop = timer.stop
+  local close = timer.close
+  if stop ~= nil and type(stop) ~= 'function' then
+    error('timer stop method must be a function', 2)
+  end
+  if close ~= nil and type(close) ~= 'function' then
+    error('timer close method must be a function', 2)
+  end
+  if stop == nil and close == nil then
+    error('timer handle must provide stop or close', 2)
+  end
+
+  if stop then
     pcall(function()
       timer:stop()
     end)
   end
-  if timer.close then
+  if close then
     pcall(function()
       timer:close()
     end)
