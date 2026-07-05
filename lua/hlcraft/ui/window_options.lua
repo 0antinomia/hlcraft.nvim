@@ -10,6 +10,11 @@ M.managed = {
   'foldcolumn',
 }
 
+local managed_set = {}
+for _, option in ipairs(M.managed) do
+  managed_set[option] = true
+end
+
 M.workspace_values = {
   number = false,
   relativenumber = false,
@@ -77,6 +82,9 @@ function M.restore(snapshot)
   end
 
   for option, value in pairs(snapshot.values) do
+    if not managed_set[option] then
+      error(('window option snapshot contains unmanaged option: %s'):format(tostring(option)), 2)
+    end
     pcall(function()
       vim.wo[snapshot.win][option] = value
     end)
