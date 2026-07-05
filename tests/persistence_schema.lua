@@ -33,6 +33,10 @@ h.assert_equal(
 
 local nil_entry_ok = pcall(schema.normalize_entry, 'Normal', nil)
 h.assert_true(not nil_entry_ok, 'schema accepted nil entry', scope)
+local nil_entry_name_ok = pcall(schema.normalize_entry, nil, {})
+h.assert_true(not nil_entry_name_ok, 'schema accepted nil entry name', scope)
+local empty_entry_name_ok = pcall(schema.normalize_entry, '   ', {})
+h.assert_true(not empty_entry_name_ok, 'schema accepted empty entry name', scope)
 local bad_opts_ok = pcall(schema.normalize_entry, 'Normal', {}, false)
 h.assert_true(not bad_opts_ok, 'schema accepted non-table normalize options', scope)
 local unknown_opts_ok = pcall(schema.normalize_entry, 'Normal', {}, { compact = true })
@@ -131,8 +135,89 @@ for _, case in ipairs({
   h.assert_true(not ok, ('schema accepted invalid loaded %s'):format(case.label), scope)
 end
 
+for _, case in ipairs({
+  {
+    label = 'group without entry',
+    value = {
+      entries = {},
+      groups = {
+        OrphanGroup = 'main',
+      },
+      sections = {
+        main = {},
+      },
+    },
+  },
+  {
+    label = 'entry without group',
+    value = {
+      entries = {
+        OrphanEntry = {
+          fg = '#101010',
+        },
+      },
+      groups = {},
+      sections = {
+        main = {
+          OrphanEntry = {
+            fg = '#101010',
+          },
+        },
+      },
+    },
+  },
+  {
+    label = 'entry missing from section',
+    value = {
+      entries = {
+        MissingSectionEntry = {
+          fg = '#101010',
+        },
+      },
+      groups = {
+        MissingSectionEntry = 'main',
+      },
+      sections = {
+        main = {},
+      },
+    },
+  },
+  {
+    label = 'section group mismatch',
+    value = {
+      entries = {
+        MismatchedSection = {
+          fg = '#101010',
+        },
+      },
+      groups = {
+        MismatchedSection = 'main',
+      },
+      sections = {
+        main = {
+          MismatchedSection = {
+            fg = '#101010',
+          },
+        },
+        other = {
+          MismatchedSection = {
+            fg = '#101010',
+          },
+        },
+      },
+    },
+  },
+}) do
+  local ok = pcall(schema.normalize_loaded_data, case.value)
+  h.assert_true(not ok, ('schema accepted loaded %s'):format(case.label), scope)
+end
+
 local nil_entries_ok = pcall(schema.normalize_entries, nil)
 h.assert_true(not nil_entries_ok, 'schema accepted nil entries', scope)
+local invalid_entries_name_ok = pcall(schema.normalize_entries, {
+  [1] = {},
+})
+h.assert_true(not invalid_entries_name_ok, 'schema accepted invalid persisted entry name', scope)
 
 local invalid_entries, invalid_entries_err = schema.normalize_entries({
   Normal = {

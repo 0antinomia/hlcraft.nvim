@@ -16,6 +16,27 @@ local function assert_non_empty_string(value, label)
   return value
 end
 
+local function assert_entry_exists(data, name, label)
+  if data.entries[name] == nil then
+    error(('%s %s has no entry'):format(label, name), 3)
+  end
+end
+
+local function assert_group_exists(data, name, label)
+  local group_name = data.groups[name]
+  if group_name == nil then
+    error(('%s %s has no group'):format(label, name), 3)
+  end
+  return group_name
+end
+
+local function assert_section_contains(data, section_name, name)
+  local section = data.sections[section_name]
+  if type(section) ~= 'table' or section[name] == nil then
+    error(('loaded persistence entry %s is missing from section %s'):format(name, section_name), 3)
+  end
+end
+
 local function normalize_entry_options(opts)
   if opts == nil then
     return {}
@@ -33,6 +54,7 @@ local function normalize_entry_options(opts)
 end
 
 function M.normalize_entry(name, entry, opts)
+  name = assert_non_empty_string(name, 'persistence highlight name')
   entry = assert_table(entry, ('persistence entry %s'):format(tostring(name)))
   opts = normalize_entry_options(opts)
 
@@ -57,12 +79,15 @@ function M.normalize_loaded_data(data)
   for name, group_name in pairs(data.groups) do
     assert_non_empty_string(name, 'loaded persistence highlight name')
     assert_non_empty_string(group_name, ('loaded persistence group for %s'):format(name))
+    assert_entry_exists(data, name, 'loaded persistence group')
     normalized_data.groups[name] = group_name
   end
 
   local normalized_by_name = {}
   for name, entry in pairs(data.entries) do
     assert_non_empty_string(name, 'loaded persistence highlight name')
+    local group_name = assert_group_exists(data, name, 'loaded persistence entry')
+    assert_section_contains(data, group_name, name)
     local normalized, err = M.normalize_entry(name, entry)
     if err then
       error(err, 2)
@@ -77,6 +102,10 @@ function M.normalize_loaded_data(data)
     local section = {}
     for name, entry in pairs(entries) do
       assert_non_empty_string(name, 'loaded persistence highlight name')
+      local group_name = assert_group_exists(data, name, 'loaded persistence section entry')
+      if group_name ~= section_name then
+        error(('loaded persistence section %s contains %s assigned to %s'):format(section_name, name, group_name), 3)
+      end
       if normalized_by_name[name] then
         section[name] = normalized_by_name[name]
       else
