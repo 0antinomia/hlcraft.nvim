@@ -93,6 +93,11 @@ for _, case in ipairs({
     message = 'unknown reapply event key was accepted',
   },
   {
+    value = { reapply_events = { events = { { event = 'ColorScheme', pattern = '   ' } } } },
+    error = 'reapply_events.events[1].pattern: must be a non-empty string',
+    message = 'blank reapply event pattern was accepted',
+  },
+  {
     value = { dynamic = { enabled = 'yes', interval_ms = 0 } },
     error = 'dynamic.enabled: must be boolean, got string',
     message = 'invalid dynamic config was accepted',
@@ -165,6 +170,32 @@ local fractional_dynamic = normalize_with({ dynamic = { interval_ms = 120.9 } })
 h.assert_equal(fractional_dynamic.dynamic.interval_ms, 120, 'dynamic interval did not floor fractional values', scope)
 local trimmed_preview_key = normalize_with({ preview_key = ' zz ' })
 h.assert_equal(trimmed_preview_key.preview_key, 'zz', 'preview_key did not trim', scope)
+local trimmed_reapply_events = normalize_with({
+  reapply_events = {
+    events = {
+      ' ColorScheme ',
+      { event = ' SessionLoadPost ', pattern = ' * ', once = true },
+    },
+  },
+})
+h.assert_equal(
+  trimmed_reapply_events.reapply_events.events[1],
+  'ColorScheme',
+  'string reapply event did not trim',
+  scope
+)
+h.assert_equal(
+  trimmed_reapply_events.reapply_events.events[2].event,
+  'SessionLoadPost',
+  'table reapply event did not trim',
+  scope
+)
+h.assert_equal(
+  trimmed_reapply_events.reapply_events.events[2].pattern,
+  '*',
+  'reapply event pattern did not trim',
+  scope
+)
 local invalid_normalize_ok = pcall(
   schema.normalize,
   vim.tbl_extend('force', vim.deepcopy(schema.defaults), {

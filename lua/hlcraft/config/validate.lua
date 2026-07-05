@@ -112,8 +112,8 @@ local function validate_reapply_event(errors, index, entry)
 
   validate_table_keys(errors, ('reapply_events.events[%d]'):format(index), entry, reapply_event_keys)
   validate_event_name(errors, ('reapply_events.events[%d].event'):format(index), entry.event)
-  if entry.pattern ~= nil and type(entry.pattern) ~= 'string' then
-    add(errors, ('reapply_events.events[%d].pattern: must be a string'):format(index))
+  if entry.pattern ~= nil then
+    validate_non_empty_string(errors, ('reapply_events.events[%d].pattern'):format(index), entry.pattern)
   end
   validate_boolean(errors, ('reapply_events.events[%d].once'):format(index), entry.once)
 end

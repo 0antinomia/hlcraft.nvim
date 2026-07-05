@@ -39,6 +39,23 @@ local function normalize_from_none(value)
   }
 end
 
+local function normalize_reapply_event(value)
+  if type(value) == 'string' then
+    return vim.trim(value)
+  end
+
+  local normalized = {
+    event = vim.trim(value.event),
+  }
+  if value.pattern ~= nil then
+    normalized.pattern = vim.trim(value.pattern)
+  end
+  if value.once ~= nil then
+    normalized.once = value.once
+  end
+  return normalized
+end
+
 local function normalize_reapply_events(value)
   if type(value) == 'boolean' then
     return {
@@ -48,10 +65,14 @@ local function normalize_reapply_events(value)
   end
 
   value = assert_table(value, 'reapply_events config')
+  local events = {}
+  for index, event in ipairs(value.events) do
+    events[index] = normalize_reapply_event(event)
+  end
 
   return {
     enabled = value.enabled ~= false,
-    events = vim.deepcopy(value.events),
+    events = events,
   }
 end
 
