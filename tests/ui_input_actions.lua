@@ -106,6 +106,49 @@ h.with_temp_buf(function(buf)
   h.assert_true(not invalid_input_row_ok, 'input model accepted a negative row', scope)
   local invalid_current_area_row_ok = pcall(input_model.current_area, instance, 0)
   h.assert_true(not invalid_current_area_row_ok, 'input model accepted a zero current-area row', scope)
+  local missing_result_lines_ok = pcall(input_model.current_area, {
+    state = {
+      geometry = {
+        inputs = {},
+      },
+    },
+  }, 1)
+  h.assert_true(not missing_result_lines_ok, 'input model accepted missing result line geometry', scope)
+  local missing_set_extmark_instance_ok = pcall(input_model.set_input_extmarks, nil)
+  h.assert_true(not missing_set_extmark_instance_ok, 'input model accepted missing extmark instance', scope)
+  local invalid_extmark_namespace_ok = pcall(input_model.set_input_extmarks, {
+    ns = false,
+    state = {
+      buf = buf,
+      geometry = {
+        inputs = {
+          { name = 'bad', kind = 'name', line = 1 },
+        },
+      },
+    },
+  })
+  h.assert_true(not invalid_extmark_namespace_ok, 'input model accepted invalid extmark namespace', scope)
+  local invalid_extmark_line_ok = pcall(input_model.set_input_extmarks, {
+    ns = instance.ns,
+    state = {
+      buf = buf,
+      geometry = {
+        inputs = {
+          { name = 'bad', kind = 'name', line = 0 },
+        },
+      },
+    },
+  })
+  h.assert_true(not invalid_extmark_line_ok, 'input model accepted invalid extmark row', scope)
+  local invalid_pos_namespace_ok = pcall(input_model.get_input_pos, {
+    ns = false,
+    state = instance.state,
+  }, 'color')
+  h.assert_true(not invalid_pos_namespace_ok, 'input model accepted invalid position namespace', scope)
+  local invalid_field_line_ok = pcall(input_model.field_line_text, instance, { line = 0 })
+  h.assert_true(not invalid_field_line_ok, 'input model accepted invalid field line', scope)
+  local invalid_field_shape_ok = pcall(input_model.field_line_text, instance, false)
+  h.assert_true(not invalid_field_shape_ok, 'input model accepted invalid field shape', scope)
   local missing_action_instance_ok = pcall(actions.should_block_backward_delete, nil)
   h.assert_true(not missing_action_instance_ok, 'input actions accepted missing instance', scope)
   local missing_action_geometry_ok = pcall(actions.should_block_backward_delete, {
