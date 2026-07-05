@@ -9,6 +9,13 @@ local function field_name(field)
   return input_sequence.name(field)
 end
 
+local function assert_input_field(field)
+  if type(field) ~= 'table' then
+    error('input field must be a table', 3)
+  end
+  return field
+end
+
 local function assert_input_value(value)
   if type(value) ~= 'string' then
     error('input value must be a string', 3)
@@ -49,16 +56,38 @@ local function assert_row1(row1)
   return row1
 end
 
-local function geometry_inputs(instance)
+local function assert_namespace(ns)
+  if type(ns) ~= 'number' then
+    error('input namespace must be a number', 3)
+  end
+  if not numbers.is_finite(ns) or math.floor(ns) ~= ns or ns < 0 then
+    error('input namespace must be a non-negative finite integer', 3)
+  end
+  return ns
+end
+
+local function input_geometry(instance)
   local state = instance_state(instance)
   if type(state.geometry) ~= 'table' then
     error('input geometry must be a table', 3)
   end
-  local inputs = state.geometry.inputs
+  return state.geometry
+end
+
+local function geometry_inputs(instance)
+  local inputs = input_geometry(instance).inputs
   if type(inputs) ~= 'table' then
     error('input geometry inputs must be a table', 3)
   end
   return inputs
+end
+
+local function geometry_result_lines(instance)
+  local result_lines = input_geometry(instance).result_lines
+  if type(result_lines) ~= 'table' then
+    error('input geometry result lines must be a table', 3)
+  end
+  return result_lines
 end
 
 local function extmark_ids(instance)
@@ -94,8 +123,9 @@ function M.current_area(instance, row1)
     end
     return field.kind, field
   end
-  if instance.state.geometry.result_lines[row1] then
-    return 'results', instance.state.geometry.result_lines[row1]
+  local result_lines = geometry_result_lines(instance)
+  if result_lines[row1] then
+    return 'results', result_lines[row1]
   end
 end
 
@@ -111,21 +141,22 @@ end
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.set_input_extmarks(instance)
-  if not window.is_valid_buf(instance.state.buf) then
+  local state = instance_state(instance)
+  if not window.is_valid_buf(state.buf) then
     return
   end
+  local ns = assert_namespace(instance.ns)
 
-  instance.state.extmark_ids = {}
+  state.extmark_ids = {}
   for _, field in ipairs(geometry_inputs(instance)) do
     local name = field_name(field)
-    instance.state.extmark_ids[name .. ':start'] =
-      vim.api.nvim_buf_set_extmark(instance.state.buf, instance.ns, field.line - 1, 0, {
-        right_gravity = false,
-      })
-    instance.state.extmark_ids[name .. ':end'] =
-      vim.api.nvim_buf_set_extmark(instance.state.buf, instance.ns, field.line, 0, {
-        right_gravity = false,
-      })
+    local row1 = assert_row1(field.line)
+    state.extmark_ids[name .. ':start'] = vim.api.nvim_buf_set_extmark(state.buf, ns, row1 - 1, 0, {
+      right_gravity = false,
+    })
+    state.extmark_ids[name .. ':end'] = vim.api.nvim_buf_set_extmark(state.buf, ns, row1, 0, {
+      right_gravity = false,
+    })
   end
 end
 
@@ -148,8 +179,13 @@ function M.get_input_pos(instance, name)
     return nil, nil, field
   end
 
-  local start_mark = vim.api.nvim_buf_get_extmark_by_id(instance.state.buf, instance.ns, start_id, {})
-  local end_mark = vim.api.nvim_buf_get_extmark_by_id(instance.state.buf, instance.ns, end_id, {})
+  local state = instance_state(instance)
+  if not window.is_valid_buf(state.buf) then
+    error('input model requires a valid buffer', 3)
+  end
+  local ns = assert_namespace(instance.ns)
+  local start_mark = vim.api.nvim_buf_get_extmark_by_id(state.buf, ns, start_id, {})
+  local end_mark = vim.api.nvim_buf_get_extmark_by_id(state.buf, ns, end_id, {})
   local start_row = start_mark[1]
   local end_row = end_mark[1]
   return start_row, end_row, field
@@ -256,18 +292,21 @@ end
 --- @param field table Field descriptor with a `line` key
 --- @return string Text content of the field's line
 function M.field_line_text(instance, field)
-  return buffer_lines.line(instance.state.buf, field.line - 1, 'input field')
+  local state = instance_state(instance)
+  field = assert_input_field(field)
+  return buffer_lines.line(state.buf, assert_row1(field.line) - 1, 'input field')
 end
 
 --- Read name and color query values from the buffer into instance state
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.sync_queries_from_buffer(instance)
-  if instance.state.rendering or not window.is_valid_buf(instance.state.buf) or instance.state.detail_index then
+  local state = instance_state(instance)
+  if state.rendering or not window.is_valid_buf(state.buf) or state.detail_index then
     return
   end
-  instance.state.name_query = M.get_input_value(instance, 'name')
-  instance.state.color_query = M.get_input_value(instance, 'color')
+  state.name_query = M.get_input_value(instance, 'name')
+  state.color_query = M.get_input_value(instance, 'color')
 end
 
 return M

@@ -72,4 +72,29 @@ assert_plan(
   'visual above paste should prepare trailing newline'
 )
 
+local invalid_input_ok = pcall(paste_plan.below, false, 3, false)
+h.assert_true(not invalid_input_ok, 'paste plan accepted non-table input', scope)
+local invalid_start_ok = pcall(paste_plan.below, {
+  start_row = -1,
+  end_row = 3,
+  value = 'alpha',
+}, 3, false)
+h.assert_true(not invalid_start_ok, 'paste plan accepted invalid start row', scope)
+local invalid_end_ok = pcall(paste_plan.below, {
+  start_row = 3,
+  end_row = 2,
+  value = 'alpha',
+}, 3, false)
+h.assert_true(not invalid_end_ok, 'paste plan accepted invalid end row', scope)
+local invalid_value_ok = pcall(paste_plan.below, {
+  start_row = 3,
+  end_row = 3,
+  value = false,
+}, 3, false)
+h.assert_true(not invalid_value_ok, 'paste plan accepted non-string value', scope)
+local invalid_row_ok = pcall(paste_plan.below, single, math.huge, false)
+h.assert_true(not invalid_row_ok, 'paste plan accepted invalid cursor row', scope)
+local invalid_visual_ok = pcall(paste_plan.above, single, 3, nil)
+h.assert_true(not invalid_visual_ok, 'paste plan accepted missing visual flag', scope)
+
 print('hlcraft ui input paste plan: OK')
