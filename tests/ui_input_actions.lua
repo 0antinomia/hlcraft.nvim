@@ -116,6 +116,17 @@ h.with_temp_buf(function(buf)
     },
   }, 1)
   h.assert_true(not missing_result_lines_ok, 'input model accepted missing result line geometry', scope)
+  local invalid_result_index_ok = pcall(input_model.current_area, {
+    state = {
+      geometry = {
+        inputs = {},
+        result_lines = {
+          [1] = 0,
+        },
+      },
+    },
+  }, 1)
+  h.assert_true(not invalid_result_index_ok, 'input model accepted invalid result index geometry', scope)
   local missing_set_extmark_instance_ok = pcall(input_model.set_input_extmarks, nil)
   h.assert_true(not missing_set_extmark_instance_ok, 'input model accepted missing extmark instance', scope)
   local invalid_extmark_namespace_ok = pcall(input_model.set_input_extmarks, {
