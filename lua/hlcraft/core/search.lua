@@ -83,7 +83,7 @@ function M.by_name(keyword)
 
   for _, group in ipairs(all) do
     if group.name:lower():find(lower_keyword, 1, true) then
-      results[#results + 1] = group
+      results[#results + 1] = vim.deepcopy(group)
     end
   end
 
