@@ -10,7 +10,7 @@ local function assert_scene_name(name, label, level)
 end
 
 local function scene_state(instance)
-  if not instance or not instance.state then
+  if type(instance) ~= 'table' or type(instance.state) ~= 'table' then
     error('scene lookup requires an instance', 3)
   end
   local state = instance.state.scene
@@ -80,6 +80,7 @@ function M.render(instance)
 end
 
 function M.handle(instance, action, ...)
+  action = assert_scene_name(action, 'scene action', 2)
   local scene = M.current(instance)
   if scene and scene.handle then
     return scene.handle(instance, action, ...)

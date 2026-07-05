@@ -69,6 +69,9 @@ local missing_scene_ok = pcall(scene.current_name, {
   state = {},
 })
 h.assert_true(not missing_scene_ok, 'scene lookup accepted missing state schema', scope)
+assert_fails(function()
+  scene.current_name(nil)
+end, 'scene lookup accepted missing instance')
 local invalid_scene_name_ok = pcall(scene.current_name, {
   state = {
     scene = {},
@@ -97,6 +100,9 @@ local scene_name_option_ok = pcall(scene.set, instance, 'field_editor', { name =
 h.assert_true(not scene_name_option_ok, 'scene set accepted a name option override', scope)
 local empty_scene_set_ok = pcall(scene.set, instance, '', {})
 h.assert_true(not empty_scene_set_ok, 'scene set accepted an empty scene name', scope)
+assert_fails(function()
+  scene.handle(instance, '')
+end, 'scene handle accepted an empty action')
 
 local detail_instance = {
   state = {
