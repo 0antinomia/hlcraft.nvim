@@ -177,6 +177,26 @@ local invalid_raw_state_ok = pcall(raw_dynamic.close, {
   },
 })
 h.assert_true(not invalid_raw_state_ok, 'raw dynamic close accepted invalid state schema', scope)
+local invalid_raw_buf_ok = pcall(raw_dynamic.close, {
+  state = {
+    raw_dynamic = {
+      buf = false,
+    },
+  },
+})
+h.assert_true(not invalid_raw_buf_ok, 'raw dynamic close accepted invalid buffer handle state', scope)
+local invalid_raw_win_ok = pcall(raw_dynamic.close, {
+  state = {
+    raw_dynamic = {
+      win = false,
+    },
+  },
+})
+h.assert_true(not invalid_raw_win_ok, 'raw dynamic close accepted invalid window handle state', scope)
+local invalid_raw_result_ok = pcall(raw_dynamic.open, {
+  state = {},
+}, {}, 'fg')
+h.assert_true(not invalid_raw_result_ok, 'raw dynamic open accepted a nameless result', scope)
 local invalid_raw_field_ok = pcall(raw_dynamic.open, {
   state = {},
 }, result, false)
@@ -384,6 +404,17 @@ h.with_temp_buf(function(preview_buf)
   dynamic_preview.tick(preview_instance, 1000)
   local second_preview_hl = vim.api.nvim_get_hl(preview_ns, { name = preview_hl_name })
   h.assert_equal(second_preview_hl.fg, 0x808080, 'fixed preview changed with live time', scope)
+  preview_instance.state.dynamic_preview.marks[preview_id] = false
+  assert_fails(function()
+    dynamic_preview.tick(preview_instance, 0)
+  end, 'dynamic preview accepted invalid mark id state')
+  preview_instance.state.dynamic_preview.marks = {
+    bad = 1,
+  }
+  assert_fails(function()
+    dynamic_preview.tick(preview_instance, 0)
+  end, 'dynamic preview accepted invalid mark item id state')
+  preview_instance.state.dynamic_preview.marks = {}
   dynamic_preview.clear(preview_instance)
 end)
 

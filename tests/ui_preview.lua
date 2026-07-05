@@ -71,6 +71,16 @@ local ok, err = xpcall(function()
       },
     })
   end, 'preview keymap install accepted invalid preview key')
+  config.config = vim.tbl_deep_extend('force', vim.deepcopy(original_config), {
+    preview_key = '   ',
+  })
+  assert_fails(function()
+    preview.install_keymap({
+      state = {
+        preview = ui_state.preview(),
+      },
+    })
+  end, 'preview keymap install accepted blank preview key')
   config.config = original_config
 
   vim.keymap.set('n', lhs, '<Nop>', {
