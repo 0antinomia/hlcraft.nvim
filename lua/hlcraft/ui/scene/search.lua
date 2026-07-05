@@ -119,9 +119,13 @@ end
 --- @return nil
 function M.update_results(instance)
   local state = instance_state(instance)
+  local cursor = nil
+  if state.detail_index == nil then
+    cursor = positive_integer(state.list_cursor, 'search list cursor')
+  end
   state.results = search_model.results(state.name_query, state.color_query)
   if state.detail_index == nil then
-    state.list_cursor = math.min(math.max(state.list_cursor, 1), math.max(#state.results, 1))
+    state.list_cursor = math.min(math.max(cursor, 1), math.max(#state.results, 1))
   end
 end
 

@@ -155,9 +155,10 @@ function M.refresh(instance, name, reopen_detail)
   end
 
   if reopen_detail then
+    local cursor = positive_integer(state.list_cursor, 'detail list cursor')
     state.detail_index = nil
     field_editor.field = nil
-    state.list_cursor = math.min(math.max(state.list_cursor, 1), math.max(#results, 1))
+    state.list_cursor = math.min(math.max(cursor, 1), math.max(#results, 1))
     restore_search_scene(instance)
     instance:rerender()
   end
