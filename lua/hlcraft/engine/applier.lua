@@ -25,6 +25,13 @@ local function assert_name(name)
   return name
 end
 
+local function assert_replay(replay)
+  if type(replay) ~= 'function' then
+    error('engine applier requires a replay callback', 3)
+  end
+  return replay
+end
+
 function M.build_preset_overrides()
   if not config.from_none_enabled() then
     return {}
@@ -126,6 +133,7 @@ function M.register_reapply_events(replay)
   if not config.config.reapply_events.enabled then
     return
   end
+  replay = assert_replay(replay)
 
   for index, hook in ipairs(tables.assert_sequence(config.config.reapply_events.events, 'reapply events', 3)) do
     local event = hook

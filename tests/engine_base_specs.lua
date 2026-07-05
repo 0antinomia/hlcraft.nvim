@@ -1,5 +1,6 @@
 local h = require('tests.helpers')
 local scope = 'hlcraft engine base specs'
+local assert_fails = h.scoped_assert_fails(scope)
 
 local base_specs = require('hlcraft.engine.base_specs')
 
@@ -44,6 +45,22 @@ local invalid_merged_state_ok = pcall(base_specs.merged, { base_specs = {} }, na
 h.assert_true(not invalid_merged_state_ok, 'base spec merge accepted missing active state', scope)
 local invalid_merged_name_ok = pcall(base_specs.merged, state, nil)
 h.assert_true(not invalid_merged_name_ok, 'base spec merge accepted missing name', scope)
+
+local invalid_cached_state = {
+  base_specs = {
+    [name] = false,
+  },
+  active = {},
+}
+assert_fails(function()
+  base_specs.capture(invalid_cached_state, name)
+end, 'base spec capture accepted invalid cached spec')
+assert_fails(function()
+  base_specs.restore(invalid_cached_state, name)
+end, 'base spec restore accepted invalid cached spec')
+assert_fails(function()
+  base_specs.merged(invalid_cached_state, name)
+end, 'base spec merge accepted invalid cached spec')
 
 vim.api.nvim_set_hl(0, name, { fg = '#445566', italic = true })
 base_specs.restore(state, name)

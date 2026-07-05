@@ -26,6 +26,14 @@ local function active_state(state)
   return state
 end
 
+local function cached_base_spec(state, name)
+  local spec = state.base_specs[name]
+  if spec ~= nil and type(spec) ~= 'table' then
+    error(('base spec %s must be a table'):format(name), 3)
+  end
+  return spec
+end
+
 function M.normalized_set_hl_spec(name)
   name = assert_name(name)
   local group = highlights.get_group(name)
@@ -60,7 +68,7 @@ end
 function M.capture(state, name)
   state = base_spec_state(state)
   name = assert_name(name)
-  if state.base_specs[name] ~= nil then
+  if cached_base_spec(state, name) ~= nil then
     return
   end
 
@@ -76,8 +84,8 @@ end
 function M.restore(state, name)
   state = base_spec_state(state)
   name = assert_name(name)
-  local base = state.base_specs[name]
-  if not base then
+  local base = cached_base_spec(state, name)
+  if base == nil then
     return
   end
 
