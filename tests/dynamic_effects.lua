@@ -37,9 +37,17 @@ h.assert_true(timeline.phase(250, 1000, 0, 'bad') == nil, 'unknown loop was acce
 h.assert_true(timeline.sample_numeric(numeric_stops, 0 / 0, 'linear') == nil, 'NaN sample phase was accepted', scope)
 h.assert_true(timeline.sample_numeric(numeric_stops, 0.5, 'bad') == nil, 'unknown interpolation was accepted', scope)
 h.assert_true(timeline.sample_numeric({ false }, 0.5, 'linear') == nil, 'non-table stop was accepted', scope)
+h.assert_true(timeline.sample_numeric({
+  [2] = { at = 1, value = 1 },
+}, 0.5, 'linear') == nil, 'sparse numeric stops were accepted', scope)
 h.assert_true(
   timeline.sample_numeric({ { at = 0, value = 0 }, { value = 1 } }, 0.5, 'linear') == nil,
   'stop without position was accepted',
+  scope
+)
+h.assert_true(
+  timeline.sample_numeric({ { at = 0 }, { at = 1, value = 1 } }, 0.5, 'linear') == nil,
+  'numeric stop without value was accepted',
   scope
 )
 
