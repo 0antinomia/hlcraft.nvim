@@ -53,36 +53,18 @@ local function valid_buffer(buf)
 end
 
 local function positive_integer(value, label)
-  if type(value) ~= 'number' then
-    error(('%s must be a number'):format(label), 3)
-  end
-  if not numbers.is_finite(value) or math.floor(value) ~= value or value < 1 then
-    error(('%s must be a positive finite integer'):format(label), 3)
-  end
-  return value
+  return numbers.assert_positive_integer(value, label, 3)
 end
 
 local function non_negative_integer(value, label)
-  if type(value) ~= 'number' then
-    error(('%s must be a number'):format(label), 3)
-  end
-  if not numbers.is_finite(value) or math.floor(value) ~= value or value < 0 then
-    error(('%s must be a non-negative finite integer'):format(label), 3)
-  end
-  return value
+  return numbers.assert_non_negative_integer(value, label, 3)
 end
 
 local function extmark_id(value, label)
   if value == nil then
     return nil
   end
-  if type(value) ~= 'number' then
-    error(('%s must be a number'):format(label), 3)
-  end
-  if not numbers.is_finite(value) or math.floor(value) ~= value or value < 1 then
-    error(('%s must be a positive finite integer'):format(label), 3)
-  end
-  return value
+  return numbers.assert_positive_integer(value, label, 3)
 end
 
 local function non_empty_string(value, label)

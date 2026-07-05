@@ -32,13 +32,7 @@ function M.field(field, label)
 end
 
 function M.width(width, label)
-  if type(width) ~= 'number' then
-    error(('%s width must be a number'):format(label), 3)
-  end
-  if not numbers.is_finite(width) or math.floor(width) ~= width or width < 1 then
-    error(('%s width must be a positive finite integer'):format(label), 3)
-  end
-  return width
+  return numbers.assert_positive_integer(width, ('%s width'):format(label), 3)
 end
 
 function M.dynamic(dynamic, label)

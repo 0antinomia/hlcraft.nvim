@@ -50,17 +50,7 @@ local function assert_time(now_ms)
 end
 
 local function is_non_negative_integer(value)
-  return type(value) == 'number' and numbers.is_finite(value) and math.floor(value) == value and value >= 0
-end
-
-local function positive_integer(value, label)
-  if type(value) ~= 'number' then
-    error(('%s must be a number'):format(label), 3)
-  end
-  if not numbers.is_finite(value) or math.floor(value) ~= value or value < 1 then
-    error(('%s must be a positive finite integer'):format(label), 3)
-  end
-  return value
+  return numbers.is_integer(value, 0)
 end
 
 local function instance_preview_key(preview)
@@ -107,8 +97,8 @@ end
 
 local function clear_preview_marks(state, ns, preview)
   for item_id, mark_id in pairs(preview.marks) do
-    item_id = positive_integer(item_id, 'dynamic preview item id')
-    mark_id = positive_integer(mark_id, 'dynamic preview mark id')
+    item_id = numbers.assert_positive_integer(item_id, 'dynamic preview item id', 3)
+    mark_id = numbers.assert_positive_integer(mark_id, 'dynamic preview mark id', 3)
     if is_tracked_preview_mark(state, ns, preview, item_id, mark_id) then
       pcall(vim.api.nvim_buf_del_extmark, state.buf, ns, mark_id)
     end

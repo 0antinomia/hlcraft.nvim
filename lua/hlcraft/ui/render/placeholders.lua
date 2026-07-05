@@ -21,13 +21,7 @@ local function instance_state(instance)
 end
 
 local function instance_namespace(instance)
-  if type(instance.ns) ~= 'number' then
-    error('placeholder namespace must be a number', 3)
-  end
-  if not numbers.is_finite(instance.ns) or math.floor(instance.ns) ~= instance.ns or instance.ns < 0 then
-    error('placeholder namespace must be a non-negative finite integer', 3)
-  end
-  return instance.ns
+  return numbers.assert_non_negative_integer(instance.ns, 'placeholder namespace', 3)
 end
 
 local function placeholder_marks(state)
@@ -45,26 +39,14 @@ local function geometry_inputs(state)
 end
 
 local function positive_integer(value, label)
-  if type(value) ~= 'number' then
-    error(('%s must be a number'):format(label), 3)
-  end
-  if not numbers.is_finite(value) or math.floor(value) ~= value or value < 1 then
-    error(('%s must be a positive finite integer'):format(label), 3)
-  end
-  return value
+  return numbers.assert_positive_integer(value, label, 3)
 end
 
 local function extmark_id(value, label)
   if value == nil then
     return nil
   end
-  if type(value) ~= 'number' then
-    error(('%s must be a number'):format(label), 3)
-  end
-  if not numbers.is_finite(value) or math.floor(value) ~= value or value < 1 then
-    error(('%s must be a positive finite integer'):format(label), 3)
-  end
-  return value
+  return numbers.assert_positive_integer(value, label, 3)
 end
 
 local function detail_active(state)
@@ -72,10 +54,7 @@ local function detail_active(state)
   if index == nil then
     return false
   end
-  if type(index) ~= 'number' then
-    error('placeholder detail index must be a number or nil', 3)
-  end
-  if not numbers.is_finite(index) or math.floor(index) ~= index or index < 1 then
+  if not numbers.is_integer(index, 1) then
     error('placeholder detail index must be a positive finite integer or nil', 3)
   end
   return true

@@ -49,13 +49,7 @@ local function mode(background)
 end
 
 local function assert_namespace(ns)
-  if type(ns) ~= 'number' then
-    error('theme namespace must be a number', 3)
-  end
-  if not numbers.is_finite(ns) or math.floor(ns) ~= ns or ns < 0 then
-    error('theme namespace must be a non-negative finite integer', 3)
-  end
-  return ns
+  return numbers.assert_non_negative_integer(ns, 'theme namespace', 3)
 end
 
 function M.palette(background)
