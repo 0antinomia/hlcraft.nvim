@@ -40,6 +40,9 @@ function M.sorted_keys(value, compare)
   if type(value) ~= 'table' then
     error('sorted_keys value must be a table', 2)
   end
+  if compare ~= nil and type(compare) ~= 'function' then
+    error('sorted_keys comparator must be a function or nil', 2)
+  end
 
   local keys = {}
   for key in pairs(value) do
