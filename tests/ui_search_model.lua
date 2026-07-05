@@ -27,9 +27,23 @@ h.assert_equal(
   'name empty message changed',
   scope
 )
+h.assert_equal(
+  model.empty_message('', '   '),
+  'Use Name and Color search together to narrow highlight groups',
+  'blank color empty message changed',
+  scope
+)
+h.assert_equal(
+  model.empty_message('Normal', '   '),
+  'No highlight groups match this name filter',
+  'blank color name empty message changed',
+  scope
+)
 
 h.assert_true(model.valid_color_query('#abcdef'), 'valid hex color query was rejected', scope)
+h.assert_true(model.valid_color_query(' #abcdef '), 'spaced hex color query was rejected', scope)
 h.assert_true(model.valid_color_query('NONE'), 'NONE color query was rejected', scope)
+h.assert_true(model.valid_color_query(' none '), 'spaced NONE color query was rejected', scope)
 h.assert_true(not model.valid_color_query('not-a-color'), 'invalid color query was accepted', scope)
 h.assert_true(not model.valid_color_query(123), 'numeric color query was accepted', scope)
 
@@ -86,6 +100,10 @@ h.assert_equal(combined[1].name, 'Beta', 'combined search did not intersect prov
 h.assert_equal(#provider_calls, 2, 'combined search did not call both providers', scope)
 h.assert_equal(provider_calls[1], 'name:a', 'combined search called name provider incorrectly', scope)
 h.assert_equal(provider_calls[2], 'color:#ffffff', 'combined search called color provider incorrectly', scope)
+
+provider_calls = {}
+model.results('a', ' #ffffff ', provider)
+h.assert_equal(provider_calls[2], 'color:#ffffff', 'combined search did not trim color provider query', scope)
 
 provider_calls = {}
 local invalid = model.results('a', 'invalid', provider)
@@ -154,5 +172,12 @@ local name_only = model.results('Alpha', '', provider)
 h.assert_equal(name_only[1].name, 'Alpha', 'name-only search did not use name provider', scope)
 h.assert_equal(#provider_calls, 1, 'name-only search called wrong number of providers', scope)
 h.assert_equal(provider_calls[1], 'name:Alpha', 'name-only search called wrong provider', scope)
+
+provider_calls = {}
+local blank_color = model.results('Alpha', '   ', provider)
+h.assert_equal(#blank_color, 2, 'blank color query did not return name results', scope)
+h.assert_equal(blank_color[1].name, 'Alpha', 'blank color query did not fall back to name search', scope)
+h.assert_equal(#provider_calls, 1, 'blank color query called wrong number of providers', scope)
+h.assert_equal(provider_calls[1], 'name:Alpha', 'blank color query called wrong provider', scope)
 
 print('hlcraft ui search model: OK')

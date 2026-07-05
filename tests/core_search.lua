@@ -61,6 +61,8 @@ by_color = local_results(by_color)
 h.assert_equal(by_color[1].name, names[2], 'color search did not return closest match first', scope)
 h.assert_equal(by_color[1].distance, 0, 'exact color match distance changed', scope)
 h.assert_true(by_color[2].distance > by_color[1].distance, 'color search did not sort by distance', scope)
+local spaced_color = local_results(search.by_color(' #202020 ', 64))
+h.assert_equal(spaced_color[1].name, names[2], 'color search did not trim color query', scope)
 
 h.assert_equal(#search.by_color('', 64), 0, 'empty color search did not return empty results', scope)
 local non_string_color_ok = pcall(search.by_color, 123, 64)
