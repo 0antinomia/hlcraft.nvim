@@ -75,6 +75,9 @@ local ignored_files = {
 local function assert_all_tests_listed()
   local listed = {}
   for _, test_file in ipairs(tests) do
+    if listed[test_file] then
+      error(('tests/run_all.lua lists test file twice: %s'):format(test_file), 0)
+    end
     listed[test_file] = true
   end
 
