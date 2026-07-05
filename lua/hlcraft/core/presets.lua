@@ -27,10 +27,18 @@ local extended_transparent_groups = {
   'PmenuThumb',
 }
 
+local function assert_scope(scope)
+  if scope ~= nil and scope ~= 'core' and scope ~= 'extended' then
+    error('transparent preset scope must be "core", "extended", or nil', 3)
+  end
+  return scope
+end
+
 --- Build the broad transparent baseline used when from_none is enabled.
 --- @param scope '"core"'|'"extended"'|nil
 --- @return table
 function M.transparent(scope)
+  scope = assert_scope(scope)
   local overrides = {}
   local groups = vim.deepcopy(core_transparent_groups)
 
