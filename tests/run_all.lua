@@ -45,6 +45,7 @@ local tests = {
   'tests/ui_render_list.lua',
   'tests/ui_render_search.lua',
   'tests/ui_render_decorations.lua',
+  'tests/ui_render_editors.lua',
   'tests/ui_hints.lua',
   'tests/ui_help.lua',
   'tests/ui_scene_rows.lua',
