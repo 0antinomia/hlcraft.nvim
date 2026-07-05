@@ -6,13 +6,35 @@ local ui_fields = require('hlcraft.ui.fields')
 
 local M = {}
 
+local function instance_state(instance)
+  if type(instance) ~= 'table' or type(instance.state) ~= 'table' then
+    error('UI context requires an instance', 3)
+  end
+  return instance.state
+end
+
+local function field_editor_state(state)
+  if type(state.field_editor) ~= 'table' then
+    error('UI context field editor state must be a table', 3)
+  end
+  return state.field_editor
+end
+
+local function result_list(state)
+  if type(state.results) ~= 'table' then
+    error('UI context results must be a table', 3)
+  end
+  return state.results
+end
+
 function M.editor_scene_is_active(instance)
+  local state = instance_state(instance)
   local current_scene = scene.current_name(instance)
-  return instance.state.detail_index ~= nil and (current_scene == 'detail' or current_scene == 'field_editor')
+  return state.detail_index ~= nil and (current_scene == 'detail' or current_scene == 'field_editor')
 end
 
 function M.current_field(instance)
-  return instance.state.field_editor and instance.state.field_editor.field or nil
+  return field_editor_state(instance_state(instance)).field
 end
 
 function M.current_field_kind(instance)
@@ -27,6 +49,7 @@ function M.current_field_kind(instance)
 end
 
 function M.current_result(instance)
+  result_list(instance_state(instance))
   return detail_scene.current_result(instance)
 end
 

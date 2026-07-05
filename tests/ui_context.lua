@@ -15,6 +15,10 @@ hlcraft.setup({
   reapply_events = false,
 })
 
+local function assert_fails(fn, message)
+  h.assert_true(not pcall(fn), message, scope)
+end
+
 vim.api.nvim_set_hl(0, 'HlcraftUiContextNormal', { fg = '#101010' })
 engine.set_group('HlcraftUiContextNormal', 'ui-context')
 local dynamic_ok, dynamic_err = engine.set_dynamic('HlcraftUiContextNormal', 'fg', {
@@ -44,6 +48,22 @@ h.assert_equal(context.current_field(instance), 'fg', 'current field changed', s
 h.assert_equal(context.current_field_kind(instance), 'color', 'field kind changed', scope)
 h.assert_true(context.color_field_is_dynamic(instance), 'dynamic color field was not detected', scope)
 h.assert_equal(context.current_color_dynamic(instance).preset, 'pulse', 'dynamic value changed', scope)
+assert_fails(function()
+  context.editor_scene_is_active(nil)
+end, 'UI context accepted missing instance')
+assert_fails(function()
+  context.current_field({
+    state = {},
+  })
+end, 'UI context accepted missing field editor state')
+assert_fails(function()
+  context.current_result({
+    state = {
+      detail_index = 1,
+      field_editor = {},
+    },
+  })
+end, 'UI context accepted missing results')
 
 local missing_scene_ok = pcall(scene.current_name, {
   state = {},
