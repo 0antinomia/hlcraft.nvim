@@ -39,6 +39,28 @@ local ok, err = xpcall(function()
       },
     })
   end, 'preview keymap uninstall accepted invalid keymap state')
+  assert_fails(function()
+    preview.uninstall_keymap({
+      state = {
+        preview = {
+          keymap = {},
+        },
+      },
+    })
+  end, 'preview keymap uninstall accepted missing lhs')
+
+  local original_config = config.config
+  config.config = vim.tbl_deep_extend('force', vim.deepcopy(original_config), {
+    preview_key = true,
+  })
+  assert_fails(function()
+    preview.install_keymap({
+      state = {
+        preview = ui_state.preview(),
+      },
+    })
+  end, 'preview keymap install accepted invalid preview key')
+  config.config = original_config
 
   vim.keymap.set('n', lhs, '<Nop>', {
     silent = true,
