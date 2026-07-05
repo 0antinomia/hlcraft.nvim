@@ -57,6 +57,9 @@ end
 function M.register(name, scene)
   name = assert_scene_name(name, 'scene registration name', 2)
   scene = assert_scene(scene)
+  if registry[name] ~= nil then
+    error(('scene already registered: %s'):format(name), 2)
+  end
   registry[name] = scene
 end
 
@@ -76,9 +79,14 @@ function M.set(instance, name, opts)
   if not scene then
     return false, ('unknown scene: %s'):format(tostring(name))
   end
+  local previous_scene = state.scene
   state.scene = vim.tbl_extend('force', opts, { name = name })
   if scene.enter then
-    scene.enter(instance, opts)
+    local ok, err = pcall(scene.enter, instance, opts)
+    if not ok then
+      state.scene = previous_scene
+      error(err, 0)
+    end
   end
   return true, nil
 end
