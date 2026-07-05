@@ -42,6 +42,28 @@ local ok, err = xpcall(function()
     })
   end, 'preview flash accepted sparse results')
   assert_fails(function()
+    preview.flash_current({
+      state = {
+        preview = ui_state.preview(),
+        results = {
+          { name = 'Normal' },
+        },
+        detail_index = 0,
+      },
+    })
+  end, 'preview flash accepted invalid detail index')
+  assert_fails(function()
+    preview.flash_current({
+      state = {
+        preview = ui_state.preview(),
+        results = {
+          { name = 'Normal' },
+        },
+        list_cursor = 0,
+      },
+    })
+  end, 'preview flash accepted invalid list cursor')
+  assert_fails(function()
     preview.uninstall_keymap({
       state = {
         preview = {

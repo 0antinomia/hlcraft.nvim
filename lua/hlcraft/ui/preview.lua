@@ -1,5 +1,6 @@
 local search_scene = require('hlcraft.ui.scene.search')
 local config = require('hlcraft.config')
+local numbers = require('hlcraft.core.number')
 local tables = require('hlcraft.core.tables')
 local timers = require('hlcraft.core.timers')
 
@@ -22,6 +23,16 @@ end
 
 local function result_list(state)
   return tables.assert_sequence(state.results, 'preview results', 3)
+end
+
+local function positive_integer(value, label)
+  if type(value) ~= 'number' then
+    error(('%s must be a number'):format(label), 3)
+  end
+  if not numbers.is_finite(value) or math.floor(value) ~= value or value < 1 then
+    error(('%s must be a positive finite integer'):format(label), 3)
+  end
+  return value
 end
 
 local function preview_key()
@@ -103,12 +114,15 @@ end
 
 local function current_result(instance, state)
   local results = result_list(state)
-  if state.detail_index then
-    return results[state.detail_index]
+  if state.detail_index ~= nil then
+    return results[positive_integer(state.detail_index, 'preview detail index')]
   end
 
   local list_index = state.list_cursor
-  if list_index and results[list_index] then
+  if list_index ~= nil then
+    list_index = positive_integer(list_index, 'preview list cursor')
+  end
+  if list_index ~= nil and results[list_index] then
     return results[list_index]
   end
 
