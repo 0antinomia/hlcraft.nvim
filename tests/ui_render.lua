@@ -364,6 +364,14 @@ h.with_temp_buf(function(buf)
   h.assert_true(not missing_decoration_instance_ok, 'decorations accepted missing instance', scope)
   local invalid_header_line_ok = pcall(decorations.set_input_header, decoration_instance, { line = 0 }, 'Name')
   h.assert_true(not invalid_header_line_ok, 'input header accepted invalid field line', scope)
+  decoration_instance.state.input_marks['Name:1'] = false
+  local invalid_header_mark_ok = pcall(decorations.set_input_header, decoration_instance, { line = 1 }, 'Name')
+  h.assert_true(not invalid_header_mark_ok, 'input header accepted invalid extmark id', scope)
+  decoration_instance.state.input_marks['Name:1'] = nil
+  decoration_instance.state.input_marks.results_header = false
+  local invalid_results_mark_ok = pcall(decorations.set_results_header, decoration_instance, 2, 80)
+  h.assert_true(not invalid_results_mark_ok, 'results header accepted invalid extmark id', scope)
+  decoration_instance.state.input_marks.results_header = nil
   local invalid_header_extra_ok = pcall(decorations.set_input_header, decoration_instance, { line = 1 }, 'Name', {
     extra = false,
   })

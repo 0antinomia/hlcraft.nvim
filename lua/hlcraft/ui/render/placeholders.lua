@@ -54,6 +54,19 @@ local function positive_integer(value, label)
   return value
 end
 
+local function extmark_id(value, label)
+  if value == nil then
+    return nil
+  end
+  if type(value) ~= 'number' then
+    error(('%s must be a number'):format(label), 3)
+  end
+  if not numbers.is_finite(value) or math.floor(value) ~= value or value < 1 then
+    error(('%s must be a positive finite integer'):format(label), 3)
+  end
+  return value
+end
+
 local function detail_active(state)
   local index = state.detail_index
   if index == nil then
@@ -75,7 +88,7 @@ end
 local function set_overlay(state, ns, buf, key, row0, text, hl)
   local marks = placeholder_marks(state)
   marks[key] = vim.api.nvim_buf_set_extmark(buf, ns, row0, 0, {
-    id = marks[key],
+    id = extmark_id(marks[key], 'placeholder extmark id'),
     virt_text = { { text, hl } },
     virt_text_pos = 'overlay',
     right_gravity = false,
@@ -84,7 +97,7 @@ end
 
 local function clear_overlay(state, ns, key)
   local marks = placeholder_marks(state)
-  local mark_id = marks[key]
+  local mark_id = extmark_id(marks[key], 'placeholder extmark id')
   if not mark_id or not valid_buffer(state) then
     return
   end
