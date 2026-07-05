@@ -50,6 +50,16 @@ h.assert_true(
   'numeric stop without value was accepted',
   scope
 )
+h.assert_true(
+  timeline.sample_numeric({ { at = -0.1, value = 0 }, { at = 1, value = 1 } }, 0.5, 'linear') == nil,
+  'out-of-range numeric stop was accepted',
+  scope
+)
+h.assert_true(
+  timeline.sample_numeric({ { at = 1, value = 1 }, { at = 0, value = 0 } }, 0.5, 'linear') == nil,
+  'unsorted numeric stops were accepted',
+  scope
+)
 
 h.assert_equal(
   transforms.apply('#808080', { type = 'brightness', value = 0.5 }),

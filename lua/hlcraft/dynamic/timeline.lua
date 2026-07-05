@@ -18,17 +18,19 @@ local function curve(amount, interpolation)
 end
 
 local function valid_stop(stop)
-  return type(stop) == 'table' and numbers.is_finite(stop.at)
+  return type(stop) == 'table' and numbers.is_finite(stop.at) and stop.at >= 0 and stop.at <= 1
 end
 
 local function valid_stops(stops)
   if type(stops) ~= 'table' or #stops == 0 or not tables.is_sequence(stops) then
     return false
   end
+  local previous_at = -math.huge
   for _, stop in ipairs(stops) do
-    if not valid_stop(stop) then
+    if not valid_stop(stop) or stop.at < previous_at then
       return false
     end
+    previous_at = stop.at
   end
   return true
 end
