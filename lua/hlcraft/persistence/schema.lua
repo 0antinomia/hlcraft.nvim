@@ -16,6 +16,10 @@ local function assert_non_empty_string(value, label)
   return value
 end
 
+local function normalize_non_empty_string(value, label)
+  return vim.trim(assert_non_empty_string(value, label))
+end
+
 local function assert_entry_exists(data, name, label)
   if data.entries[name] == nil then
     error(('%s %s has no entry'):format(label, name), 3)
@@ -27,11 +31,25 @@ local function assert_group_exists(data, name, label)
   if group_name == nil then
     error(('%s %s has no group'):format(label, name), 3)
   end
-  return group_name
+  return normalize_non_empty_string(group_name, ('%s group for %s'):format(label, name))
 end
 
-local function assert_section_contains(data, section_name, name)
-  local section = data.sections[section_name]
+local function normalized_section_keys(data)
+  local keys = {}
+  for section_name, entries in pairs(data.sections) do
+    local normalized = normalize_non_empty_string(section_name, 'loaded persistence section name')
+    assert_table(entries, 'loaded persistence section entries')
+    if keys[normalized] ~= nil then
+      error(('loaded persistence section %s is defined more than once'):format(normalized), 3)
+    end
+    keys[normalized] = section_name
+  end
+  return keys
+end
+
+local function assert_section_contains(data, section_keys, section_name, name)
+  local raw_section_name = section_keys[section_name]
+  local section = raw_section_name and data.sections[raw_section_name]
   if type(section) ~= 'table' or section[name] == nil then
     error(('loaded persistence entry %s is missing from section %s'):format(name, section_name), 3)
   end
@@ -75,10 +93,11 @@ function M.normalize_loaded_data(data)
     groups = {},
     sections = {},
   }
+  local section_keys = normalized_section_keys(data)
 
   for name, group_name in pairs(data.groups) do
     assert_non_empty_string(name, 'loaded persistence highlight name')
-    assert_non_empty_string(group_name, ('loaded persistence group for %s'):format(name))
+    group_name = normalize_non_empty_string(group_name, ('loaded persistence group for %s'):format(name))
     assert_entry_exists(data, name, 'loaded persistence group')
     normalized_data.groups[name] = group_name
   end
@@ -87,7 +106,7 @@ function M.normalize_loaded_data(data)
   for name, entry in pairs(data.entries) do
     assert_non_empty_string(name, 'loaded persistence highlight name')
     local group_name = assert_group_exists(data, name, 'loaded persistence entry')
-    assert_section_contains(data, group_name, name)
+    assert_section_contains(data, section_keys, group_name, name)
     local normalized, err = M.normalize_entry(name, entry)
     if err then
       error(err, 2)
@@ -97,7 +116,7 @@ function M.normalize_loaded_data(data)
   end
 
   for section_name, entries in pairs(data.sections) do
-    assert_non_empty_string(section_name, 'loaded persistence section name')
+    section_name = normalize_non_empty_string(section_name, 'loaded persistence section name')
     entries = assert_table(entries, 'loaded persistence section entries')
     local section = {}
     for name, entry in pairs(entries) do

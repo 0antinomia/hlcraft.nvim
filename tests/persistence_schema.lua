@@ -70,6 +70,32 @@ h.assert_equal(
   scope
 )
 
+local normalized_group_data = schema.normalize_loaded_data({
+  entries = {
+    Spaced = {
+      fg = '#AABBCC',
+    },
+  },
+  groups = {
+    Spaced = ' main ',
+  },
+  sections = {
+    [' main '] = {
+      Spaced = {
+        fg = '#AABBCC',
+      },
+    },
+  },
+})
+h.assert_equal(normalized_group_data.groups.Spaced, 'main', 'loaded group name did not normalize', scope)
+h.assert_true(normalized_group_data.sections[' main '] == nil, 'loaded section kept unnormalized key', scope)
+h.assert_equal(
+  normalized_group_data.sections.main.Spaced.fg,
+  '#aabbcc',
+  'loaded normalized section entry changed',
+  scope
+)
+
 local invalid_loaded_ok, invalid_loaded_err = pcall(schema.normalize_loaded_data, {
   entries = {
     Invalid = {
