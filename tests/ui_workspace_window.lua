@@ -94,10 +94,33 @@ local ok, err = xpcall(function()
     },
   })
   h.assert_true(not unmanaged_snapshot_ok, 'window option restore accepted unmanaged option values', scope)
+  local partial_snapshot_ok = pcall(window_options.restore, {
+    win = win,
+    values = {
+      number = true,
+      relativenumber = true,
+      signcolumn = 'yes',
+    },
+  })
+  h.assert_true(not partial_snapshot_ok, 'window option restore accepted partial option values', scope)
   local non_table_snapshot_ok = pcall(window_options.restore, false)
   h.assert_true(not non_table_snapshot_ok, 'window option restore accepted non-table snapshot', scope)
   local invalid_workspace_values_ok = pcall(window_options.matches_workspace, nil)
   h.assert_true(not invalid_workspace_values_ok, 'workspace option matcher accepted nil values', scope)
+  local partial_workspace_values_ok = pcall(window_options.matches_workspace, {
+    number = false,
+    relativenumber = false,
+    signcolumn = 'no',
+  })
+  h.assert_true(not partial_workspace_values_ok, 'workspace option matcher accepted partial values', scope)
+  local unmanaged_workspace_values_ok = pcall(window_options.matches_workspace, {
+    number = false,
+    relativenumber = false,
+    signcolumn = 'no',
+    foldcolumn = '0',
+    wrap = false,
+  })
+  h.assert_true(not unmanaged_workspace_values_ok, 'workspace option matcher accepted unmanaged values', scope)
   h.assert_true(
     window_options.snapshot(nil) == nil,
     'window option snapshot rejected invalid window incorrectly',
