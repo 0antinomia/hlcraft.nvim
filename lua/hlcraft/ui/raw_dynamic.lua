@@ -1,4 +1,5 @@
 local dynamic_editor = require('hlcraft.ui.editor.dynamic')
+local editor_context = require('hlcraft.ui.editor.context')
 local json = require('hlcraft.ui.json')
 local notify = require('hlcraft.notify')
 local session = require('hlcraft.ui.session')
@@ -30,13 +31,9 @@ local function raw_dynamic_state(state)
 end
 
 local function active_dynamic(result, field)
-  if type(result) ~= 'table' or type(result.name) ~= 'string' or result.name == '' then
-    error('raw dynamic editor requires a highlight result', 3)
-  end
-  if type(field) ~= 'string' or field == '' then
-    error('raw dynamic field must be a non-empty string', 3)
-  end
-  return session.dynamic_value(result.name, field)
+  local name = editor_context.result_name(result, 'raw dynamic editor')
+  field = editor_context.field_key(field, 'raw dynamic editor')
+  return session.dynamic_value(name, field)
 end
 
 local function buffer_text(buf)

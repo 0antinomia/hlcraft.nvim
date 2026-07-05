@@ -2,6 +2,7 @@ local blend_editor = require('hlcraft.ui.editor.blend')
 local color_editor = require('hlcraft.ui.editor.color')
 local core_fields = require('hlcraft.core.fields')
 local dynamic_editor = require('hlcraft.ui.editor.dynamic')
+local editor_context = require('hlcraft.ui.editor.context')
 local group_editor = require('hlcraft.ui.editor.group')
 local session = require('hlcraft.ui.session')
 local ui_fields = require('hlcraft.ui.fields')
@@ -15,12 +16,8 @@ local function action_context(instance, action, result, field)
   if type(action) ~= 'string' or action == '' then
     error('field editor action must be a non-empty string', 3)
   end
-  if type(result) ~= 'table' or type(result.name) ~= 'string' or result.name == '' then
-    error('field editor action requires a highlight result', 3)
-  end
-  if type(field) ~= 'string' or field == '' then
-    error('field editor action field must be a non-empty string', 3)
-  end
+  editor_context.result_name(result, 'field editor action')
+  field = editor_context.field_key(field, 'field editor action')
   return instance, action, result, field
 end
 
