@@ -638,8 +638,14 @@ h.assert_true(dynamic_geometry.editor_rows.dynamic_loop ~= nil, 'dynamic loop ro
 h.assert_true(dynamic_geometry.editor_rows.dynamic_phase ~= nil, 'dynamic phase row must stay editable', scope)
 h.assert_true(dynamic_text:find('Edit    ', 1, true) ~= nil, 'dynamic editor lacks an edit section', scope)
 h.assert_true(dynamic_text:find('Global  ', 1, true) ~= nil, 'dynamic editor lacks a global section', scope)
+h.assert_true(dynamic_text:find('Sample 0.50:', 1, true) ~= nil, 'dynamic editor omitted timeline samples', scope)
 h.assert_true(not dynamic_text:find('Keys:', 1, true), 'dynamic editor kept crowded Keys hint', scope)
 h.assert_true(dynamic_geometry.editor_rows.dynamic_keys == nil, 'dynamic hint row should not be selectable', scope)
+h.assert_true(
+  dynamic_geometry.editor_rows['dynamic_sample:0.50'] == nil,
+  'dynamic sample row should not be selectable',
+  scope
+)
 local invalid_dynamic_instance_ok =
   pcall(dynamic_renderer.build, nil, { editor_rows = {} }, result, 'fg', 80, 0, dynamic)
 h.assert_true(not invalid_dynamic_instance_ok, 'dynamic editor accepted missing instance', scope)
