@@ -1,5 +1,6 @@
 local tests = {
   'tests/config.lua',
+  'tests/init.lua',
   'tests/health.lua',
   'tests/notify.lua',
   'tests/neovim.lua',

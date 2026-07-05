@@ -52,6 +52,9 @@ M.open = function(opts)
   if not initialized then
     M.setup()
   end
+  if not initialized then
+    return nil
+  end
   return ui.open(opts)
 end
 
