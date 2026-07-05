@@ -27,8 +27,8 @@ end
 
 local function keycap(item)
   item = assert_table(item, 'help item must be a table')
-  assert_non_empty_string(item[1], 'help item key must be a non-empty string')
-  return ('[%s]'):format(item[1])
+  local key = assert_non_empty_string(item[1], 'help item key must be a non-empty string')
+  return ('[%s]'):format(key)
 end
 
 local function keycap_width(items)
@@ -45,10 +45,10 @@ local function item_line(item, width)
   if type(width) ~= 'number' then
     error('help item width must be a number', 3)
   end
-  assert_non_empty_string(item[2], 'help item action must be a non-empty string')
+  local action = assert_non_empty_string(item[2], 'help item action must be a non-empty string')
   local key = keycap(item)
   local padding = math.max(2, width - vim.fn.strdisplaywidth(key) + 2)
-  return '  ' .. key .. string.rep(' ', padding) .. item[2]
+  return '  ' .. key .. string.rep(' ', padding) .. action
 end
 
 function M.sections(preview_key)
@@ -63,7 +63,7 @@ function M.sections(preview_key)
   }
 
   if preview_key ~= nil and preview_key ~= false then
-    assert_non_empty_string(preview_key, 'preview key must be a non-empty string or false')
+    preview_key = assert_non_empty_string(preview_key, 'preview key must be a non-empty string or false')
     action_items[#action_items + 1] = { preview_key, 'preview result' }
   end
 
@@ -140,9 +140,9 @@ function M.lines(preview_key)
   local sections = tables.assert_sequence(M.sections(preview_key), 'help sections', 3)
   for section_index, section in ipairs(sections) do
     section = assert_table(section, 'help section must be a table')
-    assert_non_empty_string(section.title, 'help section title must be a non-empty string')
+    local title = assert_non_empty_string(section.title, 'help section title must be a non-empty string')
     local items = tables.assert_sequence(section.items, 'help section items', 3)
-    lines[#lines + 1] = section.title
+    lines[#lines + 1] = title
     local width = keycap_width(items)
     for _, item in ipairs(items) do
       lines[#lines + 1] = item_line(item, width)

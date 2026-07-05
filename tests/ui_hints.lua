@@ -105,6 +105,11 @@ h.assert_true(vim.tbl_contains(help_lines, 'Navigation'), 'help navigation secti
 h.assert_true(vim.tbl_contains(help_lines, 'Actions'), 'help actions section missing', scope)
 h.assert_true(vim.tbl_contains(help_lines, '  [z]  preview result'), 'preview key help line missing', scope)
 h.assert_true(
+  vim.tbl_contains(help_model.lines(' z '), '  [z]  preview result'),
+  'preview key help line did not trim',
+  scope
+)
+h.assert_true(
   not vim.tbl_contains(help_model.lines(false), '  [false]  preview result'),
   'disabled preview key was rendered',
   scope
