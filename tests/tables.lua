@@ -36,6 +36,10 @@ local custom_sorted = tables.sorted_keys({ short = true, longest = true }, funct
   return #left > #right
 end)
 h.assert_equal(custom_sorted[1], 'longest', 'custom key comparator was ignored', scope)
+h.assert_true(tables.compare_names('Alpha', 'alpha'), 'name comparator did not tie-break equal lowercase names', scope)
+h.assert_true(tables.compare_names('alpha', 'Beta'), 'name comparator ignored lowercase ordering', scope)
+local invalid_name_compare_ok = pcall(tables.compare_names, 'Alpha', false)
+h.assert_true(not invalid_name_compare_ok, 'name comparator accepted non-string values', scope)
 
 h.assert_true(tables.has_only_keys({ fg = true }, { fg = true, bg = true }), 'allowed key was rejected', scope)
 h.assert_true(not tables.has_only_keys({ sp = true }, { fg = true, bg = true }), 'unknown key was accepted', scope)

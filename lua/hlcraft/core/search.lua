@@ -5,6 +5,7 @@ local highlights = require('hlcraft.core.highlights')
 local color = require('hlcraft.core.color')
 local config = require('hlcraft.config')
 local numbers = require('hlcraft.core.number')
+local tables = require('hlcraft.core.tables')
 
 local function is_none_query(value)
   return type(value) == 'string' and value:upper() == 'NONE'
@@ -16,7 +17,7 @@ end
 
 local function sort_by_name(results)
   table.sort(results, function(a, b)
-    return a.name:lower() < b.name:lower()
+    return tables.compare_names(a.name, b.name)
   end)
   return results
 end
@@ -24,7 +25,7 @@ end
 local function sort_by_distance(results)
   table.sort(results, function(a, b)
     if a.distance == b.distance then
-      return a.name:lower() < b.name:lower()
+      return tables.compare_names(a.name, b.name)
     end
     return a.distance < b.distance
   end)
