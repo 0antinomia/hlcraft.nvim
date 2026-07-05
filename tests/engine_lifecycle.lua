@@ -58,6 +58,13 @@ local ok, err = xpcall(function()
   })
   local nil_load_ok = pcall(nil_lifecycle.bootstrap, true, function() end)
   h.assert_true(not nil_load_ok, 'lifecycle accepted nil loaded persistence data', scope)
+
+  local missing_replay_ok = pcall(nil_lifecycle.bootstrap, true, nil)
+  h.assert_true(not missing_replay_ok, 'lifecycle accepted missing replay callback', scope)
+  local missing_restore_name_ok = pcall(nil_lifecycle.restore_persisted, nil)
+  h.assert_true(not missing_restore_name_ok, 'lifecycle restore accepted missing highlight name', scope)
+  local empty_clear_name_ok = pcall(nil_lifecycle.clear, '')
+  h.assert_true(not empty_clear_name_ok, 'lifecycle clear accepted empty highlight name', scope)
 end, debug.traceback)
 
 restore_state()
