@@ -64,6 +64,16 @@ local function assert_row1(row1)
   return row1
 end
 
+local function result_index(value)
+  if type(value) ~= 'number' then
+    error('input result index must be a number', 3)
+  end
+  if not numbers.is_finite(value) or math.floor(value) ~= value or value < 1 then
+    error('input result index must be a positive finite integer', 3)
+  end
+  return value
+end
+
 local function assert_namespace(ns)
   if type(ns) ~= 'number' then
     error('input namespace must be a number', 3)
@@ -142,8 +152,8 @@ function M.current_area(instance, row1)
     return field.kind, field
   end
   local result_lines = geometry_result_lines(instance)
-  if result_lines[row1] then
-    return 'results', result_lines[row1]
+  if result_lines[row1] ~= nil then
+    return 'results', result_index(result_lines[row1])
   end
 end
 
