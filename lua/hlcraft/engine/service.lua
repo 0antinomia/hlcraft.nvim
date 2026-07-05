@@ -56,7 +56,7 @@ end
 --- @return string
 function M.get_draft_group(name)
   name = assert_name(name)
-  return data.draft_groups[name]
+  return snapshot.normalize_group_name(data.draft_groups[name], 'draft group')
 end
 
 --- Return the persisted TOML section for a highlight group.
@@ -64,7 +64,7 @@ end
 --- @return string
 function M.get_persisted_group(name)
   name = assert_name(name)
-  return data.persisted_groups[name]
+  return snapshot.normalize_group_name(data.persisted_groups[name], 'persisted group')
 end
 
 --- Return sorted unique TOML section names known from defaults, persisted, and draft state.

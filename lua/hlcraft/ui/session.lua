@@ -24,13 +24,9 @@ local function assert_entry(value, label)
   return value
 end
 
-local function shallow_copy(value, label)
+local function copy_entry(value, label)
   value = assert_entry(value, label)
-  local copy = {}
-  for key, item in pairs(value) do
-    copy[key] = item
-  end
-  return copy
+  return vim.deepcopy(value)
 end
 
 local function same_entry(left, right)
@@ -61,11 +57,11 @@ local function refresh(instance, name)
 end
 
 function M.draft_entry(name)
-  return shallow_copy(engine.get(assert_name(name)), 'draft session entry')
+  return copy_entry(engine.get(assert_name(name)), 'draft session entry')
 end
 
 function M.persisted_entry(name)
-  return shallow_copy(engine.get_persisted(assert_name(name)), 'persisted session entry')
+  return copy_entry(engine.get_persisted(assert_name(name)), 'persisted session entry')
 end
 
 function M.draft_group(name)

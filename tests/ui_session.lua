@@ -8,6 +8,22 @@ local original_session = package.loaded[session_module]
 
 local saved = false
 local restored_name
+local clean_draft = {
+  fg = '#101010',
+  dynamic = {
+    fg = {
+      version = 1,
+      duration = 2000,
+      loop = 'repeat',
+      interpolation = 'linear',
+      timeline = {
+        { at = 0, color = '#000000' },
+        { at = 1, color = '#ffffff' },
+      },
+    },
+  },
+}
+local clean_persisted = vim.deepcopy(clean_draft)
 
 local fake_engine = {
   get = function(name)
@@ -27,13 +43,13 @@ local fake_engine = {
         },
       }
     end
-    return { fg = '#101010' }
+    return clean_draft
   end,
   get_persisted = function(name)
     if name == 'invalid-persisted' then
       return nil
     end
-    return { fg = '#101010' }
+    return clean_persisted
   end,
   get_draft_group = function(name)
     return name == 'dirty' and 'draft' or 'main'
@@ -77,7 +93,14 @@ local session = require(session_module)
 
 local draft = session.draft_entry('clean')
 draft.fg = '#ffffff'
+draft.dynamic.fg.timeline[1].color = '#222222'
 h.assert_equal(session.draft_entry('clean').fg, '#101010', 'draft entry was not copied', scope)
+h.assert_equal(
+  session.draft_entry('clean').dynamic.fg.timeline[1].color,
+  '#000000',
+  'draft entry nested dynamic config was not copied',
+  scope
+)
 h.assert_equal(session.display_value('clean', 'fg', '#fallback'), '#101010', 'display value ignored draft entry', scope)
 h.assert_equal(session.display_value('clean', 'bg', '#fallback'), '#fallback', 'display value ignored fallback', scope)
 h.assert_true(not session.is_dirty('clean'), 'clean session was marked dirty', scope)
