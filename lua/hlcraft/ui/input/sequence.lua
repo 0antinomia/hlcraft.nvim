@@ -1,3 +1,5 @@
+local tables = require('hlcraft.core.tables')
+
 local M = {}
 
 local function assert_field(field)
@@ -10,6 +12,9 @@ end
 local function assert_inputs(inputs)
   if type(inputs) ~= 'table' then
     error('input sequence must be a table', 3)
+  end
+  if not tables.is_sequence(inputs) then
+    error('input sequence must be a sequence', 3)
   end
   return inputs
 end

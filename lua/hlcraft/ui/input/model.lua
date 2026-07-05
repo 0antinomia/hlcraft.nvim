@@ -1,5 +1,6 @@
 local input_sequence = require('hlcraft.ui.input.sequence')
 local numbers = require('hlcraft.core.number')
+local tables = require('hlcraft.core.tables')
 local window = require('hlcraft.ui.workspace.window')
 local buffer_lines = require('hlcraft.ui.buffer_lines')
 
@@ -78,6 +79,9 @@ local function geometry_inputs(instance)
   local inputs = input_geometry(instance).inputs
   if type(inputs) ~= 'table' then
     error('input geometry inputs must be a table', 3)
+  end
+  if not tables.is_sequence(inputs) then
+    error('input geometry inputs must be a sequence', 3)
   end
   return inputs
 end

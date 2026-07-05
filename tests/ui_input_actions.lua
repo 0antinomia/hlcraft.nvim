@@ -165,6 +165,16 @@ h.with_temp_buf(function(buf)
   h.assert_true(not invalid_paste_above_visual_ok, 'paste above accepted non-boolean visual flag', scope)
   local invalid_first_geometry_ok = pcall(actions.goto_first_input, { state = { geometry = {} } })
   h.assert_true(not invalid_first_geometry_ok, 'first input jump accepted missing geometry inputs', scope)
+  local non_sequence_first_geometry_ok = pcall(actions.goto_first_input, {
+    state = {
+      geometry = {
+        inputs = {
+          [2] = { name = 'late', kind = 'name', line = 1 },
+        },
+      },
+    },
+  })
+  h.assert_true(not non_sequence_first_geometry_ok, 'first input jump accepted non-sequence geometry inputs', scope)
   local invalid_first_detail_ok =
     pcall(actions.goto_first_input, { state = { geometry = instance.state.geometry, detail_index = 0 } })
   h.assert_true(not invalid_first_detail_ok, 'first input jump accepted invalid detail index', scope)
@@ -182,6 +192,16 @@ local invalid_geometry_ok = pcall(input_model.get_input_at_row, {
   },
 }, 0)
 h.assert_true(not invalid_geometry_ok, 'input model accepted missing geometry inputs', scope)
+local non_sequence_geometry_ok = pcall(input_model.get_input_at_row, {
+  state = {
+    geometry = {
+      inputs = {
+        [2] = { name = 'late', kind = 'name', line = 1 },
+      },
+    },
+  },
+}, 0)
+h.assert_true(not non_sequence_geometry_ok, 'input model accepted non-sequence geometry inputs', scope)
 local invalid_instance_ok = pcall(input_model.get_input_at_row, nil, 0)
 h.assert_true(not invalid_instance_ok, 'input model accepted missing instance', scope)
 

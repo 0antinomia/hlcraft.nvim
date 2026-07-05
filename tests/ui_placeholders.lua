@@ -50,6 +50,19 @@ h.with_temp_buf(function(buf)
     },
   })
   h.assert_true(not invalid_geometry_ok, 'placeholders accepted missing geometry inputs', scope)
+  local non_sequence_geometry_ok = pcall(placeholders.refresh, {
+    ns = vim.api.nvim_create_namespace('hlcraft-ui-placeholders-nonsequential-test'),
+    state = {
+      buf = buf,
+      geometry = {
+        inputs = {
+          [2] = { name = 'late', kind = 'name', line = 1 },
+        },
+      },
+      placeholder_marks = {},
+    },
+  })
+  h.assert_true(not non_sequence_geometry_ok, 'placeholders accepted non-sequence geometry inputs', scope)
   local missing_instance_ok = pcall(placeholders.refresh, nil)
   h.assert_true(not missing_instance_ok, 'placeholders accepted missing instance', scope)
   local missing_marks_ok = pcall(placeholders.refresh, {
