@@ -14,6 +14,7 @@ local editor_rows = require('hlcraft.ui.render.editor_rows')
 local field_editor_renderer = require('hlcraft.ui.render.field_editor')
 local list_renderer = require('hlcraft.ui.render.list')
 local render_buffer = require('hlcraft.ui.render.buffer')
+local search_renderer = require('hlcraft.ui.render.search')
 local render_util = require('hlcraft.render.util')
 local theme = require('hlcraft.ui.theme')
 local ui_state = require('hlcraft.ui.state')
@@ -149,6 +150,74 @@ h.assert_true(not invalid_list_result_ok, 'result list renderer accepted nameles
 local invalid_list_color_ok =
   pcall(list_renderer.build, { state = { results = { { name = 'Normal', fg = false } } } }, 80)
 h.assert_true(not invalid_list_color_ok, 'result list renderer accepted non-string color', scope)
+h.with_temp_buf(function(buf)
+  local search_instance = {
+    id = 'ui-render-search-test',
+    ns = vim.api.nvim_create_namespace('hlcraft-ui-render-search-test'),
+    input_label_hl = theme.groups.label,
+    state = {
+      buf = buf,
+      name_query = '',
+      color_query = '',
+      results = { result },
+      dynamic_preview = ui_state.dynamic_preview(),
+    },
+  }
+  search_renderer.render(search_instance)
+  h.assert_equal(
+    search_instance.state.geometry.result_lines[7],
+    1,
+    'search renderer did not register result row',
+    scope
+  )
+  local rendered = table.concat(vim.api.nvim_buf_get_lines(buf, 0, -1, false), '\n')
+  h.assert_true(rendered:find(result.name, 1, true) ~= nil, 'search renderer did not render result name', scope)
+
+  local missing_search_instance_ok = pcall(search_renderer.render, nil)
+  h.assert_true(not missing_search_instance_ok, 'search renderer accepted missing instance', scope)
+  local missing_search_results_ok = pcall(search_renderer.render, {
+    id = 'ui-render-search-missing-results-test',
+    ns = search_instance.ns,
+    input_label_hl = theme.groups.label,
+    state = {
+      buf = buf,
+      name_query = '',
+      color_query = '',
+      dynamic_preview = ui_state.dynamic_preview(),
+    },
+  })
+  h.assert_true(not missing_search_results_ok, 'search renderer accepted missing results', scope)
+  local missing_search_namespace_ok = pcall(search_renderer.render, {
+    id = 'ui-render-search-missing-namespace-test',
+    input_label_hl = theme.groups.label,
+    state = {
+      buf = buf,
+      name_query = '',
+      color_query = '',
+      results = { result },
+      dynamic_preview = ui_state.dynamic_preview(),
+    },
+  })
+  h.assert_true(not missing_search_namespace_ok, 'search renderer accepted missing namespace', scope)
+  local invalid_search_color_ok = pcall(search_renderer.render, {
+    id = 'ui-render-search-invalid-color-test',
+    ns = search_instance.ns,
+    input_label_hl = theme.groups.label,
+    state = {
+      buf = buf,
+      name_query = '',
+      color_query = '',
+      results = {
+        {
+          name = 'InvalidColorResult',
+          fg = false,
+        },
+      },
+      dynamic_preview = ui_state.dynamic_preview(),
+    },
+  })
+  h.assert_true(not invalid_search_color_ok, 'search renderer accepted invalid result color', scope)
+end, { current = true })
 h.assert_equal(render_util.truncate('abcdef', 4), 'abc…', 'render truncate lost ellipsis budget', scope)
 h.assert_equal(
   render_util.truncate('你好世界', 5),
