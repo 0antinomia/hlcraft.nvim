@@ -33,6 +33,9 @@ highlights.invalidate_cache()
 local by_name = search.by_name('hlcraftsearch')
 h.assert_equal(by_name[1].name, names[1], 'name search did not sort by name', scope)
 h.assert_equal(by_name[2].name, names[2], 'name search skipped beta', scope)
+local isolated_name_result = search.by_name(names[1])[1]
+isolated_name_result.fg = '#ffffff'
+h.assert_true(search.by_name(names[1])[1].fg ~= '#ffffff', 'name search returned mutable cache entries', scope)
 h.assert_equal(#search.by_name(''), 0, 'empty name search did not return empty results', scope)
 local non_string_name_ok = pcall(search.by_name, 123)
 h.assert_true(not non_string_name_ok, 'name search accepted a non-string query', scope)
