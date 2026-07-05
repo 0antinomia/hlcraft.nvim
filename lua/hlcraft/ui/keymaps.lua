@@ -8,6 +8,20 @@ local lifecycle = require('hlcraft.ui.workspace.lifecycle')
 local M = {}
 local unpack = unpack or table.unpack
 
+local function instance_state(instance)
+  if type(instance) ~= 'table' or type(instance.state) ~= 'table' then
+    error('workspace keymaps require an instance', 3)
+  end
+  return instance.state
+end
+
+local function assert_buffer(buf)
+  if type(buf) ~= 'number' or not vim.api.nvim_buf_is_valid(buf) then
+    error('workspace keymaps require a valid buffer', 3)
+  end
+  return buf
+end
+
 local function keymap_opts(opts, extra)
   if extra == nil then
     return opts
@@ -189,6 +203,8 @@ end
 --- @param buf number Buffer handle to attach keymaps to
 --- @return nil
 function M.setup_workspace_keymaps(instance, buf)
+  instance_state(instance)
+  buf = assert_buffer(buf)
   local opts = { buffer = buf, silent = true, nowait = true }
 
   install_specs(instance, opts)

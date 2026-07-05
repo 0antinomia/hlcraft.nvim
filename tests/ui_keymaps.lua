@@ -3,7 +3,18 @@ local scope = 'hlcraft ui keymaps'
 
 local keymaps = require('hlcraft.ui.keymaps')
 
+local function assert_fails(fn, message)
+  h.assert_true(not pcall(fn), message, scope)
+end
+
 h.with_temp_buf(function(buf)
+  assert_fails(function()
+    keymaps.setup_workspace_keymaps(nil, buf)
+  end, 'workspace keymaps accepted missing instance')
+  assert_fails(function()
+    keymaps.setup_workspace_keymaps({ state = {} }, nil)
+  end, 'workspace keymaps accepted invalid buffer')
+
   keymaps.setup_workspace_keymaps({
     state = {},
   }, buf)

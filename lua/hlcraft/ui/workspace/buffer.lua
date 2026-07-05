@@ -2,16 +2,31 @@ local window = require('hlcraft.ui.workspace.window')
 
 local M = {}
 
+local function instance_state(instance)
+  if type(instance) ~= 'table' or type(instance.state) ~= 'table' then
+    error('workspace buffer requires an instance', 3)
+  end
+  return instance.state
+end
+
+local function assert_group_name(instance)
+  if type(instance.group_name) ~= 'string' or instance.group_name == '' then
+    error('workspace buffer group name must be a non-empty string', 3)
+  end
+end
+
 --- Create the workspace buffer if it does not already exist
 --- @param instance table The Instance object holding UI state
 --- @return number Buffer handle
 function M.ensure(instance)
-  if window.is_valid_buf(instance.state.buf) then
-    return instance.state.buf
+  local state = instance_state(instance)
+  if window.is_valid_buf(state.buf) then
+    return state.buf
   end
 
+  assert_group_name(instance)
   local buf = vim.api.nvim_create_buf(true, true)
-  instance.state.buf = buf
+  state.buf = buf
   vim.api.nvim_buf_set_name(buf, 'HLCRAFT')
   vim.bo[buf].bufhidden = 'hide'
   vim.bo[buf].buftype = 'nofile'
