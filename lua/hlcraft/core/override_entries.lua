@@ -11,8 +11,26 @@ for _, key in ipairs(fields.override_keys) do
   entry_keys[key] = true
 end
 
-local function entry_label(opts)
-  return opts and opts.label or 'override entry'
+local function normalize_options(opts)
+  if opts == nil then
+    return {
+      label = 'override entry',
+      compact_dynamic = false,
+    }
+  end
+  if type(opts) ~= 'table' then
+    error('override entry options must be a table', 3)
+  end
+  if opts.label ~= nil and (type(opts.label) ~= 'string' or opts.label == '') then
+    error('override entry label must be a non-empty string or nil', 3)
+  end
+  if opts.compact_dynamic ~= nil and type(opts.compact_dynamic) ~= 'boolean' then
+    error('override entry compact_dynamic option must be boolean', 3)
+  end
+  return {
+    label = opts.label or 'override entry',
+    compact_dynamic = opts.compact_dynamic == true,
+  }
 end
 
 local function set_normalized(entry, key, value)
@@ -23,7 +41,8 @@ local function set_normalized(entry, key, value)
 end
 
 function M.normalize(entry, opts)
-  local label = entry_label(opts)
+  opts = normalize_options(opts)
+  local label = opts.label
   if type(entry) ~= 'table' then
     return nil, ('%s must be a table'):format(label)
   end
@@ -50,7 +69,7 @@ function M.normalize(entry, opts)
     if not dynamic then
       return nil, ('%s has invalid dynamic override'):format(label)
     end
-    if opts and opts.compact_dynamic then
+    if opts.compact_dynamic then
       normalized.dynamic = dynamic_model.compact_dynamic(dynamic)
     else
       normalized.dynamic = dynamic
