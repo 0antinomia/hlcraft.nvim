@@ -16,6 +16,8 @@ local nil_field_ok = pcall(sequence.name, nil)
 h.assert_true(not nil_field_ok, 'input sequence accepted nil field', scope)
 local unnamed_field_ok = pcall(sequence.name, { kind = 'name' })
 h.assert_true(not unnamed_field_ok, 'input sequence accepted unnamed field', scope)
+local false_key_ok = pcall(sequence.name, { key = false, name = 'field', kind = 'detail' })
+h.assert_true(not false_key_ok, 'input sequence ignored invalid false key', scope)
 
 h.assert_equal(sequence.first_name(inputs), 'name', 'first input name changed', scope)
 h.assert_equal(

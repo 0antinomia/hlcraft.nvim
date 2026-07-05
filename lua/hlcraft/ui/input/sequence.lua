@@ -29,7 +29,10 @@ end
 
 function M.name(field)
   field = assert_field(field)
-  local name = field.key or field.name
+  local name = field.name
+  if field.key ~= nil then
+    name = field.key
+  end
   if type(name) ~= 'string' or name == '' then
     error('input field name must be a non-empty string', 2)
   end
