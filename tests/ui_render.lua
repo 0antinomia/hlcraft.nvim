@@ -411,6 +411,50 @@ h.with_temp_buf(function(buf)
     },
   })
   h.assert_true(not keyed_header_virt_chunk_ok, 'input header accepted keyed virtual line chunk', scope)
+  local invalid_header_virt_chunk_text_ok = pcall(
+    decorations.set_input_header,
+    decoration_instance,
+    { line = 1 },
+    'Name',
+    {
+      top_virt_lines = {
+        {
+          { false, theme.groups.key },
+        },
+      },
+    }
+  )
+  h.assert_true(
+    not invalid_header_virt_chunk_text_ok,
+    'input header accepted non-string virtual line chunk text',
+    scope
+  )
+  local invalid_header_virt_chunk_hl_ok = pcall(
+    decorations.set_input_header,
+    decoration_instance,
+    { line = 1 },
+    'Name',
+    {
+      top_virt_lines = {
+        {
+          { '?', false },
+        },
+      },
+    }
+  )
+  h.assert_true(
+    not invalid_header_virt_chunk_hl_ok,
+    'input header accepted non-string virtual line chunk highlight',
+    scope
+  )
+  local extra_header_virt_chunk_ok = pcall(decorations.set_input_header, decoration_instance, { line = 1 }, 'Name', {
+    top_virt_lines = {
+      {
+        { '?', theme.groups.key, 'extra' },
+      },
+    },
+  })
+  h.assert_true(not extra_header_virt_chunk_ok, 'input header accepted oversized virtual line chunk', scope)
   local invalid_results_width_ok = pcall(decorations.set_results_header, decoration_instance, 1, 0)
   h.assert_true(not invalid_results_width_ok, 'results header accepted invalid width', scope)
   local invalid_color_buf_ok = pcall(decorations.apply_color_cell, decoration_instance, -1, 0, 0, 'x', '#ffffff', 'fg')

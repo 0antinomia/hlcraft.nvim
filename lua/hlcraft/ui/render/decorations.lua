@@ -137,6 +137,15 @@ local function optional_virt_lines(lines)
       if not tables.is_sequence(chunk) then
         error('input header virtual line chunk must be a sequence', 3)
       end
+      if #chunk > 2 then
+        error('input header virtual line chunk must contain text and optional highlight', 3)
+      end
+      if type(chunk[1]) ~= 'string' then
+        error('input header virtual line chunk text must be a string', 3)
+      end
+      if chunk[2] ~= nil and type(chunk[2]) ~= 'string' then
+        error('input header virtual line chunk highlight must be a string or nil', 3)
+      end
     end
   end
   return lines
