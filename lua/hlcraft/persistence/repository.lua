@@ -144,8 +144,6 @@ function M.save(overrides, groups, path)
     return false, validation_err
   end
 
-  files.ensure_directory(target)
-
   local normalized_overrides, normalize_err = schema.normalize_entries(overrides)
   if not normalized_overrides then
     return false, normalize_err
@@ -157,6 +155,7 @@ function M.save(overrides, groups, path)
   end
 
   local section_names = tables.sorted_keys(sections)
+  files.ensure_directory(target)
 
   for _, section_name in ipairs(section_names) do
     local filepath = files.file_path(target, section_name)
