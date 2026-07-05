@@ -12,6 +12,16 @@ local function assert_string(value, label)
   return value
 end
 
+local function assert_path(value, label)
+  if type(value) ~= 'string' then
+    error(('%s must be a string'):format(label), 3)
+  end
+  if vim.trim(value) == '' then
+    error(('%s must be a non-empty string'):format(label), 3)
+  end
+  return value
+end
+
 local function assert_lines(value)
   value = tables.assert_sequence(value, 'File content lines', 3)
   for index, line in ipairs(value) do
@@ -58,12 +68,12 @@ function M.sanitize_filename(name)
 end
 
 function M.ensure_directory(path)
-  assert_string(path, 'Directory path')
+  assert_path(path, 'Directory path')
   vim.fn.mkdir(path, 'p')
 end
 
 function M.file_path(path, group_name)
-  assert_string(path, 'Directory path')
+  assert_path(path, 'Directory path')
   local section_name = codec.normalize_group_name(group_name)
   if not section_name then
     return nil
@@ -83,7 +93,7 @@ local function is_toml_file(path, file_type, include_links)
 end
 
 function M.toml_files_in_dir(path, opts)
-  assert_string(path, 'Directory path')
+  assert_path(path, 'Directory path')
   opts = toml_directory_opts(opts)
   local files = {}
   local fd = uv.fs_scandir(path)
@@ -108,7 +118,7 @@ function M.toml_files_in_dir(path, opts)
 end
 
 function M.atomic_write(filepath, content_lines)
-  assert_string(filepath, 'File path')
+  assert_path(filepath, 'File path')
   content_lines = assert_lines(content_lines)
 
   local tmp_path = filepath .. '.tmp'
@@ -129,7 +139,7 @@ function M.atomic_write(filepath, content_lines)
 end
 
 function M.remove_stale_toml_files(path, active_section_names)
-  assert_string(path, 'Directory path')
+  assert_path(path, 'Directory path')
   active_section_names = tables.assert_sequence(active_section_names, 'Active section names', 2)
 
   local active_files = {}

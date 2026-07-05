@@ -39,6 +39,8 @@ h.cleanup_dir(invalid_persist_dir)
 
 local invalid_load_path_ok = pcall(storage.load, false)
 h.assert_true(not invalid_load_path_ok, 'storage.load accepted a non-string path', scope)
+local empty_load_path_ok = pcall(storage.load, '   ')
+h.assert_true(not empty_load_path_ok, 'storage.load accepted an empty path', scope)
 
 local symlink_target = persist_dir .. '-linked-target.toml'
 h.cleanup_dir(symlink_target)
@@ -151,6 +153,8 @@ h.assert_equal(missing_groups_err, 'Groups must be a table', 'missing groups err
 
 local invalid_save_path_ok = pcall(storage.save, {}, {}, false)
 h.assert_true(not invalid_save_path_ok, 'storage.save accepted a non-string path', scope)
+local empty_save_path_ok = pcall(storage.save, {}, {}, '   ')
+h.assert_true(not empty_save_path_ok, 'storage.save accepted an empty path', scope)
 
 local missing_group_ok, missing_group_err = storage.save({
   MissingGroup = { fg = '#111111' },
@@ -271,18 +275,26 @@ h.assert_true(
 )
 local numeric_path_ok = pcall(files.file_path, 1, 'group')
 h.assert_true(not numeric_path_ok, 'file_path accepted a non-string directory path', scope)
+local empty_path_ok = pcall(files.file_path, '   ', 'group')
+h.assert_true(not empty_path_ok, 'file_path accepted an empty directory path', scope)
 local invalid_toml_dir_opts_ok = pcall(files.toml_files_in_dir, persist_dir, false)
 h.assert_true(not invalid_toml_dir_opts_ok, 'toml directory scan accepted non-table options', scope)
+local empty_toml_dir_ok = pcall(files.toml_files_in_dir, '   ')
+h.assert_true(not empty_toml_dir_ok, 'toml directory scan accepted an empty path', scope)
 local invalid_toml_link_opts_ok = pcall(files.toml_files_in_dir, persist_dir, { include_links = 'yes' })
 h.assert_true(not invalid_toml_link_opts_ok, 'toml directory scan accepted non-boolean link option', scope)
 local unknown_toml_dir_opts_ok = pcall(files.toml_files_in_dir, persist_dir, { unknown = true })
 h.assert_true(not unknown_toml_dir_opts_ok, 'toml directory scan accepted an unknown option', scope)
 local invalid_atomic_lines_ok = pcall(files.atomic_write, persist_dir .. '/bad.toml', { false })
 h.assert_true(not invalid_atomic_lines_ok, 'atomic_write accepted a non-string content line', scope)
+local empty_atomic_path_ok = pcall(files.atomic_write, '   ', {})
+h.assert_true(not empty_atomic_path_ok, 'atomic_write accepted an empty path', scope)
 local non_sequence_atomic_lines_ok = pcall(files.atomic_write, persist_dir .. '/bad.toml', { ok = 'line' })
 h.assert_true(not non_sequence_atomic_lines_ok, 'atomic_write accepted non-sequence content lines', scope)
 local invalid_stale_sections_ok = pcall(files.remove_stale_toml_files, persist_dir, false)
 h.assert_true(not invalid_stale_sections_ok, 'stale TOML cleanup accepted non-table section names', scope)
+local empty_stale_path_ok = pcall(files.remove_stale_toml_files, '   ', {})
+h.assert_true(not empty_stale_path_ok, 'stale TOML cleanup accepted an empty path', scope)
 local non_sequence_stale_sections_ok = pcall(files.remove_stale_toml_files, persist_dir, { active = true })
 h.assert_true(not non_sequence_stale_sections_ok, 'stale TOML cleanup accepted non-sequence section names', scope)
 
