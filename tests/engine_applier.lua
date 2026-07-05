@@ -1,5 +1,6 @@
 local h = require('tests.helpers')
 local scope = 'hlcraft engine applier'
+local assert_fails = h.scoped_assert_fails(scope)
 
 local applier = require('hlcraft.engine.applier')
 local config = require('hlcraft.config')
@@ -9,6 +10,7 @@ local original_set_hl = vim.api.nvim_set_hl
 local original_store_set_hl = store.data.original_set_hl
 local original_config = config.config
 local original_hooked = store.data.hooked
+local original_group = store.data.group
 local original_pending = vim.deepcopy(store.data.pending)
 local original_base_specs = vim.deepcopy(store.data.base_specs)
 local original_active = vim.deepcopy(store.data.active)
@@ -20,6 +22,7 @@ local function restore_state()
   store.data.original_set_hl = original_store_set_hl
   config.config = original_config
   store.data.hooked = original_hooked
+  store.data.group = original_group
   store.data.pending = original_pending
   store.data.base_specs = original_base_specs
   store.data.active = original_active
@@ -62,6 +65,18 @@ local ok, err = xpcall(function()
   })
   local sparse_events_ok = pcall(applier.register_reapply_events, function() end)
   h.assert_true(not sparse_events_ok, 'applier accepted sparse reapply events', scope)
+
+  config.config = vim.tbl_deep_extend('force', vim.deepcopy(config.config), {
+    reapply_events = {
+      enabled = true,
+      events = {
+        'ColorScheme',
+      },
+    },
+  })
+  assert_fails(function()
+    applier.register_reapply_events(nil)
+  end, 'applier accepted missing replay callback')
 end, debug.traceback)
 
 restore_state()
