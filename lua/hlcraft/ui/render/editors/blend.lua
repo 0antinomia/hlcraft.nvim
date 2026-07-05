@@ -2,10 +2,14 @@ local field_values = require('hlcraft.ui.field_values')
 local session = require('hlcraft.ui.session')
 local editor_layout = require('hlcraft.ui.render.editor_layout')
 local hints = require('hlcraft.ui.render.hints')
+local validate = require('hlcraft.ui.render.editors.validate')
 
 local M = {}
 
 function M.build(geometry, result, width)
+  validate.geometry(geometry, 'blend editor')
+  result = validate.result(result, 'blend editor')
+  width = validate.width(width, 'blend editor')
   local fallback = field_values.fallback_value(result, 'blend')
   local value = session.display_value(result.name, 'blend', fallback)
   local lines = {

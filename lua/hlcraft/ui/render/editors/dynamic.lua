@@ -5,6 +5,7 @@ local render_util = require('hlcraft.render.util')
 local editor_layout = require('hlcraft.ui.render.editor_layout')
 local editor_rows = require('hlcraft.ui.render.editor_rows')
 local hints = require('hlcraft.ui.render.hints')
+local validate = require('hlcraft.ui.render.editors.validate')
 
 local M = {}
 
@@ -22,6 +23,12 @@ local function append_line(lines, text)
 end
 
 function M.build(instance, geometry, result, field, width, line_offset, dynamic)
+  instance = validate.instance(instance, 'dynamic editor')
+  geometry = validate.geometry(geometry, 'dynamic editor')
+  result = validate.result(result, 'dynamic editor')
+  field = validate.field(field, 'dynamic editor')
+  width = validate.width(width, 'dynamic editor')
+  dynamic = validate.dynamic(dynamic, 'dynamic editor')
   line_offset = render_util.line_offset(line_offset, 'dynamic editor')
   local label = ui_fields.detail_labels[field] or field:upper()
   local fallback = field_values.fallback_value(result, field)
