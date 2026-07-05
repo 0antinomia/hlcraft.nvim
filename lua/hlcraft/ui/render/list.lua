@@ -1,5 +1,6 @@
 local render_util = require('hlcraft.render.util')
 local numbers = require('hlcraft.core.number')
+local tables = require('hlcraft.core.tables')
 local search_scene = require('hlcraft.ui.scene.search')
 
 local M = {}
@@ -14,6 +15,9 @@ end
 local function result_list(state)
   if type(state.results) ~= 'table' then
     error('result list renderer results must be a table', 3)
+  end
+  if not tables.is_sequence(state.results) then
+    error('result list renderer results must be a sequence', 3)
   end
   return state.results
 end

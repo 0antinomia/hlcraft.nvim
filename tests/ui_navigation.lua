@@ -87,6 +87,16 @@ local invalid_geometry_ok = pcall(navigation.allowed_rows, {
   },
 })
 h.assert_true(not invalid_geometry_ok, 'navigation accepted missing geometry inputs', scope)
+local sparse_input_rows_ok = pcall(navigation.allowed_rows, {
+  state = {
+    geometry = vim.tbl_extend('force', ui_state.geometry(), {
+      inputs = {
+        [2] = { line = 4 },
+      },
+    }),
+  },
+})
+h.assert_true(not sparse_input_rows_ok, 'navigation accepted sparse input geometry', scope)
 
 local invalid_input_row_instance = {
   state = {

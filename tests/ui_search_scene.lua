@@ -40,6 +40,24 @@ local missing_result_lines_ok = pcall(search_scene.rows, {
   },
 })
 h.assert_true(not missing_result_lines_ok, 'search scene accepted missing result_lines geometry', scope)
+h.with_temp_buf(function(buf)
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, { 'result' })
+  vim.api.nvim_win_set_cursor(0, { 1, 0 })
+  local sparse_current_entry_ok = pcall(search_scene.current_entry, {
+    state = {
+      buf = buf,
+      geometry = vim.tbl_extend('force', ui_state.geometry(), {
+        result_lines = {
+          [1] = 2,
+        },
+      }),
+      results = {
+        [2] = { name = 'Late' },
+      },
+    },
+  })
+  h.assert_true(not sparse_current_entry_ok, 'search scene accepted sparse results', scope)
+end, { current = true })
 assert_fails(function()
   search_scene.enter(nil)
 end, 'search scene accepted missing instance')

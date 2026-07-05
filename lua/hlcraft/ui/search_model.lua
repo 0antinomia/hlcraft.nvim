@@ -2,6 +2,7 @@ local M = {}
 
 local color = require('hlcraft.core.color')
 local search = require('hlcraft.core.search')
+local tables = require('hlcraft.core.tables')
 
 local function assert_string(value, label)
   if type(value) ~= 'string' then
@@ -13,6 +14,9 @@ end
 local function assert_results(value, label)
   if type(value) ~= 'table' then
     error(('%s must be a table'):format(label), 3)
+  end
+  if not tables.is_sequence(value) then
+    error(('%s must be a sequence'):format(label), 3)
   end
   return value
 end

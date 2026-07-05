@@ -175,6 +175,8 @@ local invalid_list_instance_ok = pcall(list_renderer.build, nil, 80)
 h.assert_true(not invalid_list_instance_ok, 'result list renderer accepted missing instance', scope)
 local invalid_list_results_ok = pcall(list_renderer.build, { state = {} }, 80)
 h.assert_true(not invalid_list_results_ok, 'result list renderer accepted missing results', scope)
+local sparse_list_results_ok = pcall(list_renderer.build, { state = { results = { [2] = result } } }, 80)
+h.assert_true(not sparse_list_results_ok, 'result list renderer accepted sparse results', scope)
 local invalid_list_width_ok = pcall(list_renderer.build, { state = { results = {} } }, math.huge)
 h.assert_true(not invalid_list_width_ok, 'result list renderer accepted non-finite width', scope)
 local invalid_list_result_ok = pcall(list_renderer.build, { state = { results = { {} } } }, 80)
@@ -219,6 +221,17 @@ h.with_temp_buf(function(buf)
     },
   })
   h.assert_true(not missing_search_results_ok, 'search renderer accepted missing results', scope)
+  local sparse_search_results_ok = pcall(search_renderer.render, {
+    id = 'ui-render-search-sparse-results-test',
+    ns = search_instance.ns,
+    input_label_hl = theme.groups.label,
+    state = {
+      results = {
+        [2] = result,
+      },
+    },
+  })
+  h.assert_true(not sparse_search_results_ok, 'search renderer accepted sparse results', scope)
   local missing_search_namespace_ok = pcall(search_renderer.render, {
     id = 'ui-render-search-missing-namespace-test',
     input_label_hl = theme.groups.label,

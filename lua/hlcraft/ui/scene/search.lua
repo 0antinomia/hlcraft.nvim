@@ -2,6 +2,7 @@ local buffer_fields = require('hlcraft.ui.input.buffer_fields')
 local navigation = require('hlcraft.ui.navigation')
 local search_model = require('hlcraft.ui.search_model')
 local numbers = require('hlcraft.core.number')
+local tables = require('hlcraft.core.tables')
 local ui_fields = require('hlcraft.ui.fields')
 local lifecycle = require('hlcraft.ui.workspace.lifecycle')
 local window = require('hlcraft.ui.workspace.window')
@@ -39,6 +40,9 @@ end
 local function result_list(state)
   if type(state.results) ~= 'table' then
     error('search scene results must be a table', 3)
+  end
+  if not tables.is_sequence(state.results) then
+    error('search scene results must be a sequence', 3)
   end
   return state.results
 end

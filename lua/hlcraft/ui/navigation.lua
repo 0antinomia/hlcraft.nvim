@@ -1,6 +1,7 @@
 local window = require('hlcraft.ui.workspace.window')
 local buffer_lines = require('hlcraft.ui.buffer_lines')
 local numbers = require('hlcraft.core.number')
+local tables = require('hlcraft.core.tables')
 
 local M = {}
 
@@ -45,6 +46,9 @@ local function geometry_table(state, key)
   local value = state.geometry[key]
   if type(value) ~= 'table' then
     error(('navigation geometry %s must be a table'):format(key), 3)
+  end
+  if key == 'inputs' and not tables.is_sequence(value) then
+    error('navigation geometry inputs must be a sequence', 3)
   end
   return value
 end

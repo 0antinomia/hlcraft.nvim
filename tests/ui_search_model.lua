@@ -48,6 +48,10 @@ h.assert_equal(intersection[3].name, 'Beta', 'intersection omitted a shared resu
 h.assert_equal(intersection[2].distance, 5, 'intersection did not carry color distance', scope)
 local nil_intersect_ok = pcall(model.intersect, nil, {})
 h.assert_true(not nil_intersect_ok, 'search model accepted nil name results', scope)
+local sparse_intersect_ok = pcall(model.intersect, {
+  [2] = { name = 'Late' },
+}, {})
+h.assert_true(not sparse_intersect_ok, 'search model accepted sparse name results', scope)
 
 local provider_calls = {}
 local provider = {
@@ -98,6 +102,17 @@ local invalid_provider_result_ok = pcall(model.results, 'Alpha', '', {
   end,
 })
 h.assert_true(not invalid_provider_result_ok, 'search model accepted invalid provider results', scope)
+local sparse_provider_result_ok = pcall(model.results, 'Alpha', '', {
+  by_name = function()
+    return {
+      [2] = { name = 'Late' },
+    }
+  end,
+  by_color = function()
+    return {}
+  end,
+})
+h.assert_true(not sparse_provider_result_ok, 'search model accepted sparse provider results', scope)
 
 provider_calls = {}
 local color_only = model.results('', 'NONE', provider)
