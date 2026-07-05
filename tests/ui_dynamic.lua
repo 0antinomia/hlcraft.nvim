@@ -218,6 +218,11 @@ h.with_temp_buf(function(render_buf)
     'dynamic swatch preview did not track its rendered row',
     scope
   )
+  h.assert_true(
+    render_instance.state.dynamic_preview.items[1].field == nil,
+    'dynamic swatch preview kept renderer-only field state',
+    scope
+  )
   h.assert_true(render_geometry.editor_rows.dynamic_swatch == nil, 'dynamic swatch row should not be selectable', scope)
 end)
 
@@ -248,8 +253,10 @@ h.with_temp_buf(function(preview_buf)
     base = '#000000',
     dynamic = preview_dynamic,
     now_ms = 500,
+    extra = true,
   })
   h.assert_equal(preview_id, 1, 'preview item was not registered', scope)
+  h.assert_true(preview_instance.state.dynamic_preview.items[1].extra == nil, 'preview item kept unknown state', scope)
   assert_fails(function()
     dynamic_preview.register(nil, {})
   end, 'dynamic preview accepted missing instance')
@@ -267,6 +274,26 @@ h.with_temp_buf(function(preview_buf)
     dynamic = preview_dynamic,
   })
   h.assert_true(not missing_preview_state_ok, 'dynamic preview accepted missing state schema', scope)
+  local non_sequence_preview_state_ok = pcall(dynamic_preview.register, {
+    ns = preview_ns,
+    state = {
+      buf = preview_buf,
+      dynamic_preview = {
+        marks = {},
+        items = {
+          [2] = {},
+        },
+      },
+    },
+  }, {
+    line = 1,
+    col_start = 0,
+    col_end = 4,
+    text = 'XXXX',
+    base = '#000000',
+    dynamic = preview_dynamic,
+  })
+  h.assert_true(not non_sequence_preview_state_ok, 'dynamic preview accepted non-sequence items state', scope)
   assert_fails(function()
     dynamic_preview.register({
       ns = false,

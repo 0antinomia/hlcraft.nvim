@@ -2,6 +2,7 @@ local config = require('hlcraft.config')
 local effects = require('hlcraft.dynamic.effects')
 local model = require('hlcraft.dynamic.model')
 local numbers = require('hlcraft.core.number')
+local tables = require('hlcraft.core.tables')
 local timers = require('hlcraft.core.timers')
 
 local M = {}
@@ -25,6 +26,9 @@ local function preview_state(state)
   end
   if type(preview.items) ~= 'table' then
     error('dynamic preview items must be a table', 3)
+  end
+  if not tables.is_sequence(preview.items) then
+    error('dynamic preview items must be a sequence', 3)
   end
   return preview
 end
@@ -150,9 +154,15 @@ local function normalize_item(item, dynamic)
     return nil
   end
 
-  local normalized = vim.deepcopy(item)
-  normalized.dynamic = dynamic
-  return normalized
+  return {
+    line = item.line,
+    col_start = item.col_start,
+    col_end = item.col_end,
+    text = item.text,
+    base = item.base,
+    dynamic = dynamic,
+    now_ms = item.now_ms,
+  }
 end
 
 function M.register(instance, item)
