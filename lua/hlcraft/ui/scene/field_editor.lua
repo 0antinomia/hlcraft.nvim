@@ -165,6 +165,11 @@ end
 
 function M.input_dynamic_row(instance, opts)
   opts = optional_table(opts, 'dynamic row input')
+  for key in pairs(opts) do
+    if key ~= 'default_raw' then
+      error(('unknown dynamic row input option: %s'):format(tostring(key)), 3)
+    end
+  end
   local default_raw = optional_boolean(opts.default_raw, 'dynamic row raw fallback')
   local result = M.current_result(instance)
   local field = M.current_field(instance)

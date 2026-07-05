@@ -35,6 +35,8 @@ local nil_entry_ok = pcall(schema.normalize_entry, 'Normal', nil)
 h.assert_true(not nil_entry_ok, 'schema accepted nil entry', scope)
 local bad_opts_ok = pcall(schema.normalize_entry, 'Normal', {}, false)
 h.assert_true(not bad_opts_ok, 'schema accepted non-table normalize options', scope)
+local unknown_opts_ok = pcall(schema.normalize_entry, 'Normal', {}, { compact = true })
+h.assert_true(not unknown_opts_ok, 'schema accepted unknown normalize options', scope)
 local bad_compact_option_ok = pcall(schema.normalize_entry, 'Normal', {}, { compact_dynamic = 'yes' })
 h.assert_true(not bad_compact_option_ok, 'schema accepted non-boolean compact option', scope)
 

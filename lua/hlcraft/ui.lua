@@ -18,6 +18,12 @@ local function optional_opts(opts)
   if type(opts) ~= 'table' then
     error('UI open options must be a table', 3)
   end
+  for key in pairs(opts) do
+    if key ~= 'instance_name' then
+      error(('unknown UI open option: %s'):format(tostring(key)), 3)
+    end
+  end
+  assert_instance_name(opts.instance_name)
   return opts
 end
 

@@ -38,6 +38,11 @@ local function optional_opts(opts)
   if type(opts) ~= 'table' then
     error('line highlight options must be a table', 3)
   end
+  for key in pairs(opts) do
+    if key ~= 'buf' then
+      error(('unknown line highlight option: %s'):format(tostring(key)), 3)
+    end
+  end
   return opts
 end
 

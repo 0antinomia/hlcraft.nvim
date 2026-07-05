@@ -14,6 +14,11 @@ end
 
 local function prompt_opts(opts)
   opts = optional_opts(opts)
+  for key in pairs(opts) do
+    if key ~= 'notify_errors' then
+      error(('unknown prompt option: %s'):format(tostring(key)), 3)
+    end
+  end
   if opts.notify_errors ~= nil and type(opts.notify_errors) ~= 'boolean' then
     error('prompt notify_errors must be boolean', 3)
   end

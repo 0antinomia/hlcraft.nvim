@@ -342,8 +342,6 @@ local missing_required_text_ok = pcall(decorations.require_text_start, 'left rig
 h.assert_true(not missing_required_text_ok, 'required text finder accepted missing text', scope)
 local invalid_required_label_ok = pcall(decorations.require_text_start, 'left right', 'left', 0, '')
 h.assert_true(not invalid_required_label_ok, 'required text finder accepted an empty label', scope)
-local invalid_header_opts_ok = pcall(decorations.set_input_header, {}, {}, 'Label', false)
-h.assert_true(not invalid_header_opts_ok, 'input header accepted non-table options', scope)
 h.with_temp_buf(function(buf)
   local decoration_instance = {
     id = 'ui-render-decoration-test',
@@ -367,6 +365,12 @@ h.with_temp_buf(function(buf)
 
   local missing_decoration_instance_ok = pcall(decorations.set_results_header, nil, 1, 80)
   h.assert_true(not missing_decoration_instance_ok, 'decorations accepted missing instance', scope)
+  local invalid_header_opts_ok = pcall(decorations.set_input_header, decoration_instance, { line = 1 }, 'Name', false)
+  h.assert_true(not invalid_header_opts_ok, 'input header accepted non-table options', scope)
+  local unknown_header_opts_ok = pcall(decorations.set_input_header, decoration_instance, { line = 1 }, 'Name', {
+    width = 10,
+  })
+  h.assert_true(not unknown_header_opts_ok, 'input header accepted unknown options', scope)
   local invalid_header_line_ok = pcall(decorations.set_input_header, decoration_instance, { line = 0 }, 'Name')
   h.assert_true(not invalid_header_line_ok, 'input header accepted invalid field line', scope)
   decoration_instance.state.input_marks['Name:1'] = false

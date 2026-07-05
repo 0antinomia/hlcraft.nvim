@@ -30,6 +30,11 @@ local function optional_opts(opts)
   if type(opts) ~= 'table' then
     error('highlight entry options must be a table', 3)
   end
+  for key in pairs(opts) do
+    if key ~= 'resolve_chain' and key ~= 'resolve_attrs' then
+      error(('unknown highlight entry option: %s'):format(tostring(key)), 3)
+    end
+  end
   if opts.resolve_chain ~= nil and type(opts.resolve_chain) ~= 'function' then
     error('highlight entry resolve_chain option must be a function', 3)
   end

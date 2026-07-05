@@ -46,6 +46,13 @@ h.with_temp_bufs(2, function(workspace_buf, help_buf)
     },
   }, 0, '[q] close', false)
   h.assert_true(not invalid_hint_opts_ok, 'hint highlighter accepted non-table options', scope)
+  local unknown_hint_opts_ok = pcall(line_highlights.apply_hint_line, {
+    ns = ns,
+    state = {
+      buf = help_buf,
+    },
+  }, 0, '[q] close', { win = 1 })
+  h.assert_true(not unknown_hint_opts_ok, 'hint highlighter accepted unknown options', scope)
   local invalid_target_buf_ok = pcall(line_highlights.apply_hint_line, {
     ns = ns,
     state = {

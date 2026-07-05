@@ -21,6 +21,11 @@ local function normalize_entry_options(opts)
     return {}
   end
   opts = assert_table(opts, 'persistence entry options')
+  for key in pairs(opts) do
+    if key ~= 'compact_dynamic' then
+      error(('unknown persistence entry option: %s'):format(tostring(key)), 3)
+    end
+  end
   if opts.compact_dynamic ~= nil and type(opts.compact_dynamic) ~= 'boolean' then
     error('persistence entry compact_dynamic option must be boolean', 3)
   end
