@@ -3,6 +3,7 @@ local scope = 'hlcraft ui handles'
 
 local handles = require('hlcraft.ui.handles')
 local buffer_lines = require('hlcraft.ui.buffer_lines')
+local UiInstance = require('hlcraft.ui.instance')
 local ui = require('hlcraft.ui')
 
 h.assert_true(not handles.is_valid_buf(nil), 'nil buffer was valid', scope)
@@ -20,6 +21,12 @@ local empty_instance_name_ok = pcall(ui.get_instance, '')
 h.assert_true(not empty_instance_name_ok, 'UI accepted empty instance name', scope)
 local invalid_open_opts_ok = pcall(ui.open, false)
 h.assert_true(not invalid_open_opts_ok, 'UI open accepted non-table options', scope)
+local default_instance = UiInstance.new()
+h.assert_equal(default_instance.id, 'default', 'UI instance default id changed', scope)
+local invalid_instance_id_ok = pcall(UiInstance.new, false)
+h.assert_true(not invalid_instance_id_ok, 'UI instance accepted non-string id', scope)
+local empty_instance_id_ok = pcall(UiInstance.new, '')
+h.assert_true(not empty_instance_id_ok, 'UI instance accepted empty id', scope)
 
 h.with_temp_buf(function(line_buf)
   vim.api.nvim_buf_set_lines(line_buf, 0, -1, false, { 'alpha' })
