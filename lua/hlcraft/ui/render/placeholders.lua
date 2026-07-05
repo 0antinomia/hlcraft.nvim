@@ -4,6 +4,7 @@ local buffer_fields = require('hlcraft.ui.input.buffer_fields')
 local core_fields = require('hlcraft.core.fields')
 local input_sequence = require('hlcraft.ui.input.sequence')
 local numbers = require('hlcraft.core.number')
+local tables = require('hlcraft.core.tables')
 local theme = require('hlcraft.ui.theme')
 local ui_fields = require('hlcraft.ui.fields')
 local window = require('hlcraft.ui.workspace.window')
@@ -43,6 +44,9 @@ local function geometry_inputs(state)
   local inputs = state.geometry.inputs
   if type(inputs) ~= 'table' then
     error('placeholder geometry inputs must be a table', 3)
+  end
+  if not tables.is_sequence(inputs) then
+    error('placeholder geometry inputs must be a sequence', 3)
   end
   return inputs
 end

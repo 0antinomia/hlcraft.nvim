@@ -93,6 +93,12 @@ local invalid_append_lines_ok = pcall(render_buffer.append_input, false, { input
 h.assert_true(not invalid_append_lines_ok, 'input append helper accepted non-table lines', scope)
 local invalid_append_geometry_ok = pcall(render_buffer.append_input, {}, {}, 'name', 'name', 'value', { width = 10 })
 h.assert_true(not invalid_append_geometry_ok, 'input append helper accepted geometry without inputs', scope)
+local non_sequence_append_geometry_ok = pcall(render_buffer.append_input, {}, {
+  inputs = {
+    [2] = { name = 'late', kind = 'name', line = 1 },
+  },
+}, 'name', 'name', 'value', { width = 10 })
+h.assert_true(not non_sequence_append_geometry_ok, 'input append helper accepted non-sequence geometry inputs', scope)
 local invalid_append_value_ok = pcall(render_buffer.append_input, {}, { inputs = {} }, 'name', 'name', false, {
   width = 10,
 })
@@ -148,6 +154,12 @@ h.with_temp_buf(function(buf)
   h.assert_true(not invalid_finish_geometry_ok, 'render buffer finish accepted non-table geometry', scope)
   local invalid_finish_inputs_ok = pcall(render_buffer.finish, render_instance, {})
   h.assert_true(not invalid_finish_inputs_ok, 'render buffer finish accepted geometry without inputs', scope)
+  local non_sequence_finish_inputs_ok = pcall(render_buffer.finish, render_instance, {
+    inputs = {
+      [2] = { name = 'late', kind = 'name', line = 1 },
+    },
+  })
+  h.assert_true(not non_sequence_finish_inputs_ok, 'render buffer finish accepted non-sequence geometry inputs', scope)
 end)
 local list_lines, list_selectable = list_renderer.build({ state = { results = { result } } }, 80)
 h.assert_true(#list_lines >= 3, 'result list renderer did not produce rows', scope)

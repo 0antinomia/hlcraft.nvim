@@ -2,6 +2,7 @@ local notify = require('hlcraft.notify')
 local render_util = require('hlcraft.render.util')
 local buffer_fields = require('hlcraft.ui.input.buffer_fields')
 local numbers = require('hlcraft.core.number')
+local tables = require('hlcraft.core.tables')
 local ui_state = require('hlcraft.ui.state')
 local theme = require('hlcraft.ui.theme')
 local window = require('hlcraft.ui.workspace.window')
@@ -76,6 +77,9 @@ local function geometry_inputs(geometry)
   geometry = geometry_table(geometry)
   if type(geometry.inputs) ~= 'table' then
     error('render geometry inputs must be a table', 3)
+  end
+  if not tables.is_sequence(geometry.inputs) then
+    error('render geometry inputs must be a sequence', 3)
   end
   return geometry.inputs
 end

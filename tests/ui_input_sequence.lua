@@ -36,6 +36,10 @@ h.assert_equal(
 )
 local nil_inputs_ok = pcall(sequence.first_name, nil)
 h.assert_true(not nil_inputs_ok, 'input sequence accepted nil inputs', scope)
+local sparse_inputs_ok = pcall(sequence.first_name, { [2] = { name = 'late' } })
+h.assert_true(not sparse_inputs_ok, 'input sequence accepted sparse inputs', scope)
+local keyed_inputs_ok = pcall(sequence.first_name, { extra = { name = 'extra' } })
+h.assert_true(not keyed_inputs_ok, 'input sequence accepted keyed inputs', scope)
 local bad_predicate_ok = pcall(sequence.first_name, inputs, true)
 h.assert_true(not bad_predicate_ok, 'input sequence accepted non-function predicate', scope)
 
