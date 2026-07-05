@@ -415,6 +415,13 @@ h.with_temp_buf(function(preview_buf)
     dynamic_preview.tick(preview_instance, 0)
   end, 'dynamic preview accepted invalid mark item id state')
   preview_instance.state.dynamic_preview.marks = {}
+  preview_instance.state.dynamic_preview.items = {
+    [2] = preview_instance.state.dynamic_preview.items[1],
+  }
+  assert_fails(function()
+    dynamic_preview.tick(preview_instance, 0)
+  end, 'dynamic preview tick accepted non-sequence items state')
+  preview_instance.state.dynamic_preview.items = {}
   dynamic_preview.clear(preview_instance)
 end)
 
