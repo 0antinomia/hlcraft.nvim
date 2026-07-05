@@ -9,6 +9,24 @@ local original_health_module = package.loaded[health_module]
 local original_repository_module = package.loaded[repository_module]
 local original_vim_health = vim.health
 
+local function version_api(version)
+  return setmetatable({}, {
+    __call = function()
+      return version
+    end,
+  })
+end
+
+local function with_version(api, fn)
+  local original_version = vim.version
+  vim.version = api
+  local ok, err = xpcall(fn, debug.traceback)
+  vim.version = original_version
+  if not ok then
+    error(err, 0)
+  end
+end
+
 local messages = {
   error = {},
   ok = {},
@@ -60,6 +78,20 @@ h.assert_true(
   scope
 )
 h.assert_true(contains(messages.ok, 'dynamic colors disabled'), 'health stopped before dynamic color check', scope)
+
+local old_version = setmetatable({ major = 0, minor = 9, patch = 5 }, {
+  __tostring = function()
+    return '0.9.5'
+  end,
+})
+with_version(version_api(old_version), function()
+  require(health_module).check()
+end)
+h.assert_true(
+  contains(messages.error, 'hlcraft requires Neovim >= 0.10.0. Current version: 0.9.5'),
+  'health did not handle a missing version comparator',
+  scope
+)
 
 package.loaded[health_module] = original_health_module
 package.loaded[repository_module] = original_repository_module
