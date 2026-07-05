@@ -1,14 +1,12 @@
 local highlights = require('hlcraft.core.highlights')
+local highlight_names = require('hlcraft.core.highlight_names')
 local snapshot = require('hlcraft.engine.snapshot')
 local store = require('hlcraft.engine.store')
 
 local M = {}
 
 local function assert_name(name)
-  if type(name) ~= 'string' or name == '' then
-    error('base spec highlight name must be a non-empty string', 3)
-  end
-  return name
+  return highlight_names.assert(name, 'base spec highlight name', 3)
 end
 
 local function base_spec_state(state)

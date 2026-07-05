@@ -1,13 +1,11 @@
 local dynamic_model = require('hlcraft.dynamic.model')
 local engine = require('hlcraft.engine.service')
+local highlight_names = require('hlcraft.core.highlight_names')
 
 local M = {}
 
 local function assert_name(name)
-  if type(name) ~= 'string' or name == '' then
-    error('highlight name must be a non-empty string', 3)
-  end
-  return name
+  return highlight_names.assert(name, 'highlight name', 3)
 end
 
 local function assert_key(key)

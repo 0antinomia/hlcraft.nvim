@@ -63,6 +63,10 @@ local bad_clear_spec_ok = pcall(runtime.clear_group, 'HlcraftDynamicRuntime', 'b
 h.assert_true(not bad_clear_spec_ok, 'runtime accepted invalid restore spec', scope)
 local bad_base_name_ok = pcall(runtime.base_spec, nil)
 h.assert_true(not bad_base_name_ok, 'runtime base_spec accepted nil group name', scope)
+local spaced_name_ok = pcall(runtime.base_spec, 'Bad Name')
+h.assert_true(not spaced_name_ok, 'runtime base_spec accepted whitespace in group name', scope)
+local command_name_ok = pcall(runtime.clear_group, 'Bad|Name')
+h.assert_true(not command_name_ok, 'runtime clear_group accepted command separators in group name', scope)
 runtime.sync_group('HlcraftDynamicRuntime', { fg = '#111111', bg = '#808080' }, {
   dynamic = runtime_dynamic,
 })

@@ -90,6 +90,10 @@ local empty_highlight_ok = pcall(codec.encode_section, 'group', {
   [''] = {},
 })
 h.assert_true(not empty_highlight_ok, 'codec section accepted an empty highlight name', scope)
+local spaced_highlight_ok = pcall(codec.encode_section, 'group', {
+  ['Bad Name'] = {},
+})
+h.assert_true(not spaced_highlight_ok, 'codec section accepted whitespace in highlight name', scope)
 local numeric_field_ok = pcall(codec.encode_inline_table, {
   [1] = '#101010',
 })

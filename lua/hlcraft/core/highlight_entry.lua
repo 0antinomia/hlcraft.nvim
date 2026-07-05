@@ -2,6 +2,7 @@ local M = {}
 
 local color = require('hlcraft.core.color')
 local fields = require('hlcraft.core.fields')
+local highlight_names = require('hlcraft.core.highlight_names')
 local numbers = require('hlcraft.core.number')
 local tables = require('hlcraft.core.tables')
 
@@ -10,10 +11,7 @@ local function terminal_name(chain)
 end
 
 local function assert_name(name)
-  if type(name) ~= 'string' or name == '' then
-    error('highlight entry name must be a non-empty string', 3)
-  end
-  return name
+  return highlight_names.assert(name, 'highlight entry name', 3)
 end
 
 local function assert_attrs(attrs)
@@ -94,9 +92,8 @@ local function link_chain(value)
     error('highlight link chain resolver must return a non-empty sequence', 3)
   end
   for index, name in ipairs(value) do
-    if type(name) ~= 'string' or name == '' then
-      error(('highlight link chain entry %d must be a non-empty string'):format(index), 3)
-    end
+    local group_name = type(name) == 'string' and name:gsub(' %(circular%)$', '') or name
+    highlight_names.assert(group_name, ('highlight link chain entry %d'):format(index), 3)
   end
   return value
 end
@@ -119,8 +116,8 @@ function M.from_attrs(name, attrs, opts)
   name = assert_name(name)
   attrs = assert_attrs(attrs)
   opts = optional_opts(opts)
-  if attrs.link ~= nil and (type(attrs.link) ~= 'string' or attrs.link == '') then
-    error('highlight link must be a non-empty string or nil', 2)
+  if attrs.link ~= nil then
+    highlight_names.assert(attrs.link, 'highlight link', 2)
   end
   local entry = {
     name = name,

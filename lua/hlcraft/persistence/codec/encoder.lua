@@ -1,4 +1,5 @@
 local fields = require('hlcraft.core.fields')
+local highlight_names = require('hlcraft.core.highlight_names')
 local numbers = require('hlcraft.core.number')
 local tables = require('hlcraft.core.tables')
 local util = require('hlcraft.persistence.codec.util')
@@ -47,10 +48,7 @@ local function assert_section_name(section_name)
 end
 
 local function assert_highlight_name(highlight_name)
-  if type(highlight_name) ~= 'string' or vim.trim(highlight_name) == '' then
-    error('TOML highlight names must be non-empty strings', 3)
-  end
-  return highlight_name
+  return highlight_names.assert(highlight_name, 'TOML highlight name', 3)
 end
 
 local function assert_field_key(key)

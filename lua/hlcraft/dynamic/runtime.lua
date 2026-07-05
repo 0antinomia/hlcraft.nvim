@@ -1,5 +1,6 @@
 local config = require('hlcraft.config')
 local effects = require('hlcraft.dynamic.effects')
+local highlight_names = require('hlcraft.core.highlight_names')
 local model = require('hlcraft.dynamic.model')
 local timers = require('hlcraft.core.timers')
 local store = require('hlcraft.engine.store')
@@ -12,10 +13,7 @@ local state = {
 }
 
 local function assert_name(name)
-  if type(name) ~= 'string' or name == '' then
-    error('dynamic runtime group name must be a non-empty string', 3)
-  end
-  return name
+  return highlight_names.assert(name, 'dynamic runtime group name', 3)
 end
 
 local function assert_table(value, label)

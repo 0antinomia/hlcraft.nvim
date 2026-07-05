@@ -27,6 +27,16 @@ assert_fails(function()
     },
   }, '', function() end)
 end, 'unsaved prompt accepted empty name')
+local spaced_name_instance = {
+  state = {
+    unsaved_prompt = {},
+  },
+}
+local spaced_name_ok = pcall(prompt.open, spaced_name_instance, 'Bad Name', function() end)
+if spaced_name_ok then
+  prompt.close(spaced_name_instance)
+end
+h.assert_true(not spaced_name_ok, 'unsaved prompt accepted whitespace in name', scope)
 assert_fails(function()
   prompt.open({
     state = {

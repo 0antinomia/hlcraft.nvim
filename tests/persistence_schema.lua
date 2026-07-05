@@ -37,6 +37,8 @@ local nil_entry_name_ok = pcall(schema.normalize_entry, nil, {})
 h.assert_true(not nil_entry_name_ok, 'schema accepted nil entry name', scope)
 local empty_entry_name_ok = pcall(schema.normalize_entry, '   ', {})
 h.assert_true(not empty_entry_name_ok, 'schema accepted empty entry name', scope)
+local spaced_entry_name_ok = pcall(schema.normalize_entry, 'Bad Name', {})
+h.assert_true(not spaced_entry_name_ok, 'schema accepted whitespace in entry name', scope)
 local bad_opts_ok = pcall(schema.normalize_entry, 'Normal', {}, false)
 h.assert_true(not bad_opts_ok, 'schema accepted non-table normalize options', scope)
 local unknown_opts_ok = pcall(schema.normalize_entry, 'Normal', {}, { compact = true })
@@ -257,12 +259,35 @@ for _, case in ipairs({
   h.assert_true(not ok, ('schema accepted loaded %s'):format(case.label), scope)
 end
 
+local spaced_loaded_name_ok = pcall(schema.normalize_loaded_data, {
+  entries = {
+    ['Bad Name'] = {
+      fg = '#101010',
+    },
+  },
+  groups = {
+    ['Bad Name'] = 'main',
+  },
+  sections = {
+    main = {
+      ['Bad Name'] = {
+        fg = '#101010',
+      },
+    },
+  },
+})
+h.assert_true(not spaced_loaded_name_ok, 'schema accepted whitespace in loaded highlight name', scope)
+
 local nil_entries_ok = pcall(schema.normalize_entries, nil)
 h.assert_true(not nil_entries_ok, 'schema accepted nil entries', scope)
 local invalid_entries_name_ok = pcall(schema.normalize_entries, {
   [1] = {},
 })
 h.assert_true(not invalid_entries_name_ok, 'schema accepted invalid persisted entry name', scope)
+local spaced_entries_name_ok = pcall(schema.normalize_entries, {
+  ['Bad Name'] = {},
+})
+h.assert_true(not spaced_entries_name_ok, 'schema accepted whitespace in persisted entry name', scope)
 
 local invalid_entries, invalid_entries_err = schema.normalize_entries({
   Normal = {
