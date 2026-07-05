@@ -3,6 +3,7 @@ local scope = 'hlcraft ui render'
 
 local config = require('hlcraft.config')
 local hlcraft = require('hlcraft')
+local blend_renderer = require('hlcraft.ui.render.editors.blend')
 local color_renderer = require('hlcraft.ui.render.editors.color')
 local decorations = require('hlcraft.ui.render.decorations')
 local detail_renderer = require('hlcraft.ui.render.detail')
@@ -12,6 +13,7 @@ local engine = require('hlcraft.engine.service')
 local editor_layout = require('hlcraft.ui.render.editor_layout')
 local editor_rows = require('hlcraft.ui.render.editor_rows')
 local field_editor_renderer = require('hlcraft.ui.render.field_editor')
+local group_renderer = require('hlcraft.ui.render.editors.group')
 local list_renderer = require('hlcraft.ui.render.list')
 local render_buffer = require('hlcraft.ui.render.buffer')
 local search_renderer = require('hlcraft.ui.render.search')
@@ -445,6 +447,18 @@ h.assert_true(color_text:find('Global  ', 1, true) ~= nil, 'color editor lacks a
 h.assert_true(color_text:find('        [?] help', 1, true) ~= nil, 'color editor global hints stayed crowded', scope)
 h.assert_true(not color_text:find('Keys:', 1, true), 'color editor kept crowded Keys hint', scope)
 h.assert_true(color_geometry.editor_rows.color_keys == nil, 'color hint row should not be selectable', scope)
+local invalid_color_geometry_ok = pcall(color_renderer.build, {}, result, 'fg', 80)
+h.assert_true(not invalid_color_geometry_ok, 'color editor accepted missing geometry', scope)
+local invalid_color_result_ok = pcall(color_renderer.build, { editor_rows = {} }, {}, 'fg', 80)
+h.assert_true(not invalid_color_result_ok, 'color editor accepted missing result', scope)
+local invalid_color_field_ok = pcall(color_renderer.build, { editor_rows = {} }, result, '', 80)
+h.assert_true(not invalid_color_field_ok, 'color editor accepted empty field', scope)
+local invalid_color_width_ok = pcall(color_renderer.build, { editor_rows = {} }, result, 'fg', 0)
+h.assert_true(not invalid_color_width_ok, 'color editor accepted invalid width', scope)
+local invalid_blend_width_ok = pcall(blend_renderer.build, { editor_rows = {} }, result, 0)
+h.assert_true(not invalid_blend_width_ok, 'blend editor accepted invalid width', scope)
+local invalid_group_result_ok = pcall(group_renderer.build, { editor_rows = {} }, {}, 80)
+h.assert_true(not invalid_group_result_ok, 'group editor accepted missing result', scope)
 
 local dynamic_geometry = { editor_rows = {} }
 local dynamic = dynamic_model.normalize_channel({
@@ -463,6 +477,12 @@ h.assert_true(dynamic_text:find('Edit    ', 1, true) ~= nil, 'dynamic editor lac
 h.assert_true(dynamic_text:find('Global  ', 1, true) ~= nil, 'dynamic editor lacks a global section', scope)
 h.assert_true(not dynamic_text:find('Keys:', 1, true), 'dynamic editor kept crowded Keys hint', scope)
 h.assert_true(dynamic_geometry.editor_rows.dynamic_keys == nil, 'dynamic hint row should not be selectable', scope)
+local invalid_dynamic_instance_ok =
+  pcall(dynamic_renderer.build, nil, { editor_rows = {} }, result, 'fg', 80, 0, dynamic)
+h.assert_true(not invalid_dynamic_instance_ok, 'dynamic editor accepted missing instance', scope)
+local invalid_dynamic_value_ok =
+  pcall(dynamic_renderer.build, instance, { editor_rows = {} }, result, 'fg', 80, 0, false)
+h.assert_true(not invalid_dynamic_value_ok, 'dynamic editor accepted invalid dynamic value', scope)
 
 local dynamic_set_ok, dynamic_set_err = engine.set_dynamic('HlcraftUiRenderNormal', 'fg', dynamic)
 h.assert_true(dynamic_set_ok, dynamic_set_err or 'dynamic fixture did not set', scope)
