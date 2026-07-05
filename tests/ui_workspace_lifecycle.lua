@@ -46,8 +46,21 @@ lifecycle.hide(instance)
 h.assert_true(instance.state.closing, 'workspace lifecycle hide ignored closing guard incorrectly', scope)
 
 instance.state.closing = false
+local raw_buf = vim.api.nvim_create_buf(false, true)
+local raw_win = vim.api.nvim_open_win(raw_buf, false, {
+  relative = 'editor',
+  style = 'minimal',
+  width = 1,
+  height = 1,
+  row = 0,
+  col = 0,
+})
+instance.state.raw_dynamic = { buf = raw_buf, win = raw_win }
 lifecycle.hide(instance)
 h.assert_true(not instance.state.closing, 'workspace lifecycle hide kept closing guard', scope)
+h.assert_true(not vim.api.nvim_win_is_valid(raw_win), 'workspace lifecycle hide kept raw dynamic window', scope)
+h.assert_true(not vim.api.nvim_buf_is_valid(raw_buf), 'workspace lifecycle hide kept raw dynamic buffer', scope)
+h.assert_true(instance.state.raw_dynamic == nil, 'workspace lifecycle hide kept raw dynamic state', scope)
 
 lifecycle.close(instance)
 h.assert_true(not instance.state.closing, 'workspace lifecycle close kept closing guard', scope)

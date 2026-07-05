@@ -29,6 +29,10 @@ local function cleanup_dynamic_preview(instance)
   require('hlcraft.ui.dynamic_preview').clear(instance)
 end
 
+local function close_raw_dynamic(instance)
+  require('hlcraft.ui.raw_dynamic').close(instance)
+end
+
 local function install_preview_keymap(instance)
   require('hlcraft.ui.preview').install_keymap(instance)
 end
@@ -51,6 +55,7 @@ end
 --- @return nil
 local function reset_view_state(instance, state)
   close_unsaved_prompt(instance)
+  close_raw_dynamic(instance)
   ui_state.reset_view(state)
 end
 
@@ -74,6 +79,7 @@ function M.hide(instance)
 
   local ok, err = pcall(function()
     close_unsaved_prompt(instance)
+    close_raw_dynamic(instance)
     cleanup_preview(instance)
     cleanup_dynamic_preview(instance)
     uninstall_preview_keymap(instance)
@@ -116,6 +122,7 @@ function M.cleanup(instance)
 
   local ok, err = pcall(function()
     close_unsaved_prompt(instance)
+    close_raw_dynamic(instance)
     cleanup_preview(instance)
     cleanup_dynamic_preview(instance)
     uninstall_preview_keymap(instance)

@@ -25,6 +25,7 @@ h.assert_true(first.preview ~= second.preview, 'preview state was shared', scope
 h.assert_true(first.dynamic_preview ~= second.dynamic_preview, 'dynamic preview state was shared', scope)
 h.assert_true(first.dynamic_preview.marks ~= second.dynamic_preview.marks, 'dynamic preview marks were shared', scope)
 h.assert_true(first.dynamic_preview.items ~= second.dynamic_preview.items, 'dynamic preview items were shared', scope)
+h.assert_true(first.raw_dynamic ~= second.raw_dynamic, 'raw dynamic state was shared', scope)
 
 local timer = {}
 local state = ui_state.initial()
@@ -62,6 +63,7 @@ state.dynamic_preview = {
   timer = {},
   instance_id = 7,
 }
+state.raw_dynamic = { win = 61, buf = 62 }
 state.scene = { name = 'detail', index = 2 }
 
 ui_state.reset_view(state)
@@ -103,6 +105,8 @@ h.assert_true(next(state.dynamic_preview.marks) == nil, 'view reset kept dynamic
 h.assert_true(next(state.dynamic_preview.items) == nil, 'view reset kept dynamic preview items', scope)
 h.assert_true(state.dynamic_preview.timer == nil, 'view reset kept dynamic preview timer', scope)
 h.assert_true(state.dynamic_preview.instance_id == nil, 'view reset kept dynamic preview instance id', scope)
+h.assert_true(state.raw_dynamic.win == nil, 'view reset kept raw dynamic window', scope)
+h.assert_true(state.raw_dynamic.buf == nil, 'view reset kept raw dynamic buffer', scope)
 h.assert_equal(state.scene.name, 'search', 'view reset did not return to search scene', scope)
 
 state.closing = true

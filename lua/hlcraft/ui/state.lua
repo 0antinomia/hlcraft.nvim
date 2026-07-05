@@ -47,6 +47,13 @@ function M.dynamic_preview()
   }
 end
 
+function M.raw_dynamic()
+  return {
+    win = nil,
+    buf = nil,
+  }
+end
+
 function M.search_scene()
   return {
     name = 'search',
@@ -78,6 +85,7 @@ function M.reset_view(target)
   target.clamping_cursor = false
   target.preview = M.preview()
   target.dynamic_preview = M.dynamic_preview()
+  target.raw_dynamic = M.raw_dynamic()
   target.scene = M.search_scene()
 end
 
