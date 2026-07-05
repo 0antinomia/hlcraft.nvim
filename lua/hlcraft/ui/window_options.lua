@@ -62,7 +62,13 @@ function M.snapshot(win)
 end
 
 function M.restore(snapshot)
-  if not snapshot or not M.is_valid_win(snapshot.win) then
+  if snapshot == nil then
+    return false
+  end
+  if type(snapshot) ~= 'table' then
+    error('window option snapshot must be a table', 2)
+  end
+  if not M.is_valid_win(snapshot.win) then
     return false
   end
 

@@ -87,6 +87,8 @@ local ok, err = xpcall(function()
     win = win,
   })
   h.assert_true(not invalid_snapshot_ok, 'window option restore accepted missing values', scope)
+  local non_table_snapshot_ok = pcall(window_options.restore, false)
+  h.assert_true(not non_table_snapshot_ok, 'window option restore accepted non-table snapshot', scope)
   local invalid_workspace_values_ok = pcall(window_options.matches_workspace, nil)
   h.assert_true(not invalid_workspace_values_ok, 'workspace option matcher accepted nil values', scope)
   h.assert_true(
