@@ -1,6 +1,7 @@
 local line_model = require('hlcraft.ui.render.line_model')
 local numbers = require('hlcraft.core.number')
 local render_util = require('hlcraft.render.util')
+local tables = require('hlcraft.core.tables')
 local theme = require('hlcraft.ui.theme')
 local window = require('hlcraft.ui.workspace.window')
 
@@ -112,6 +113,9 @@ end
 local function assert_spans(spans)
   if type(spans) ~= 'table' then
     error('render spans must be a table', 3)
+  end
+  if not tables.is_sequence(spans) then
+    error('render spans must be a sequence', 3)
   end
   return spans
 end

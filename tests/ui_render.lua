@@ -334,6 +334,28 @@ h.with_temp_buf(function(buf)
     top_virt_lines = { false },
   })
   h.assert_true(not invalid_header_virt_ok, 'input header accepted invalid virtual lines', scope)
+  local sparse_header_virt_lines_ok = pcall(decorations.set_input_header, decoration_instance, { line = 1 }, 'Name', {
+    top_virt_lines = {
+      [2] = decorations.help_virt_line(),
+    },
+  })
+  h.assert_true(not sparse_header_virt_lines_ok, 'input header accepted sparse virtual lines', scope)
+  local sparse_header_virt_line_ok = pcall(decorations.set_input_header, decoration_instance, { line = 1 }, 'Name', {
+    top_virt_lines = {
+      {
+        [2] = { '?', theme.groups.key },
+      },
+    },
+  })
+  h.assert_true(not sparse_header_virt_line_ok, 'input header accepted sparse virtual line chunks', scope)
+  local keyed_header_virt_chunk_ok = pcall(decorations.set_input_header, decoration_instance, { line = 1 }, 'Name', {
+    top_virt_lines = {
+      {
+        { text = '?', hl = theme.groups.key },
+      },
+    },
+  })
+  h.assert_true(not keyed_header_virt_chunk_ok, 'input header accepted keyed virtual line chunk', scope)
   local invalid_results_width_ok = pcall(decorations.set_results_header, decoration_instance, 1, 0)
   h.assert_true(not invalid_results_width_ok, 'results header accepted invalid width', scope)
   local invalid_color_buf_ok = pcall(decorations.apply_color_cell, decoration_instance, -1, 0, 0, 'x', '#ffffff', 'fg')

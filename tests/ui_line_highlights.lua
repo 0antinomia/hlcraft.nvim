@@ -142,6 +142,41 @@ h.with_temp_buf(function(buf)
     package.loaded[line_model_module] = {
       hint_spans = function()
         return {
+          [2] = {
+            kind = 'key',
+            start_col = 0,
+            end_col = 1,
+          },
+        }
+      end,
+      label_spans = function()
+        return {}
+      end,
+    }
+    local strict_line_highlights = require(line_highlights_module)
+    local sparse_spans_ok = pcall(strict_line_highlights.apply_hint_line, {
+      ns = ns,
+      state = {
+        buf = buf,
+      },
+    }, 0, '[q] close')
+    h.assert_true(not sparse_spans_ok, 'line highlighter accepted sparse spans', scope)
+  end, debug.traceback)
+
+  package.loaded[line_highlights_module] = original_line_highlights
+  package.loaded[line_model_module] = original_line_model
+
+  if not ok then
+    error(err, 0)
+  end
+end)
+
+h.with_temp_buf(function(buf)
+  local ok, err = xpcall(function()
+    package.loaded[line_highlights_module] = nil
+    package.loaded[line_model_module] = {
+      hint_spans = function()
+        return {
           {
             kind = 'key',
             start_col = 2,
