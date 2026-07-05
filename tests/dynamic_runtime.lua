@@ -50,6 +50,15 @@ local bad_base_spec_ok = pcall(runtime.sync_group, 'HlcraftDynamicRuntime', nil,
 h.assert_true(not bad_base_spec_ok, 'runtime accepted nil base spec', scope)
 local bad_entry_ok = pcall(runtime.sync_group, 'HlcraftDynamicRuntime', { fg = '#111111' }, nil)
 h.assert_true(not bad_entry_ok, 'runtime accepted nil entry', scope)
+local bad_dynamic_ok = pcall(runtime.sync_group, 'HlcraftDynamicRuntime', { fg = '#111111' }, {
+  dynamic = {
+    fg = {
+      version = 1,
+      timeline = {},
+    },
+  },
+})
+h.assert_true(not bad_dynamic_ok, 'runtime accepted invalid dynamic override', scope)
 local bad_clear_spec_ok = pcall(runtime.clear_group, 'HlcraftDynamicRuntime', 'bad-spec')
 h.assert_true(not bad_clear_spec_ok, 'runtime accepted invalid restore spec', scope)
 local bad_base_name_ok = pcall(runtime.base_spec, nil)
