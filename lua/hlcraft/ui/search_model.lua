@@ -37,9 +37,21 @@ local function assert_provider(provider)
   return provider
 end
 
+local function normalized_color_query(query)
+  if type(query) ~= 'string' then
+    return nil
+  end
+  query = vim.trim(query)
+  if query:upper() == 'NONE' or color.hex_to_int(query) ~= nil then
+    return query
+  end
+  return nil
+end
+
 function M.empty_message(name_query, color_query)
   name_query = assert_string(name_query, 'name query')
   color_query = assert_string(color_query, 'color query')
+  color_query = vim.trim(color_query)
   if name_query == '' and color_query == '' then
     return 'Use Name and Color search together to narrow highlight groups'
   end
@@ -53,7 +65,7 @@ function M.empty_message(name_query, color_query)
 end
 
 function M.valid_color_query(query)
-  return type(query) == 'string' and (query:upper() == 'NONE' or color.hex_to_int(query) ~= nil)
+  return normalized_color_query(query) ~= nil
 end
 
 function M.intersect(name_results, color_results)
@@ -89,12 +101,14 @@ function M.results(name_query, color_query, provider)
   name_query = assert_string(name_query, 'name query')
   color_query = assert_string(color_query, 'color query')
   provider = assert_provider(provider)
+  color_query = vim.trim(color_query)
+  local normalized_color = normalized_color_query(color_query)
 
   if name_query ~= '' and color_query ~= '' then
-    if M.valid_color_query(color_query) then
+    if normalized_color then
       return M.intersect(
         assert_results(provider.by_name(name_query), 'name search results'),
-        assert_results(provider.by_color(color_query), 'color search results')
+        assert_results(provider.by_color(normalized_color), 'color search results')
       )
     end
     return {}
@@ -105,8 +119,8 @@ function M.results(name_query, color_query, provider)
   end
 
   if color_query ~= '' then
-    if M.valid_color_query(color_query) then
-      return assert_results(provider.by_color(color_query), 'color search results')
+    if normalized_color then
+      return assert_results(provider.by_color(normalized_color), 'color search results')
     end
     return {}
   end

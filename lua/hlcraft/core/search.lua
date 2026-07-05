@@ -138,11 +138,15 @@ local function color_threshold(value)
 end
 
 local function color_query(hex)
-  if hex == nil or hex == '' then
+  if hex == nil then
     return nil
   end
   if type(hex) ~= 'string' then
     error('Color search query must be a string or nil', 3)
+  end
+  hex = vim.trim(hex)
+  if hex == '' then
+    return nil
   end
   if is_none_query(hex) then
     return hex
