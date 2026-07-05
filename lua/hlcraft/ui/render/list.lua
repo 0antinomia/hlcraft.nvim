@@ -17,13 +17,7 @@ local function result_list(state)
 end
 
 local function render_width(width)
-  if type(width) ~= 'number' then
-    error('result list renderer width must be a number', 3)
-  end
-  if not numbers.is_finite(width) or math.floor(width) ~= width or width < 1 then
-    error('result list renderer width must be a positive finite integer', 3)
-  end
-  return width
+  return numbers.assert_positive_integer(width, 'result list renderer width', 3)
 end
 
 local function optional_color(value, label)

@@ -14,23 +14,11 @@ local function assert_text(value)
 end
 
 local function assert_width(value)
-  if type(value) ~= 'number' then
-    error('render width must be a number', 3)
-  end
-  if not numbers.is_finite(value) or math.floor(value) ~= value or value < 0 then
-    error('render width must be a non-negative finite integer', 3)
-  end
-  return value
+  return numbers.assert_non_negative_integer(value, 'render width', 3)
 end
 
 local function assert_line_nr(value)
-  if type(value) ~= 'number' then
-    error('render line number must be a number', 3)
-  end
-  if not numbers.is_finite(value) or math.floor(value) ~= value or value < 1 then
-    error('render line number must be a positive finite integer', 3)
-  end
-  return value
+  return numbers.assert_positive_integer(value, 'render line number', 3)
 end
 
 function M.string_list(lines, label, level)
@@ -123,13 +111,7 @@ end
 
 function M.line_offset(value, label)
   local prefix = label or 'render'
-  if type(value) ~= 'number' then
-    error(('%s line offset must be a number'):format(prefix), 2)
-  end
-  if not numbers.is_finite(value) or math.floor(value) ~= value or value < 0 then
-    error(('%s line offset must be a non-negative finite integer'):format(prefix), 2)
-  end
-  return value
+  return numbers.assert_non_negative_integer(value, ('%s line offset'):format(prefix), 2)
 end
 
 return M

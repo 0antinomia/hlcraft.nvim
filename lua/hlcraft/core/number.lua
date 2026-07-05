@@ -7,6 +7,33 @@ function M.is_finite(value)
   return type(value) == 'number' and value == value and value ~= math.huge and value ~= -math.huge
 end
 
+function M.is_integer(value, min)
+  return M.is_finite(value) and math.floor(value) == value and (min == nil or value >= min)
+end
+
+local function assert_label(label, level)
+  if type(label) ~= 'string' or label == '' then
+    error('number label must be a non-empty string', level)
+  end
+  return label
+end
+
+local function assert_integer(value, label, min, range, level)
+  label = assert_label(label, level)
+  if not M.is_integer(value, min) then
+    error(('%s must be a %s finite integer'):format(label, range), level)
+  end
+  return value
+end
+
+function M.assert_positive_integer(value, label, level)
+  return assert_integer(value, label, 1, 'positive', level or 2)
+end
+
+function M.assert_non_negative_integer(value, label, level)
+  return assert_integer(value, label, 0, 'non-negative', level or 2)
+end
+
 local function finite_fallback(fallback, default, level)
   if fallback == nil then
     return default

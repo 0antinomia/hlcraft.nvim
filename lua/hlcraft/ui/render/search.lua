@@ -19,13 +19,7 @@ local function instance_state(instance)
 end
 
 local function instance_namespace(instance)
-  if type(instance.ns) ~= 'number' then
-    error('search renderer namespace must be a number', 3)
-  end
-  if not numbers.is_finite(instance.ns) or math.floor(instance.ns) ~= instance.ns or instance.ns < 0 then
-    error('search renderer namespace must be a non-negative finite integer', 3)
-  end
-  return instance.ns
+  return numbers.assert_non_negative_integer(instance.ns, 'search renderer namespace', 3)
 end
 
 local function result_list(state)
@@ -33,13 +27,7 @@ local function result_list(state)
 end
 
 local function positive_integer(value, label)
-  if type(value) ~= 'number' then
-    error(('%s must be a number'):format(label), 3)
-  end
-  if not numbers.is_finite(value) or math.floor(value) ~= value or value < 1 then
-    error(('%s must be a positive finite integer'):format(label), 3)
-  end
-  return value
+  return numbers.assert_positive_integer(value, label, 3)
 end
 
 local function optional_color(value, label)

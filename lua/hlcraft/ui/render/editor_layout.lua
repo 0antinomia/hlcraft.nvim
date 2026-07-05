@@ -8,13 +8,7 @@ local function string_list(lines, label)
 end
 
 local function render_width(width)
-  if type(width) ~= 'number' then
-    error('editor layout width must be a number', 3)
-  end
-  if not numbers.is_finite(width) or math.floor(width) ~= width or width < 0 then
-    error('editor layout width must be a non-negative finite integer', 3)
-  end
-  return width
+  return numbers.assert_non_negative_integer(width, 'editor layout width', 3)
 end
 
 function M.append_hint_block(lines, hint_lines)
