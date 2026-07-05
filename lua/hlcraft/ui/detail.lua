@@ -45,11 +45,14 @@ local function optional_finite_number(value, label)
 end
 
 local function link_chain_text(link_chain)
-  if link_chain == nil or next(link_chain) == nil then
+  if link_chain == nil then
     return '-'
   end
   if type(link_chain) ~= 'table' or not tables.is_sequence(link_chain) then
     error('detail info link chain must be a sequence', 3)
+  end
+  if next(link_chain) == nil then
+    return '-'
   end
   for index, name in ipairs(link_chain) do
     if type(name) ~= 'string' or name == '' then

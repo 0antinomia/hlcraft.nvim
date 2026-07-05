@@ -1,3 +1,5 @@
+local numbers = require('hlcraft.core.number')
+
 local M = {}
 
 M.groups = {
@@ -46,11 +48,22 @@ local function mode(background)
   return background == 'light' and 'light' or 'dark'
 end
 
+local function assert_namespace(ns)
+  if type(ns) ~= 'number' then
+    error('theme namespace must be a number', 3)
+  end
+  if not numbers.is_finite(ns) or math.floor(ns) ~= ns or ns < 0 then
+    error('theme namespace must be a non-negative finite integer', 3)
+  end
+  return ns
+end
+
 function M.palette(background)
   return vim.deepcopy(palettes[mode(background or vim.o.background)])
 end
 
 function M.apply(ns)
+  ns = assert_namespace(ns)
   local palette = M.palette()
   local groups = M.groups
 

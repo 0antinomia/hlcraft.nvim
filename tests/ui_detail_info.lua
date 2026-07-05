@@ -77,6 +77,20 @@ local invalid_link_chain_ok = pcall(detail_info.build_virt_lines, {
   return theme.groups.value
 end, 80)
 h.assert_true(not invalid_link_chain_ok, 'detail info accepted invalid link chain entries', scope)
+local non_table_link_chain_ok = pcall(detail_info.build_virt_lines, {
+  name = 'HlcraftUiDetailInfoNonTableLinkChain',
+  link_chain = false,
+}, function()
+  return theme.groups.value
+end, 80)
+h.assert_true(not non_table_link_chain_ok, 'detail info accepted non-table link chain', scope)
+local sparse_link_chain_ok = pcall(detail_info.build_virt_lines, {
+  name = 'HlcraftUiDetailInfoSparseLinkChain',
+  link_chain = { [2] = 'Target' },
+}, function()
+  return theme.groups.value
+end, 80)
+h.assert_true(not sparse_link_chain_ok, 'detail info accepted sparse link chain', scope)
 local invalid_blend_ok = pcall(detail_info.build_virt_lines, {
   name = 'HlcraftUiDetailInfoInvalidBlend',
   blend = '12',

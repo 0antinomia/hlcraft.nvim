@@ -419,6 +419,10 @@ h.assert_true(top_help:find('Enter', 1, true) == nil, 'top help line should not 
 h.assert_true(top_help:find('Tab', 1, true) == nil, 'top help line should not repeat input navigation', scope)
 
 local ns = vim.api.nvim_create_namespace('hlcraft-ui-render-test')
+local non_numeric_theme_ns_ok = pcall(theme.apply, false)
+h.assert_true(not non_numeric_theme_ns_ok, 'theme accepted non-numeric namespace', scope)
+local infinite_theme_ns_ok = pcall(theme.apply, math.huge)
+h.assert_true(not infinite_theme_ns_ok, 'theme accepted infinite namespace', scope)
 theme.apply(ns)
 for _, group_name in ipairs({
   theme.groups.section,
