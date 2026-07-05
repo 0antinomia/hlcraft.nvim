@@ -27,6 +27,8 @@ local nil_decode_ok = pcall(codec.decode_lines, nil)
 h.assert_true(not nil_decode_ok, 'codec decode accepted nil lines', scope)
 local numeric_line_decode_ok = pcall(codec.decode_lines, { 1 })
 h.assert_true(not numeric_line_decode_ok, 'codec decode accepted a non-string line', scope)
+local non_sequence_decode_ok = pcall(codec.decode_lines, { [2] = '["late"]' })
+h.assert_true(not non_sequence_decode_ok, 'codec decode accepted non-sequence lines', scope)
 local invalid_data_decode_ok = pcall(codec.decode_lines, {}, {
   entries = {},
   groups = {},

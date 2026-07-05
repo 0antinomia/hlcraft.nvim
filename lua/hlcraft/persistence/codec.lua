@@ -1,5 +1,6 @@
 local encoder = require('hlcraft.persistence.codec.encoder')
 local parser = require('hlcraft.persistence.codec.parser')
+local tables = require('hlcraft.core.tables')
 local util = require('hlcraft.persistence.codec.util')
 
 local M = {}
@@ -17,6 +18,9 @@ end
 local function assert_lines(value)
   if type(value) ~= 'table' then
     error('TOML lines must be a table', 3)
+  end
+  if not tables.is_sequence(value) then
+    error('TOML lines must be a sequence', 3)
   end
   for index, line in ipairs(value) do
     if type(line) ~= 'string' then
