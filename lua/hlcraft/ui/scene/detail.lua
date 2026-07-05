@@ -92,6 +92,11 @@ end
 function M.enter(instance, opts)
   local state = instance_state(instance)
   opts = optional_table(opts, 'detail entry')
+  for key in pairs(opts) do
+    if key ~= 'index' then
+      error(('unknown detail entry option: %s'):format(tostring(key)), 3)
+    end
+  end
   if opts.index ~= nil then
     state.detail_index = positive_integer(opts.index, 'detail entry index')
   end

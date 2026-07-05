@@ -191,6 +191,11 @@ local function optional_opts(opts, label)
   if type(opts) ~= 'table' then
     error(('%s must be a table'):format(label), 3)
   end
+  for key in pairs(opts) do
+    if key ~= 'top_virt_lines' and key ~= 'extra' then
+      error(('unknown %s option: %s'):format(label, tostring(key)), 3)
+    end
+  end
   return opts
 end
 

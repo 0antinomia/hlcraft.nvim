@@ -77,6 +77,8 @@ h.assert_true(not missing_action_state_ok, 'field editor action accepted missing
 h.assert_equal(engine.get(result.name).fg, '#ffdcba', 'missing field editor state changed color draft', scope)
 local invalid_dynamic_input_opts_ok = pcall(field_scene.input_dynamic_row, instance, false)
 h.assert_true(not invalid_dynamic_input_opts_ok, 'field editor accepted non-table dynamic input options', scope)
+local unknown_dynamic_input_opts_ok = pcall(field_scene.input_dynamic_row, instance, { raw = true })
+h.assert_true(not unknown_dynamic_input_opts_ok, 'field editor accepted unknown dynamic input options', scope)
 local invalid_dynamic_input_default_ok = pcall(field_scene.input_dynamic_row, instance, { default_raw = 'yes' })
 h.assert_true(not invalid_dynamic_input_default_ok, 'field editor accepted non-boolean dynamic raw fallback', scope)
 local invalid_current_field_state_ok = pcall(field_scene.current_field, { state = {} })
