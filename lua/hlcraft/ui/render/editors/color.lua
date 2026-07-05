@@ -16,7 +16,7 @@ function M.build(geometry, result, field, width)
   local fallback = field_values.fallback_value(result, field)
   local value = session.display_value(result.name, field, fallback)
   local display_value = field_values.display_text(value)
-  local sample = 'The quick brown fox jumps over hlcraft.'
+  local sample = 'hlcraft highlight preview text'
 
   local lines = {
     ('Color editor: %s'):format(label),
