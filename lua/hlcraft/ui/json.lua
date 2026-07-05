@@ -2,6 +2,13 @@ local tables = require('hlcraft.core.tables')
 
 local M = {}
 
+local function assert_object_key(key)
+  if type(key) ~= 'string' then
+    error('JSON object keys must be strings', 3)
+  end
+  return key
+end
+
 local function assert_indent(indent)
   if type(indent) ~= 'number' or indent < 0 or math.floor(indent) ~= indent then
     error('JSON indent must be a non-negative integer', 3)
@@ -36,12 +43,9 @@ local function format_value(value, indent)
   lines[#lines + 1] = '{'
   local keys = tables.sorted_keys(value)
   for index, key in ipairs(keys) do
+    key = assert_object_key(key)
     local comma = index < #keys and ',' or ''
-    lines[#lines + 1] = child_pad
-      .. vim.json.encode(tostring(key))
-      .. ': '
-      .. format_value(value[key], indent + 1)
-      .. comma
+    lines[#lines + 1] = child_pad .. vim.json.encode(key) .. ': ' .. format_value(value[key], indent + 1) .. comma
   end
   lines[#lines + 1] = pad .. '}'
   return table.concat(lines, '\n')
