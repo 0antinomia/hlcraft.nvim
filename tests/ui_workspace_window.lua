@@ -89,6 +89,23 @@ local ok, err = xpcall(function()
   h.assert_true(not invalid_snapshot_ok, 'window option restore accepted missing values', scope)
   local invalid_workspace_values_ok = pcall(window_options.matches_workspace, nil)
   h.assert_true(not invalid_workspace_values_ok, 'workspace option matcher accepted nil values', scope)
+  h.assert_true(
+    window_options.snapshot(nil) == nil,
+    'window option snapshot rejected invalid window incorrectly',
+    scope
+  )
+  assert_fails(function()
+    window_options.read(nil)
+  end, 'window option read accepted invalid window')
+  assert_fails(function()
+    window_options.apply(nil, instance.ns)
+  end, 'window option apply accepted invalid window')
+  assert_fails(function()
+    window_options.apply(win, false)
+  end, 'window option apply accepted non-numeric namespace')
+  assert_fails(function()
+    window_options.apply(win, math.huge)
+  end, 'window option apply accepted infinite namespace')
 
   local missing_snapshot_store_ok = pcall(window.restore_all_workspace_windows, {
     state = {},
