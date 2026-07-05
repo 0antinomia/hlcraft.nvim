@@ -3,6 +3,7 @@ local tests = {
   'tests/health.lua',
   'tests/notify.lua',
   'tests/number.lua',
+  'tests/core_timers.lua',
   'tests/tables.lua',
   'tests/color.lua',
   'tests/fields.lua',
