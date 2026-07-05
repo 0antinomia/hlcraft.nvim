@@ -85,6 +85,9 @@ end, 'search scene accepted missing list cursor state')
 assert_fails(function()
   search_scene.rows({
     state = {
+      results = {
+        { name = 'Only' },
+      },
       geometry = {
         result_lines = {
           [0] = 1,
@@ -96,6 +99,9 @@ end, 'search scene accepted invalid result line')
 assert_fails(function()
   search_scene.rows({
     state = {
+      results = {
+        { name = 'Only' },
+      },
       geometry = {
         result_lines = {
           [1] = math.huge,
@@ -104,6 +110,49 @@ assert_fails(function()
     },
   })
 end, 'search scene accepted invalid result index')
+assert_fails(function()
+  search_scene.rows({
+    state = {
+      results = {
+        { name = 'Only' },
+      },
+      geometry = {
+        result_lines = {
+          [1] = 2,
+        },
+      },
+    },
+  })
+end, 'search scene accepted result geometry outside result range')
+
+h.with_temp_buf(function(buf)
+  local stale_instance = {
+    state = {
+      buf = buf,
+      field_editor = ui_state.field_editor(),
+      geometry = vim.tbl_extend('force', ui_state.geometry(), {
+        detail_menu = {},
+        result_lines = {
+          [1] = 2,
+        },
+      }),
+      last_workspace_win = vim.api.nvim_get_current_win(),
+      results = {
+        { name = 'Only' },
+      },
+    },
+    rerender = function() end,
+  }
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, { 'stale' })
+  vim.api.nvim_win_set_cursor(0, { 1, 0 })
+  assert_fails(function()
+    search_scene.current_entry(stale_instance)
+  end, 'search current entry accepted result geometry outside result range')
+  assert_fails(function()
+    search_scene.open_detail(stale_instance)
+  end, 'search open_detail accepted result geometry outside result range')
+  h.assert_true(stale_instance.state.detail_index == nil, 'failed open_detail changed detail index', scope)
+end, { current = true })
 
 h.assert_true(not search_scene.goto_first(instance), 'goto_first reported movement without a window', scope)
 h.assert_true(not search_scene.goto_offset(instance, 1), 'goto_offset reported movement without a window', scope)

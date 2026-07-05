@@ -82,6 +82,14 @@ local function result_lines(state)
   return lines
 end
 
+local function result_at(results, index, label)
+  local result = results[index]
+  if result == nil then
+    error(('%s must reference an existing search result'):format(label), 3)
+  end
+  return result
+end
+
 function M.enter(instance)
   scene_state(instance_state(instance)).name = 'search'
 end
@@ -122,11 +130,14 @@ end
 --- @return table[] Sorted array of {line=number, index=number} entries
 function M.rows(instance)
   local state = instance_state(instance)
+  local results = result_list(state)
   local rows = {}
   for line_nr, result_index in pairs(result_lines(state)) do
+    local index = positive_integer(result_index, 'search result index')
+    result_at(results, index, 'search result index')
     rows[#rows + 1] = {
       line = positive_integer(line_nr, 'search result line'),
-      index = positive_integer(result_index, 'search result index'),
+      index = index,
     }
   end
   table.sort(rows, function(a, b)
@@ -150,7 +161,7 @@ function M.current_entry(instance)
     return nil
   end
   index = positive_integer(index, 'search result index')
-  return { row = row, index = index, result = result_list(state)[index] }
+  return { row = row, index = index, result = result_at(result_list(state), index, 'search result index') }
 end
 
 --- Check if the cursor is on a result row
@@ -219,6 +230,7 @@ function M.open_detail(instance)
     return false
   end
   index = positive_integer(index, 'search result index')
+  result_at(result_list(state), index, 'search result index')
   state.detail_index = index
   field_editor.field = nil
   require('hlcraft.ui.scene').set(instance, 'detail', { index = index })
