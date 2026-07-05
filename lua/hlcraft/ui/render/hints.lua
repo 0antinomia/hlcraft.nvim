@@ -1,3 +1,5 @@
+local numbers = require('hlcraft.core.number')
+
 local M = {}
 
 local separator = '  '
@@ -99,8 +101,15 @@ local function assert_table(value, message)
 end
 
 local function assert_positive_integer(value, message)
-  if type(value) ~= 'number' or math.floor(value) ~= value or value < 1 then
+  if type(value) ~= 'number' or not numbers.is_finite(value) or math.floor(value) ~= value or value < 1 then
     error(message, 3)
+  end
+  return value
+end
+
+local function non_empty_string(value, label)
+  if type(value) ~= 'string' or value == '' then
+    error(('%s must be a non-empty string'):format(label), 3)
   end
   return value
 end
@@ -152,6 +161,8 @@ local function line_display_width(label, items, first, last)
 end
 
 function M.section_lines(label, group, options)
+  label = non_empty_string(label, 'hint section label')
+  group = non_empty_string(group, 'hint group')
   local max_items, width = section_options(options)
   local items = M.groups[group]
   if items == nil then
