@@ -72,6 +72,9 @@ local invalid_action_result_ok = pcall(actions.handle, instance, 'set_color', {}
 h.assert_true(not invalid_action_result_ok, 'field editor action accepted nameless result', scope)
 local invalid_action_field_ok = pcall(actions.handle, instance, 'set_color', result, false, '#ffffff')
 h.assert_true(not invalid_action_field_ok, 'field editor action accepted invalid field', scope)
+local missing_action_state_ok = pcall(actions.handle, { state = {} }, 'set_color', result, 'fg', '#ffffff')
+h.assert_true(not missing_action_state_ok, 'field editor action accepted missing field editor state', scope)
+h.assert_equal(engine.get(result.name).fg, '#ffdcba', 'missing field editor state changed color draft', scope)
 local invalid_dynamic_input_opts_ok = pcall(field_scene.input_dynamic_row, instance, false)
 h.assert_true(not invalid_dynamic_input_opts_ok, 'field editor accepted non-table dynamic input options', scope)
 local invalid_dynamic_input_default_ok = pcall(field_scene.input_dynamic_row, instance, { default_raw = 'yes' })
@@ -99,8 +102,10 @@ local strict_instance = {
 }
 field_scene.open(strict_instance, 'bg')
 h.assert_equal(strict_instance.state.field_editor.field, 'bg', 'field editor open did not set field', scope)
+h.assert_equal(strict_instance.state.scene.field, 'bg', 'field editor open did not mirror scene field', scope)
 field_scene.close(strict_instance)
 h.assert_equal(strict_instance.state.field_editor.field, nil, 'field editor close did not clear field', scope)
+h.assert_equal(strict_instance.state.scene.field, nil, 'field editor close did not clear scene field', scope)
 h.assert_equal(rerenders, 2, 'field editor open/close did not rerender', scope)
 local invalid_open_field_ok = pcall(field_scene.open, strict_instance, '')
 h.assert_true(not invalid_open_field_ok, 'field editor open accepted empty field', scope)
@@ -110,16 +115,17 @@ local invalid_back_index_ok =
   pcall(field_scene.back, { state = { field_editor = {}, detail_index = 0 }, rerender = function() end })
 h.assert_true(not invalid_back_index_ok, 'field editor back accepted invalid detail index', scope)
 
-instance.state.scene = {}
+instance.state.scene = { name = 'field_editor', kind = 'color' }
 field_scene.enter(instance, { field = 'bg' })
 h.assert_equal(instance.state.field_editor.field, 'bg', 'field editor enter did not set field', scope)
 h.assert_equal(instance.state.scene.field, 'bg', 'field editor enter did not mirror scene field', scope)
+h.assert_equal(instance.state.scene.kind, nil, 'field editor enter kept stale scene kind', scope)
 local invalid_enter_opts_ok = pcall(field_scene.enter, instance, false)
 h.assert_true(not invalid_enter_opts_ok, 'field editor enter accepted non-table options', scope)
 local invalid_enter_field_ok = pcall(field_scene.enter, instance, { field = false })
 h.assert_true(not invalid_enter_field_ok, 'field editor enter accepted non-string field', scope)
-local invalid_enter_kind_ok = pcall(field_scene.enter, instance, { kind = false })
-h.assert_true(not invalid_enter_kind_ok, 'field editor enter accepted non-string kind', scope)
+local unknown_enter_option_ok = pcall(field_scene.enter, instance, { kind = 'color' })
+h.assert_true(not unknown_enter_option_ok, 'field editor enter accepted an unsupported option', scope)
 local invalid_enter_scene_ok = pcall(field_scene.enter, { state = { field_editor = {} } }, {})
 h.assert_true(not invalid_enter_scene_ok, 'field editor enter accepted missing scene state', scope)
 instance.state.field_editor.field = 'fg'

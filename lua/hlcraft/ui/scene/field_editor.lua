@@ -104,6 +104,16 @@ local function optional_table(opts, label)
   return opts
 end
 
+local function entry_options(opts)
+  opts = optional_table(opts, 'field editor entry')
+  for key in pairs(opts) do
+    if key ~= 'field' then
+      error(('field editor entry option is not supported: %s'):format(tostring(key)), 3)
+    end
+  end
+  return opts
+end
+
 local function optional_string(value, label)
   if value ~= nil and (type(value) ~= 'string' or value == '') then
     error(('%s must be a non-empty string or nil'):format(label), 3)
@@ -124,17 +134,23 @@ local function selected_editor_row_key(instance)
 end
 
 function M.open(instance, key)
-  local field_editor = field_editor_state(instance_state(instance))
+  local state = instance_state(instance)
+  local field_editor = field_editor_state(state)
+  local current_scene = scene_state(state)
   key = assert_field(key)
   assert_rerender(instance)
   field_editor.field = key
+  current_scene.field = key
   instance:rerender()
 end
 
 function M.close(instance)
-  local field_editor = field_editor_state(instance_state(instance))
+  local state = instance_state(instance)
+  local field_editor = field_editor_state(state)
+  local current_scene = scene_state(state)
   assert_rerender(instance)
   field_editor.field = nil
+  current_scene.field = nil
   instance:rerender()
 end
 
@@ -175,11 +191,11 @@ function M.enter(instance, opts)
   local state = instance_state(instance)
   local field_editor = field_editor_state(state)
   local current_scene = scene_state(state)
-  opts = optional_table(opts, 'field editor entry')
+  opts = entry_options(opts)
   local field = optional_string(opts.field, 'field editor field')
-  optional_string(opts.kind, 'field editor kind')
   field_editor.field = field ~= nil and field or optional_string(field_editor.field, 'field editor field')
   current_scene.field = field_editor.field
+  current_scene.kind = nil
 end
 
 function M.render(instance)
