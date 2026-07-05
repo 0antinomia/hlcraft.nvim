@@ -31,6 +31,10 @@ local empty_item_action_ok = pcall(hints.format, {
   { 'x', '' },
 })
 h.assert_true(not empty_item_action_ok, 'hint formatter accepted empty item action', scope)
+local blank_item_action_ok = pcall(hints.format, {
+  { 'x', '   ' },
+})
+h.assert_true(not blank_item_action_ok, 'hint formatter accepted blank item action', scope)
 local nil_items_ok = pcall(hints.format, nil)
 h.assert_true(not nil_items_ok, 'hint formatter accepted nil items', scope)
 local sparse_items_ok = pcall(hints.format, {
@@ -43,6 +47,8 @@ local keyed_items_ok = pcall(hints.format, {
 h.assert_true(not keyed_items_ok, 'hint formatter accepted keyed items', scope)
 local false_options_ok = pcall(hints.section_lines, 'Action', 'search', false)
 h.assert_true(not false_options_ok, 'hint sections accepted false options', scope)
+local unknown_options_ok = pcall(hints.section_lines, 'Action', 'search', { unknown = true })
+h.assert_true(not unknown_options_ok, 'hint sections accepted unknown options', scope)
 local invalid_max_items_ok = pcall(hints.section_lines, 'Action', 'search', { max_items = false })
 h.assert_true(not invalid_max_items_ok, 'hint sections accepted invalid max_items', scope)
 local fractional_max_items_ok = pcall(hints.section_lines, 'Action', 'search', { max_items = 1.5 })
@@ -55,6 +61,8 @@ local infinite_width_ok = pcall(hints.section_lines, 'Action', 'search', { width
 h.assert_true(not infinite_width_ok, 'hint sections accepted infinite width', scope)
 local empty_label_ok = pcall(hints.section_lines, '', 'search')
 h.assert_true(not empty_label_ok, 'hint sections accepted empty labels', scope)
+local blank_label_ok = pcall(hints.section_lines, '   ', 'search')
+h.assert_true(not blank_label_ok, 'hint sections accepted blank labels', scope)
 local invalid_group_ok = pcall(hints.section_lines, 'Action', false)
 h.assert_true(not invalid_group_ok, 'hint sections accepted non-string groups', scope)
 local unknown_group_ok = pcall(hints.section_lines, 'Action', 'unknown')
@@ -109,6 +117,8 @@ local numeric_preview_ok = pcall(help_model.lines, 1)
 h.assert_true(not numeric_preview_ok, 'help model accepted numeric preview key', scope)
 local empty_preview_ok = pcall(help_model.lines, '')
 h.assert_true(not empty_preview_ok, 'help model accepted empty preview key', scope)
+local blank_preview_ok = pcall(help_model.lines, '   ')
+h.assert_true(not blank_preview_ok, 'help model accepted blank preview key', scope)
 local numeric_line_ok = pcall(help_model.is_item_line, 1)
 h.assert_true(not numeric_line_ok, 'help item detector accepted a non-string line', scope)
 local original_sections = help_model.sections
@@ -167,6 +177,18 @@ help_model.sections = function()
 end
 local empty_help_key_ok = pcall(help_model.lines)
 h.assert_true(not empty_help_key_ok, 'help model accepted an empty help item key', scope)
+help_model.sections = function()
+  return {
+    {
+      title = 'Broken',
+      items = {
+        { '   ', 'action' },
+      },
+    },
+  }
+end
+local blank_help_key_ok = pcall(help_model.lines)
+h.assert_true(not blank_help_key_ok, 'help model accepted a blank help item key', scope)
 help_model.sections = function()
   return {
     {
