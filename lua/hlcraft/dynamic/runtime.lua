@@ -109,6 +109,9 @@ function M.sync_group(name, base_spec, entry)
   base_spec = assert_table(base_spec, 'dynamic runtime base spec')
   entry = assert_table(entry, 'dynamic runtime entry')
   local dynamic = model.normalize_dynamic(entry.dynamic)
+  if entry.dynamic ~= nil and not dynamic then
+    error('dynamic runtime entry has invalid dynamic override', 2)
+  end
   if not config.config.dynamic.enabled or not dynamic then
     M.clear_group(name, base_spec)
     return
