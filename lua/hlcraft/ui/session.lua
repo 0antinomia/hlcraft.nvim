@@ -10,6 +10,13 @@ local function assert_name(name)
   return name
 end
 
+local function assert_key(key)
+  if type(key) ~= 'string' or key == '' then
+    error('session field key must be a non-empty string', 3)
+  end
+  return key
+end
+
 local function assert_entry(value, label)
   if type(value) ~= 'table' then
     error(('%s must be a table'):format(label), 3)
@@ -74,6 +81,7 @@ function M.display_group(name)
 end
 
 function M.display_value(name, key, fallback)
+  key = assert_key(key)
   local entry = M.draft_entry(name)
   if entry[key] ~= nil then
     return entry[key]
@@ -82,10 +90,12 @@ function M.display_value(name, key, fallback)
 end
 
 function M.field_value(name, key)
+  key = assert_key(key)
   return M.draft_entry(name)[key]
 end
 
 function M.dynamic_value(name, key)
+  key = assert_key(key)
   local entry = M.draft_entry(name)
   local dynamic = dynamic_model.normalize_dynamic(entry.dynamic)
   if entry.dynamic ~= nil and not dynamic then
@@ -95,6 +105,7 @@ function M.dynamic_value(name, key)
 end
 
 function M.display_color_value(name, key, fallback)
+  key = assert_key(key)
   local dynamic = M.dynamic_value(name, key)
   if dynamic then
     return ('dynamic:%s %dms'):format(dynamic.preset or 'custom', dynamic.duration)
@@ -108,6 +119,7 @@ end
 
 function M.set_color(instance, name, key, value)
   name = assert_name(name)
+  key = assert_key(key)
   instance = assert_refresh_target(instance)
   local ok, err = engine.set_color(name, key, value)
   if not ok then
@@ -120,6 +132,7 @@ end
 
 function M.set_dynamic(instance, name, key, dynamic)
   name = assert_name(name)
+  key = assert_key(key)
   instance = assert_refresh_target(instance)
   local ok, err = engine.set_dynamic(name, key, dynamic)
   if not ok then
@@ -132,6 +145,7 @@ end
 
 function M.set_style(instance, name, key, value)
   name = assert_name(name)
+  key = assert_key(key)
   instance = assert_refresh_target(instance)
   local ok, err = engine.set_style(name, key, value)
   if not ok then
