@@ -34,6 +34,12 @@ h.with_temp_buf(function(buf)
   h.assert_equal(marks[1][4].virt_text[1][1], 'true', 'extended style placeholder value changed', scope)
   h.assert_equal(marks[1][4].virt_text[1][2], theme.groups.muted, 'placeholder highlight changed', scope)
 
+  local placeholder_mark_id = marks[1][1]
+  instance.state.placeholder_marks.underdashed = false
+  local invalid_mark_ok = pcall(placeholders.refresh, instance)
+  h.assert_true(not invalid_mark_ok, 'placeholders accepted invalid extmark id', scope)
+  instance.state.placeholder_marks.underdashed = placeholder_mark_id
+
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, { 'false' })
   placeholders.refresh(instance)
   marks = vim.api.nvim_buf_get_extmarks(buf, ns, 0, -1, { details = true })

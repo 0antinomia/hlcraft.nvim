@@ -105,6 +105,9 @@ local function assert_span(span)
   if type(span.kind) ~= 'string' then
     error('render span kind must be a string', 3)
   end
+  if span_groups[span.kind] == nil then
+    error(('unsupported render span kind: %s'):format(span.kind), 3)
+  end
   span.start_col = non_negative_integer(span.start_col, 'render span start column')
   span.end_col = span_end(span.end_col, span.start_col)
   return span
@@ -117,10 +120,7 @@ end
 local function apply_spans(instance, buf, line_idx, spans)
   for _, span in ipairs(assert_spans(spans)) do
     span = assert_span(span)
-    local group = span_groups[span.kind]
-    if group then
-      add_highlight(instance, buf, line_idx, group, span.start_col, span.end_col)
-    end
+    add_highlight(instance, buf, line_idx, span_groups[span.kind], span.start_col, span.end_col)
   end
 end
 

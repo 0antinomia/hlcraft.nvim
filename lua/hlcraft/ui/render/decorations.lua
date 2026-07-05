@@ -72,6 +72,19 @@ local function non_negative_integer(value, label)
   return value
 end
 
+local function extmark_id(value, label)
+  if value == nil then
+    return nil
+  end
+  if type(value) ~= 'number' then
+    error(('%s must be a number'):format(label), 3)
+  end
+  if not numbers.is_finite(value) or math.floor(value) ~= value or value < 1 then
+    error(('%s must be a positive finite integer'):format(label), 3)
+  end
+  return value
+end
+
 local function non_empty_string(value, label)
   if type(value) ~= 'string' or value == '' then
     error(('%s must be a non-empty string'):format(label), 3)
@@ -223,7 +236,7 @@ function M.set_input_header(instance, field, label, opts)
 
   local key = label .. ':' .. line
   marks[key] = vim.api.nvim_buf_set_extmark(state.buf, ns, line - 1, 0, {
-    id = marks[key],
+    id = extmark_id(marks[key], 'input header extmark id'),
     virt_lines = virt_lines,
     virt_lines_leftcol = true,
     virt_lines_above = true,
@@ -248,7 +261,7 @@ function M.set_results_header(instance, row1, width)
 
   local separator = string.rep('─', math.max(20, width))
   marks.results_header = vim.api.nvim_buf_set_extmark(state.buf, ns, row1 - 1, 0, {
-    id = marks.results_header,
+    id = extmark_id(marks.results_header, 'results header extmark id'),
     virt_lines = {
       { { separator, theme.groups.rule } },
     },
@@ -269,7 +282,7 @@ function M.set_detail_menu_header(instance, row1, result)
   end
 
   marks.detail_menu_header = vim.api.nvim_buf_set_extmark(state.buf, ns, row1 - 1, 0, {
-    id = marks.detail_menu_header,
+    id = extmark_id(marks.detail_menu_header, 'detail menu header extmark id'),
     virt_lines = detail_virt_lines,
     virt_lines_leftcol = true,
     virt_lines_above = true,
