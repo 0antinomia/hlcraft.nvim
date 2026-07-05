@@ -137,7 +137,7 @@ end
 --- @return boolean ok
 --- @return string|nil err
 function M.save(overrides, groups, path)
-  local target = path or storage_dir()
+  local target = optional_path(path)
 
   local valid, validation_err = validate_save_inputs(overrides, groups)
   if not valid then

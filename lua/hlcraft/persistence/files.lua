@@ -1,4 +1,5 @@
 local codec = require('hlcraft.persistence.codec')
+local tables = require('hlcraft.core.tables')
 
 local M = {}
 
@@ -14,6 +15,9 @@ end
 local function assert_lines(value)
   if type(value) ~= 'table' then
     error('File content lines must be a table', 3)
+  end
+  if not tables.is_sequence(value) then
+    error('File content lines must be a sequence', 3)
   end
   for index, line in ipairs(value) do
     if type(line) ~= 'string' then
@@ -133,6 +137,9 @@ function M.remove_stale_toml_files(path, active_section_names)
   assert_string(path, 'Directory path')
   if type(active_section_names) ~= 'table' then
     error('Active section names must be a table', 2)
+  end
+  if not tables.is_sequence(active_section_names) then
+    error('Active section names must be a sequence', 2)
   end
 
   local active_files = {}

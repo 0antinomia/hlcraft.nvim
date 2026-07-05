@@ -149,6 +149,9 @@ local missing_groups_ok, missing_groups_err = storage.save({}, nil, persist_dir)
 h.assert_true(not missing_groups_ok, 'storage.save accepted missing groups', scope)
 h.assert_equal(missing_groups_err, 'Groups must be a table', 'missing groups error changed', scope)
 
+local invalid_save_path_ok = pcall(storage.save, {}, {}, false)
+h.assert_true(not invalid_save_path_ok, 'storage.save accepted a non-string path', scope)
+
 local missing_group_ok, missing_group_err = storage.save({
   MissingGroup = { fg = '#111111' },
 }, {}, persist_dir)
@@ -267,8 +270,12 @@ local unknown_toml_dir_opts_ok = pcall(files.toml_files_in_dir, persist_dir, { u
 h.assert_true(not unknown_toml_dir_opts_ok, 'toml directory scan accepted an unknown option', scope)
 local invalid_atomic_lines_ok = pcall(files.atomic_write, persist_dir .. '/bad.toml', { false })
 h.assert_true(not invalid_atomic_lines_ok, 'atomic_write accepted a non-string content line', scope)
+local non_sequence_atomic_lines_ok = pcall(files.atomic_write, persist_dir .. '/bad.toml', { ok = 'line' })
+h.assert_true(not non_sequence_atomic_lines_ok, 'atomic_write accepted non-sequence content lines', scope)
 local invalid_stale_sections_ok = pcall(files.remove_stale_toml_files, persist_dir, false)
 h.assert_true(not invalid_stale_sections_ok, 'stale TOML cleanup accepted non-table section names', scope)
+local non_sequence_stale_sections_ok = pcall(files.remove_stale_toml_files, persist_dir, { active = true })
+h.assert_true(not non_sequence_stale_sections_ok, 'stale TOML cleanup accepted non-sequence section names', scope)
 
 local saved = storage.load(persist_dir)
 h.assert_equal(saved.entries.Normal.fg, '#111111', 'saved override did not reload', scope)
