@@ -38,6 +38,7 @@ local tests = {
   'tests/ui_unsaved_prompt.lua',
   'tests/ui_workspace_window.lua',
   'tests/ui_workspace_buffer.lua',
+  'tests/ui_workspace_lifecycle.lua',
   'tests/ui_keymaps.lua',
   'tests/ui_keymap_commands.lua',
   'tests/ui_field_editor_actions.lua',

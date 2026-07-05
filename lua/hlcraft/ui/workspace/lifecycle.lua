@@ -8,6 +8,19 @@ local window = require('hlcraft.ui.workspace.window')
 
 local M = {}
 
+local function instance_state(instance)
+  if type(instance) ~= 'table' or type(instance.state) ~= 'table' then
+    error('workspace lifecycle requires an instance', 3)
+  end
+  return instance.state
+end
+
+local function assert_rerender(instance)
+  if type(instance.rerender) ~= 'function' then
+    error('workspace lifecycle requires a rerender callback', 3)
+  end
+end
+
 local function cleanup_preview(instance)
   require('hlcraft.ui.preview').cleanup(instance)
 end
@@ -36,15 +49,16 @@ end
 --- Reset all view state to defaults
 --- @param instance table The Instance object holding UI state
 --- @return nil
-local function reset_view_state(instance)
+local function reset_view_state(instance, state)
   close_unsaved_prompt(instance)
-  ui_state.reset_view(instance.state)
+  ui_state.reset_view(state)
 end
 
 --- Toggle the help floating window open or closed
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.toggle_help(instance)
+  instance_state(instance)
   help.toggle(instance)
 end
 
@@ -52,10 +66,11 @@ end
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.hide(instance)
-  if instance.state.closing then
+  local state = instance_state(instance)
+  if state.closing then
     return
   end
-  instance.state.closing = true
+  state.closing = true
 
   local ok, err = pcall(function()
     close_unsaved_prompt(instance)
@@ -65,7 +80,7 @@ function M.hide(instance)
     help.close(instance)
     window.restore_origin(instance)
   end)
-  instance.state.closing = false
+  state.closing = false
   if not ok then
     notify.warn(('close operation failed: %s'):format(tostring(err)))
   end
@@ -75,11 +90,12 @@ end
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.close(instance)
-  if instance.state.closing then
+  local state = instance_state(instance)
+  if state.closing then
     return
   end
 
-  local buf = instance.state.buf
+  local buf = state.buf
   M.hide(instance)
 
   if window.is_valid_buf(buf) then
@@ -91,11 +107,12 @@ end
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.cleanup(instance)
-  if instance.state.closing then
+  local state = instance_state(instance)
+  if state.closing then
     return
   end
-  instance.state.closing = true
-  local workspace_buf = instance.state.buf
+  state.closing = true
+  local workspace_buf = state.buf
 
   local ok, err = pcall(function()
     close_unsaved_prompt(instance)
@@ -104,9 +121,9 @@ function M.cleanup(instance)
     uninstall_preview_keymap(instance)
     window.restore_origin(instance)
     window.restore_all_workspace_windows(instance)
-    if instance.state.origin_win_options ~= nil then
-      window_options.restore(instance.state.origin_win_options)
-      instance.state.origin_win_options = nil
+    if state.origin_win_options ~= nil then
+      window_options.restore(state.origin_win_options)
+      state.origin_win_options = nil
     end
     help.close(instance)
     help.delete_buffer(instance)
@@ -121,26 +138,28 @@ function M.cleanup(instance)
     end
 
     instance.group = nil
-    ui_state.reset_workspace_handles(instance.state)
+    ui_state.reset_workspace_handles(state)
   end)
-  instance.state.closing = false
+  state.closing = false
   if not ok then
     notify.warn(('cleanup failed: %s'):format(tostring(err)))
   end
 
-  reset_view_state(instance)
+  reset_view_state(instance, state)
 end
 
 --- Open the workspace in the current window, setting up buffer and initial render
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.open(instance)
+  local state = instance_state(instance)
+  assert_rerender(instance)
   local current_win = vim.api.nvim_get_current_win()
   local current_buf = vim.api.nvim_get_current_buf()
-  if current_buf ~= instance.state.buf then
-    instance.state.origin_win = current_win
-    instance.state.origin_buf = current_buf
-    instance.state.origin_win_options = window_options.snapshot(current_win)
+  if current_buf ~= state.buf then
+    state.origin_win = current_win
+    state.origin_buf = current_buf
+    state.origin_win_options = window_options.snapshot(current_win)
   end
 
   local buf = buffer.ensure(instance)
