@@ -102,6 +102,24 @@ local invalid_provider_result_ok = pcall(model.results, 'Alpha', '', {
   end,
 })
 h.assert_true(not invalid_provider_result_ok, 'search model accepted invalid provider results', scope)
+local invalid_provider_item_ok = pcall(model.results, 'Alpha', '', {
+  by_name = function()
+    return { false }
+  end,
+  by_color = function()
+    return {}
+  end,
+})
+h.assert_true(not invalid_provider_item_ok, 'search model accepted invalid provider result item', scope)
+local nameless_provider_item_ok = pcall(model.results, 'Alpha', '', {
+  by_name = function()
+    return { {} }
+  end,
+  by_color = function()
+    return {}
+  end,
+})
+h.assert_true(not nameless_provider_item_ok, 'search model accepted nameless provider result item', scope)
 local sparse_provider_result_ok = pcall(model.results, 'Alpha', '', {
   by_name = function()
     return {

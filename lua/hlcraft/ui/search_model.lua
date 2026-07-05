@@ -12,7 +12,16 @@ local function assert_string(value, label)
 end
 
 local function assert_results(value, label)
-  return tables.assert_sequence(value, label, 3)
+  value = tables.assert_sequence(value, label, 3)
+  for index, item in ipairs(value) do
+    if type(item) ~= 'table' then
+      error(('%s[%d] must be a table'):format(label, index), 3)
+    end
+    if type(item.name) ~= 'string' or item.name == '' then
+      error(('%s[%d].name must be a non-empty string'):format(label, index), 3)
+    end
+  end
+  return value
 end
 
 local function assert_provider(provider)
