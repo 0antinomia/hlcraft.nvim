@@ -14,6 +14,10 @@ hlcraft.setup({
   reapply_events = false,
 })
 
+local function assert_fails(fn, message)
+  h.assert_true(not pcall(fn), message, scope)
+end
+
 vim.api.nvim_set_hl(0, 'HlcraftUiKeymapCommandsNormal', { fg = '#202020' })
 engine.set_group('HlcraftUiKeymapCommandsNormal', 'ui-keymap-commands')
 
@@ -50,7 +54,9 @@ h.assert_true(engine.get(result.name).dynamic.fg ~= nil, 'toggle_dynamic_color d
 
 h.assert_true(commands.adjust_dynamic_color(instance, 1), 'adjust_dynamic_color did not handle dynamic field', scope)
 h.assert_equal(engine.get(result.name).dynamic.fg.duration, 2250, 'adjust_dynamic_color did not update duration', scope)
-h.assert_true(not commands.adjust_dynamic_color(instance, 0 / 0), 'adjust_dynamic_color accepted NaN delta', scope)
+assert_fails(function()
+  commands.adjust_dynamic_color(instance, 0 / 0)
+end, 'adjust_dynamic_color accepted NaN delta')
 h.assert_equal(
   engine.get(result.name).dynamic.fg.duration,
   2250,
@@ -76,11 +82,9 @@ h.with_temp_buf(function(phase_buf)
   instance.state.buf = phase_buf
   instance.state.geometry.editor_rows.dynamic_phase = { line = 1, key = 'dynamic_phase' }
   vim.api.nvim_win_set_cursor(0, { 1, 0 })
-  h.assert_true(
-    not commands.adjust_dynamic_color(instance, 0 / 0),
-    'phase row dynamic adjustment accepted NaN delta',
-    scope
-  )
+  assert_fails(function()
+    commands.adjust_dynamic_color(instance, 0 / 0)
+  end, 'phase row dynamic adjustment accepted NaN delta')
   h.assert_equal(engine.get(result.name).dynamic.fg.phase, 0, 'phase row NaN delta changed phase', scope)
 end, { current = true })
 instance.state.buf = nil
@@ -95,6 +99,30 @@ h.assert_true(engine.get(result.name).blend == nil, 'unset_blend did not clear b
 instance.state.field_editor.field = 'group'
 h.assert_true(not commands.toggle_dynamic_color(instance), 'toggle_dynamic_color handled non-color field', scope)
 h.assert_true(not commands.adjust_dynamic_color(instance, 1), 'adjust_dynamic_color handled non-dynamic field', scope)
+assert_fails(function()
+  commands.run_action(instance, '')
+end, 'keymap command accepted empty action')
+assert_fails(function()
+  commands.run_search_action(instance, '')
+end, 'keymap command accepted empty search action')
+assert_fails(function()
+  commands.feed_normal_key(instance, '')
+end, 'keymap command accepted empty normal key')
+assert_fails(function()
+  commands.adjust_color(instance, '', 1, nil)
+end, 'keymap command accepted empty color channel')
+assert_fails(function()
+  commands.adjust_color(instance, 'r', math.huge, nil)
+end, 'keymap command accepted infinite color delta')
+assert_fails(function()
+  commands.set_color(instance, false, nil)
+end, 'keymap command accepted non-string color value')
+assert_fails(function()
+  commands.adjust_blend(instance, 0 / 0, nil)
+end, 'keymap command accepted NaN blend delta')
+assert_fails(function()
+  commands.jump_to_input_at_cursor(instance, nil)
+end, 'keymap command accepted missing insert flag')
 
 h.with_temp_buf(function(buf)
   local previous_buf = instance.state.buf

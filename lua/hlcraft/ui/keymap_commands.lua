@@ -11,7 +11,29 @@ local window = require('hlcraft.ui.workspace.window')
 
 local M = {}
 
+local function assert_string(value, label)
+  if type(value) ~= 'string' or value == '' then
+    error(('%s must be a non-empty string'):format(label), 3)
+  end
+  return value
+end
+
+local function assert_finite(value, label)
+  if not numbers.is_finite(value) then
+    error(('%s must be a finite number'):format(label), 3)
+  end
+  return value
+end
+
+local function assert_insert(insert)
+  if type(insert) ~= 'boolean' then
+    error('input jump insert flag must be boolean', 3)
+  end
+  return insert
+end
+
 function M.feed_normal_key(instance, lhs)
+  lhs = assert_string(lhs, 'normal feed key')
   local win = window.get_win(instance)
   if not window.is_valid_win(win) or search_scene.is_on_row(instance) then
     return false
@@ -22,18 +44,20 @@ function M.feed_normal_key(instance, lhs)
 end
 
 local function feed_fallback(instance, fallback_key)
-  if fallback_key then
-    return M.feed_normal_key(instance, fallback_key)
+  if fallback_key == nil then
+    return false
   end
-  return false
+  return M.feed_normal_key(instance, assert_string(fallback_key, 'fallback key'))
 end
 
 function M.run_action(instance, action, ...)
+  action = assert_string(action, 'keymap action')
   local ok = actions.dispatch(instance, action, ...)
   return ok
 end
 
 function M.run_search_action(instance, action)
+  action = assert_string(action, 'search action')
   if scene.current_name(instance) ~= 'search' then
     return false
   end
@@ -56,10 +80,8 @@ function M.cycle_dynamic_preset(instance, fallback_key)
 end
 
 function M.adjust_dynamic_color(instance, delta)
+  delta = assert_finite(delta, 'dynamic adjustment delta')
   if not context.color_field_is_dynamic(instance) then
-    return false
-  end
-  if not numbers.is_finite(delta) then
     return false
   end
 
@@ -79,6 +101,8 @@ function M.open_dynamic_raw_json(instance)
 end
 
 function M.adjust_color(instance, channel, delta, fallback_key)
+  channel = assert_string(channel, 'color adjustment channel')
+  delta = assert_finite(delta, 'color adjustment delta')
   if context.color_field_is_dynamic(instance) then
     return true
   end
@@ -89,6 +113,9 @@ function M.adjust_color(instance, channel, delta, fallback_key)
 end
 
 function M.set_color(instance, value, fallback_key)
+  if type(value) ~= 'string' then
+    error('color value must be a string', 2)
+  end
   if context.current_field_kind(instance) ~= 'color' then
     return feed_fallback(instance, fallback_key)
   end
@@ -96,6 +123,7 @@ function M.set_color(instance, value, fallback_key)
 end
 
 function M.adjust_blend(instance, delta, fallback_key)
+  delta = assert_finite(delta, 'blend adjustment delta')
   if context.current_field_kind(instance) ~= 'blend' then
     return feed_fallback(instance, fallback_key)
   end
@@ -141,6 +169,7 @@ function M.input_current_editor_field(instance)
 end
 
 function M.jump_to_input_at_cursor(instance, insert)
+  insert = assert_insert(insert)
   local win = window.get_win(instance)
   if not window.is_valid_win(win) then
     return false
