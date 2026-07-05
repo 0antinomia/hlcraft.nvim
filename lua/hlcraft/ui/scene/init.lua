@@ -1,6 +1,7 @@
 local M = {}
 
 local registry = {}
+local scene_methods = { 'enter', 'render', 'handle', 'back' }
 
 local function assert_scene_name(name, label, level)
   if type(name) ~= 'string' or name == '' then
@@ -41,11 +42,21 @@ local function optional_opts(opts)
   return opts
 end
 
+local function assert_scene(scene)
+  if type(scene) ~= 'table' then
+    error('scene registration must be a table', 3)
+  end
+  for _, method in ipairs(scene_methods) do
+    if scene[method] ~= nil and type(scene[method]) ~= 'function' then
+      error(('scene %s method must be a function'):format(method), 3)
+    end
+  end
+  return scene
+end
+
 function M.register(name, scene)
   name = assert_scene_name(name, 'scene registration name', 2)
-  if type(scene) ~= 'table' then
-    error('scene registration must be a table', 2)
-  end
+  scene = assert_scene(scene)
   registry[name] = scene
 end
 
