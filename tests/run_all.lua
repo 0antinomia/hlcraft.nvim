@@ -9,6 +9,7 @@ local tests = {
   'tests/color.lua',
   'tests/fields.lua',
   'tests/highlight_entry.lua',
+  'tests/core_presets.lua',
   'tests/core_highlights.lua',
   'tests/core_source.lua',
   'tests/core_search.lua',
