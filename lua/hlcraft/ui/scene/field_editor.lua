@@ -114,13 +114,6 @@ local function entry_options(opts)
   return opts
 end
 
-local function optional_string(value, label)
-  if value ~= nil and (type(value) ~= 'string' or value == '') then
-    error(('%s must be a non-empty string or nil'):format(label), 3)
-  end
-  return value
-end
-
 local function optional_boolean(value, label)
   if value ~= nil and type(value) ~= 'boolean' then
     error(('%s must be boolean or nil'):format(label), 3)
@@ -197,9 +190,12 @@ function M.enter(instance, opts)
   local field_editor = field_editor_state(state)
   local current_scene = scene_state(state)
   opts = entry_options(opts)
-  local field = optional_string(opts.field, 'field editor field')
-  field_editor.field = field ~= nil and field or optional_string(field_editor.field, 'field editor field')
-  current_scene.field = field_editor.field
+  if opts.field == nil then
+    error('field editor entry requires a field', 3)
+  end
+  local field = assert_field(opts.field)
+  field_editor.field = field
+  current_scene.field = field
   current_scene.kind = nil
 end
 
