@@ -23,8 +23,12 @@ h.assert_equal(unknown_entry_err, 'test entry has unsupported field: unknown', '
 
 local invalid_opts_ok = pcall(override_entries.normalize, {}, false)
 h.assert_true(not invalid_opts_ok, 'override entry accepted non-table options', scope)
+local unknown_opts_ok = pcall(override_entries.normalize, {}, { unknown = true })
+h.assert_true(not unknown_opts_ok, 'override entry accepted unknown options', scope)
 local invalid_label_ok = pcall(override_entries.normalize, {}, { label = '' })
 h.assert_true(not invalid_label_ok, 'override entry accepted an empty label', scope)
+local blank_label_ok = pcall(override_entries.normalize, {}, { label = '   ' })
+h.assert_true(not blank_label_ok, 'override entry accepted a blank label', scope)
 local invalid_compact_ok = pcall(override_entries.normalize, {}, { compact_dynamic = 'yes' })
 h.assert_true(not invalid_compact_ok, 'override entry accepted non-boolean compact option', scope)
 

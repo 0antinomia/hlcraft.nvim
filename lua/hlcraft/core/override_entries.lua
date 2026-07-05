@@ -21,14 +21,26 @@ local function normalize_options(opts)
   if type(opts) ~= 'table' then
     error('override entry options must be a table', 3)
   end
-  if opts.label ~= nil and (type(opts.label) ~= 'string' or opts.label == '') then
+  for key in pairs(opts) do
+    if key ~= 'label' and key ~= 'compact_dynamic' then
+      error(('unknown override entry option: %s'):format(tostring(key)), 3)
+    end
+  end
+  local label = opts.label
+  if label ~= nil then
+    if type(label) ~= 'string' then
+      error('override entry label must be a non-empty string or nil', 3)
+    end
+    label = vim.trim(label)
+  end
+  if label == '' then
     error('override entry label must be a non-empty string or nil', 3)
   end
   if opts.compact_dynamic ~= nil and type(opts.compact_dynamic) ~= 'boolean' then
     error('override entry compact_dynamic option must be boolean', 3)
   end
   return {
-    label = opts.label or 'override entry',
+    label = label or 'override entry',
     compact_dynamic = opts.compact_dynamic == true,
   }
 end
