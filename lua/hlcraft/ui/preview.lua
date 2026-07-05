@@ -1,4 +1,3 @@
-local detail_scene = require('hlcraft.ui.scene.detail')
 local search_scene = require('hlcraft.ui.scene.search')
 local config = require('hlcraft.config')
 local timers = require('hlcraft.core.timers')
@@ -8,6 +7,24 @@ local M = {}
 local preview_fg = '#00e5ff'
 local preview_bg = '#ff3b30'
 local preview_timeout_ms = 500
+
+local function preview_state(instance)
+  if type(instance) ~= 'table' or type(instance.state) ~= 'table' then
+    error('preview requires an instance', 3)
+  end
+  local preview = instance.state.preview
+  if type(preview) ~= 'table' then
+    error('preview state must be a table', 3)
+  end
+  return instance.state, preview
+end
+
+local function result_list(state)
+  if type(state.results) ~= 'table' then
+    error('preview results must be a table', 3)
+  end
+  return state.results
+end
 
 local function snapshot_existing_keymap(lhs)
   local info = vim.fn.maparg(lhs, 'n', false, true)
@@ -48,9 +65,12 @@ local function restore_keymap(map)
 end
 
 local function restore(instance)
-  local preview = instance.state.preview
-  if not preview or not preview.name or not preview.spec then
+  local _, preview = preview_state(instance)
+  if preview.name == nil and preview.spec == nil then
     return
+  end
+  if type(preview.name) ~= 'string' or type(preview.spec) ~= 'table' then
+    error('preview restore state is invalid', 3)
   end
 
   pcall(vim.api.nvim_set_hl, 0, preview.name, vim.deepcopy(preview.spec))
@@ -59,8 +79,8 @@ local function restore(instance)
 end
 
 local function stop_timer(instance)
-  local preview = instance.state.preview
-  if not preview or not preview.timer then
+  local _, preview = preview_state(instance)
+  if not preview.timer then
     return
   end
 
@@ -68,14 +88,15 @@ local function stop_timer(instance)
   preview.timer = nil
 end
 
-local function current_result(instance)
-  if instance.state.detail_index then
-    return detail_scene.current_result(instance)
+local function current_result(instance, state)
+  local results = result_list(state)
+  if state.detail_index then
+    return results[state.detail_index]
   end
 
-  local list_index = instance.state.list_cursor
-  if list_index and instance.state.results[list_index] then
-    return instance.state.results[list_index]
+  local list_index = state.list_cursor
+  if list_index and results[list_index] then
+    return results[list_index]
   end
 
   local entry = search_scene.current_entry(instance)
@@ -86,7 +107,8 @@ end
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.flash_current(instance)
-  local result = current_result(instance)
+  local state, preview = preview_state(instance)
+  local result = current_result(instance, state)
   if not result or not result.name then
     return
   end
@@ -99,8 +121,8 @@ function M.flash_current(instance)
   stop_timer(instance)
   restore(instance)
 
-  instance.state.preview.name = result.name
-  instance.state.preview.spec = vim.deepcopy(spec)
+  preview.name = result.name
+  preview.spec = vim.deepcopy(spec)
 
   pcall(vim.api.nvim_set_hl, 0, result.name, {
     fg = preview_fg,
@@ -108,14 +130,14 @@ function M.flash_current(instance)
     bold = true,
   })
 
-  instance.state.preview.timer = timers.once(
+  preview.timer = timers.once(
     preview_timeout_ms,
     vim.schedule_wrap(function()
       stop_timer(instance)
       restore(instance)
     end)
   )
-  if not instance.state.preview.timer then
+  if not preview.timer then
     restore(instance)
   end
 end
@@ -124,6 +146,7 @@ end
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.cleanup(instance)
+  preview_state(instance)
   stop_timer(instance)
   restore(instance)
 end
@@ -132,6 +155,7 @@ end
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.install_keymap(instance)
+  local _, preview = preview_state(instance)
   local lhs = config.config.preview_key
   if lhs == false or lhs == nil or lhs == '' then
     return
@@ -139,7 +163,7 @@ function M.install_keymap(instance)
 
   M.uninstall_keymap(instance)
 
-  instance.state.preview.keymap = {
+  preview.keymap = {
     lhs = lhs,
     previous = snapshot_existing_keymap(lhs),
   }
@@ -157,14 +181,24 @@ end
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.uninstall_keymap(instance)
-  local map = instance.state.preview.keymap
-  if not map or not map.lhs then
+  local _, preview = preview_state(instance)
+  local map = preview.keymap
+  if map == nil then
     return
+  end
+  if type(map) ~= 'table' then
+    error('preview keymap state must be a table', 2)
+  end
+  if not map.lhs then
+    return
+  end
+  if type(map.lhs) ~= 'string' or map.lhs == '' then
+    error('preview keymap lhs must be a non-empty string', 2)
   end
 
   pcall(vim.keymap.del, 'n', map.lhs)
   restore_keymap(map.previous)
-  instance.state.preview.keymap = nil
+  preview.keymap = nil
 end
 
 return M
