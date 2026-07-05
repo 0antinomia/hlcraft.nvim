@@ -52,6 +52,18 @@ function M.sorted_keys(value, compare)
   return keys
 end
 
+function M.compare_names(left, right)
+  if type(left) ~= 'string' or type(right) ~= 'string' then
+    error('name comparator values must be strings', 2)
+  end
+  local left_lower = left:lower()
+  local right_lower = right:lower()
+  if left_lower == right_lower then
+    return left < right
+  end
+  return left_lower < right_lower
+end
+
 function M.has_only_keys(value, allowed)
   if type(value) ~= 'table' or type(allowed) ~= 'table' then
     return false

@@ -79,7 +79,7 @@ function M.intersect(name_results, color_results)
     if a.distance and b.distance and a.distance ~= b.distance then
       return a.distance < b.distance
     end
-    return a.name:lower() < b.name:lower()
+    return tables.compare_names(a.name, b.name)
   end)
 
   return results

@@ -46,6 +46,17 @@ h.assert_equal(intersection[1].name, 'Gamma', 'intersection did not sort by dist
 h.assert_equal(intersection[2].name, 'Alpha', 'intersection did not tie-break by name', scope)
 h.assert_equal(intersection[3].name, 'Beta', 'intersection omitted a shared result', scope)
 h.assert_equal(intersection[2].distance, 5, 'intersection did not carry color distance', scope)
+
+local case_intersection = model.intersect({
+  { name = 'alpha' },
+  { name = 'Alpha' },
+}, {
+  { name = 'alpha', distance = 1 },
+  { name = 'Alpha', distance = 1 },
+})
+h.assert_equal(case_intersection[1].name, 'Alpha', 'intersection did not tie-break equal lowercase names', scope)
+h.assert_equal(case_intersection[2].name, 'alpha', 'intersection equal lowercase ordering changed', scope)
+
 local nil_intersect_ok = pcall(model.intersect, nil, {})
 h.assert_true(not nil_intersect_ok, 'search model accepted nil name results', scope)
 local sparse_intersect_ok = pcall(model.intersect, {
