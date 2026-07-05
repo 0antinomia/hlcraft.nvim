@@ -28,6 +28,9 @@ function M.append(lines, geometry, key, text)
   local rows = editor_rows(geometry)
   key = non_empty_string(key, 'editor row key')
   text = non_empty_string(text, 'editor row text')
+  if rows[key] ~= nil then
+    error(('editor row key already exists: %s'):format(key), 3)
+  end
   local row = {
     line = #lines + 1,
     key = key,
