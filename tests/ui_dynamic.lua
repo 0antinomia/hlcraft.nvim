@@ -270,10 +270,18 @@ h.with_temp_buf(function(render_buf)
     },
   }
   local render_geometry = { editor_rows = {} }
+  local render_result = {
+    name = result.name,
+    fg = '#101010',
+    resolved_fg = '#101010',
+    bg = '#202020',
+    resolved_bg = '#202020',
+    sp = '#303030',
+  }
   local render_lines = dynamic_renderer.build(
     render_instance,
     render_geometry,
-    result,
+    render_result,
     'fg',
     80,
     0,
@@ -302,11 +310,17 @@ h.with_temp_buf(function(render_buf)
     'dynamic swatch preview kept renderer-only field state',
     scope
   )
+  h.assert_equal(
+    render_instance.state.dynamic_preview.items[1].context.bg,
+    '#202020',
+    'dynamic swatch preview missed renderer color context',
+    scope
+  )
   h.assert_true(render_geometry.editor_rows.dynamic_swatch == nil, 'dynamic swatch row should not be selectable', scope)
 end)
 
 h.with_temp_buf(function(preview_buf)
-  vim.api.nvim_buf_set_lines(preview_buf, 0, -1, false, { 'XXXX' })
+  vim.api.nvim_buf_set_lines(preview_buf, 0, -1, false, { 'XXXX YYYY' })
   local preview_ns = vim.api.nvim_create_namespace('hlcraft-ui-dynamic-test')
   local preview_instance = {
     ns = preview_ns,
@@ -336,6 +350,27 @@ h.with_temp_buf(function(preview_buf)
   })
   h.assert_equal(preview_id, 1, 'preview item was not registered', scope)
   h.assert_true(preview_instance.state.dynamic_preview.items[1].extra == nil, 'preview item kept unknown state', scope)
+  local context_preview_id = dynamic_preview.register(preview_instance, {
+    line = 1,
+    col_start = 5,
+    col_end = 9,
+    text = 'YYYY',
+    base = '#000000',
+    context = {
+      bg = '#ffffff',
+    },
+    dynamic = {
+      version = 1,
+      duration = 1000,
+      loop = 'once',
+      timeline = {
+        { at = 0, color = 'base' },
+        { at = 1, color = 'bg' },
+      },
+    },
+    now_ms = 500,
+  })
+  h.assert_equal(context_preview_id, 2, 'context preview item was not registered', scope)
   assert_fails(function()
     dynamic_preview.register(nil, {})
   end, 'dynamic preview accepted missing instance')
@@ -434,6 +469,12 @@ h.with_temp_buf(function(preview_buf)
   )
   local first_preview_hl = vim.api.nvim_get_hl(preview_ns, { name = preview_hl_name })
   h.assert_equal(first_preview_hl.fg, 0x808080, 'fixed preview did not sample requested phase', scope)
+  local context_preview_hl_name = ('HlcraftDynamicPreview_%s_%d'):format(
+    tostring(preview_instance.state.dynamic_preview.instance_id),
+    context_preview_id
+  )
+  local context_preview_hl = vim.api.nvim_get_hl(preview_ns, { name = context_preview_hl_name })
+  h.assert_equal(context_preview_hl.fg, 0x808080, 'context preview did not resolve channel color refs', scope)
   dynamic_preview.tick(preview_instance, 1000)
   local second_preview_hl = vim.api.nvim_get_hl(preview_ns, { name = preview_hl_name })
   h.assert_equal(second_preview_hl.fg, 0x808080, 'fixed preview changed with live time', scope)

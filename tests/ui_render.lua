@@ -669,6 +669,22 @@ h.assert_true(
   'detail dynamic metadata did not use normalized values',
   scope
 )
+h.with_temp_buf(function(buf)
+  local dynamic_detail_instance = {
+    ns = vim.api.nvim_create_namespace('hlcraft-ui-render-dynamic-detail-test'),
+    state = {
+      buf = buf,
+      dynamic_preview = ui_state.dynamic_preview(),
+    },
+  }
+  detail_renderer.build(dynamic_detail_instance, { detail_menu = {} }, result, 80, 0)
+  h.assert_equal(
+    dynamic_detail_instance.state.dynamic_preview.items[1].context.bg,
+    '#222222',
+    'detail dynamic preview missed renderer color context',
+    scope
+  )
+end)
 
 h.cleanup_dir(persist_dir)
 config.setup({})

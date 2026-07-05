@@ -32,6 +32,7 @@ function M.build(instance, geometry, result, field, width, line_offset, dynamic)
   line_offset = render_util.line_offset(line_offset, 'dynamic editor')
   local label = ui_fields.detail_labels[field] or field:upper()
   local fallback = field_values.fallback_value(result, field)
+  local color_context = field_values.color_context(result)
   local swatch = ui_fields.dynamic_preview_swatch
   local lines = {
     ('Color editor: %s'):format(label),
@@ -53,6 +54,7 @@ function M.build(instance, geometry, result, field, width, line_offset, dynamic)
     text = swatch,
     field = field,
     base = fallback,
+    context = color_context,
     dynamic = dynamic,
   })
 
@@ -73,6 +75,7 @@ function M.build(instance, geometry, result, field, width, line_offset, dynamic)
       text = ui_fields.dynamic_timeline_swatch,
       field = field,
       base = fallback,
+      context = color_context,
       dynamic = sample_dynamic,
       now_ms = phase * math.max(1, sample_dynamic.duration),
     })
