@@ -51,6 +51,12 @@ local invalid_prompt_opts_ok = pcall(prompt.input, {}, function() end, false)
 h.assert_true(not invalid_prompt_opts_ok, 'prompt accepted non-table options', scope)
 local invalid_notify_opts_ok = pcall(prompt.input, {}, function() end, { notify_errors = 'no' })
 h.assert_true(not invalid_notify_opts_ok, 'prompt accepted non-boolean notify_errors option', scope)
+local invalid_value_ok = pcall(prompt.input, { value = false }, function()
+  return true, nil
+end)
+h.assert_true(not invalid_value_ok, 'prompt accepted non-string input value', scope)
+local invalid_submit_result_ok = pcall(prompt.input, { value = 'bad return' }, function() end)
+h.assert_true(not invalid_submit_result_ok, 'prompt accepted non-boolean submit result', scope)
 
 vim.ui.input = original_input
 
