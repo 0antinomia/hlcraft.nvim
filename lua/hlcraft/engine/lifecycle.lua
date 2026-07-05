@@ -8,6 +8,20 @@ local store = require('hlcraft.engine.store')
 
 local data = store.data
 
+local function assert_name(name)
+  if type(name) ~= 'string' or name == '' then
+    error('highlight name must be a non-empty string', 3)
+  end
+  return name
+end
+
+local function assert_replay(replay)
+  if type(replay) ~= 'function' then
+    error('engine lifecycle requires a replay callback', 3)
+  end
+  return replay
+end
+
 local function assert_loaded_data(loaded)
   if type(loaded) ~= 'table' then
     error('loaded persistence data must be a table', 3)
@@ -24,6 +38,7 @@ function M.bootstrap(force, replay)
   if data.bootstrapped and not force then
     return
   end
+  replay = assert_replay(replay)
 
   if data.bootstrapped and data.group then
     pcall(vim.api.nvim_del_augroup_by_id, data.group)
@@ -53,6 +68,7 @@ function M.bootstrap(force, replay)
 end
 
 function M.restore_persisted(name)
+  name = assert_name(name)
   data.draft[name] = snapshot.deepcopy(data.persisted[name])
   data.draft_groups[name] = data.persisted_groups[name]
   snapshot.rebuild_active()
@@ -61,6 +77,7 @@ function M.restore_persisted(name)
 end
 
 function M.clear(name)
+  name = assert_name(name)
   data.draft[name] = nil
   data.draft_groups[name] = nil
   snapshot.rebuild_active()
