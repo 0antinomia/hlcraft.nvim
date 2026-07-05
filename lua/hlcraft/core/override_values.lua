@@ -46,6 +46,9 @@ function M.normalize_color(value)
 end
 
 function M.normalize_style(key, value)
+  if not fields.style_set[key] then
+    return nil, ('Unsupported style key: %s'):format(tostring(key))
+  end
   if value == vim.NIL then
     return vim.NIL, nil
   end
@@ -71,6 +74,9 @@ function M.normalize_field(key, value)
 end
 
 function M.normalize_dynamic_channel(key, value)
+  if not dynamic_model.channel_set[key] then
+    return nil, ('Unsupported dynamic key: %s'):format(tostring(key))
+  end
   if M.is_unset(value) then
     return vim.NIL, nil
   end

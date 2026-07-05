@@ -53,6 +53,12 @@ h.assert_equal(
   scope
 )
 h.assert_equal(
+  select(2, override_values.normalize_style('unknown', true)),
+  'Unsupported style key: unknown',
+  'unknown style key error changed',
+  scope
+)
+h.assert_equal(
   select(1, override_values.normalize_field('fg', '#ABCDEF')),
   '#abcdef',
   'field color did not normalize',
@@ -78,6 +84,20 @@ h.assert_equal(
   select(1, override_values.normalize_dynamic_channel('fg', vim.NIL)),
   vim.NIL,
   'unset dynamic did not normalize',
+  scope
+)
+h.assert_equal(
+  select(
+    2,
+    override_values.normalize_dynamic_channel('unknown', {
+      version = 1,
+      timeline = {
+        { at = 0, color = 'base' },
+      },
+    })
+  ),
+  'Unsupported dynamic key: unknown',
+  'unknown dynamic key error changed',
   scope
 )
 
