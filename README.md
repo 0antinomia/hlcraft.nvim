@@ -181,7 +181,7 @@ Dynamic color configuration is edited from the existing `FG`, `BG`, and `SP` edi
 
 - Press `d` in a color editor to toggle dynamic mode for the current `FG`, `BG`, or `SP` channel.
 - Press `m` to cycle presets: `pulse`, `breath`, `hue`, `gradient`, `blink`, and `duotone`.
-- Press `+` / `-` to adjust the dynamic duration.
+- Press `+` / `-` to adjust the dynamic duration, or the phase when the phase row is selected.
 - Press `e` to open the raw JSON editor for the current dynamic channel.
 - Press `s` in the detail view to persist the override, just like static color changes.
 
