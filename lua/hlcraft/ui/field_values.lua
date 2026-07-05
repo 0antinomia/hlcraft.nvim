@@ -37,6 +37,15 @@ function M.fallback_value(result, key)
   return result[key]
 end
 
+function M.color_context(result)
+  result = assert_result(result)
+  local context = {}
+  for _, key in ipairs(fields.color_keys) do
+    context[key] = M.fallback_value(result, key)
+  end
+  return context
+end
+
 function M.display_text(value)
   if value == nil then
     return 'unset'

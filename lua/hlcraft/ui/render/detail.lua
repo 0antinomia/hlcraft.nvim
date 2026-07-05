@@ -74,6 +74,7 @@ function M.build(instance, geometry, result, width, line_offset)
   end
 
   local dirty_mark = session.is_dirty(result.name) and '*' or ' '
+  local color_context = field_values.color_context(result)
   for _, key in ipairs(ui_fields.detail_order) do
     local fallback = field_values.fallback_value(result, key)
     local dynamic = dynamic_model.channel_set[key] and session.dynamic_value(result.name, key) or nil
@@ -100,6 +101,7 @@ function M.build(instance, geometry, result, width, line_offset)
         text = swatch,
         field = key,
         base = fallback,
+        context = color_context,
         dynamic = dynamic,
       })
     end

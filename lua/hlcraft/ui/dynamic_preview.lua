@@ -117,7 +117,7 @@ local function clear_preview_marks(state, ns, preview)
 end
 
 local function set_preview_hl(ns, preview, item, now_ms)
-  local value = effects.compute(item.dynamic, item.base, item.now_ms or now_ms)
+  local value = effects.compute(item.dynamic, item.base, item.now_ms or now_ms, item.context)
   if not value then
     return nil
   end
@@ -137,6 +137,21 @@ local function set_preview_mark(state, ns, item, hl_name)
     return nil
   end
   return mark_id
+end
+
+local function normalize_context(context)
+  if context == nil then
+    return nil
+  end
+  if type(context) ~= 'table' then
+    return nil
+  end
+
+  local normalized = {}
+  for _, key in ipairs(model.channels) do
+    normalized[key] = context[key]
+  end
+  return normalized
 end
 
 local function normalize_item(item, dynamic)
@@ -160,6 +175,10 @@ local function normalize_item(item, dynamic)
   if item.now_ms ~= nil and (type(item.now_ms) ~= 'number' or not numbers.is_finite(item.now_ms)) then
     return nil
   end
+  local context = normalize_context(item.context)
+  if item.context ~= nil and not context then
+    return nil
+  end
 
   return {
     line = item.line,
@@ -169,6 +188,7 @@ local function normalize_item(item, dynamic)
     base = item.base,
     dynamic = dynamic,
     now_ms = item.now_ms,
+    context = context,
   }
 end
 
