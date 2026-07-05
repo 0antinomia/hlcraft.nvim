@@ -133,6 +133,7 @@ for _, line in ipairs({
   [["BareDynamic" = { dynamic = { fg = { preset = pulse } } }]],
   [["BadEscape" = { label = "\n" }]],
   [["Duplicate" = { fg = "#101010", fg = "#202020" }]],
+  [["InfiniteNumber" = { blend = 1e309 }]],
   [["DanglingTable" = { dynamic = { fg = { preset = "pulse" }}, stray = } }]],
   '"DanglingArray" = { dynamic = { fg = { timeline = [{ at = 0, color = "base" }]] } } }',
 }) do

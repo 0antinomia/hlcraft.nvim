@@ -10,6 +10,16 @@ local function storage_dir()
   return config.config.persist_dir
 end
 
+local function optional_path(path)
+  if path == nil then
+    return storage_dir()
+  end
+  if type(path) ~= 'string' then
+    error('Persistence path must be a string', 3)
+  end
+  return path
+end
+
 local function highlight_name_is_valid(name)
   return type(name) == 'string' and vim.trim(name) ~= ''
 end
@@ -63,7 +73,7 @@ end
 --- @param path string|nil
 --- @return table
 function M.load(path)
-  local target = path or storage_dir()
+  local target = optional_path(path)
   local stat = vim.uv.fs_stat(target)
   if not stat or stat.type ~= 'directory' then
     return codec.empty_data()

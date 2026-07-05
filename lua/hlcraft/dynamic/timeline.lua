@@ -16,6 +16,22 @@ local function curve(amount, interpolation)
   return amount
 end
 
+local function valid_stop(stop)
+  return type(stop) == 'table' and numbers.is_finite(stop.at)
+end
+
+local function valid_stops(stops)
+  if type(stops) ~= 'table' or #stops == 0 then
+    return false
+  end
+  for _, stop in ipairs(stops) do
+    if not valid_stop(stop) then
+      return false
+    end
+  end
+  return true
+end
+
 function M.phase(now_ms, duration, phase_offset, loop)
   if
     not numbers.is_finite(now_ms)
@@ -42,12 +58,7 @@ function M.phase(now_ms, duration, phase_offset, loop)
 end
 
 function M.sample(stops, phase, interpolation, interpolate)
-  if
-    type(stops) ~= 'table'
-    or #stops == 0
-    or not numbers.is_finite(phase)
-    or not constants.interpolation_set[interpolation]
-  then
+  if not valid_stops(stops) or not numbers.is_finite(phase) or not constants.interpolation_set[interpolation] then
     return nil
   end
   if #stops == 1 then
