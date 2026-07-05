@@ -196,8 +196,8 @@ function M.section_lines(label, group, options)
   return lines
 end
 
-local function section(label, group)
-  return M.section_lines(label, group)[1]
+local function single_section(label, group, width)
+  return M.section_lines(label, group, { width = width })
 end
 
 local function block(spec, width)
@@ -218,12 +218,12 @@ local function block(spec, width)
   return lines
 end
 
-function M.search()
-  return section('Action', 'search')
+function M.search(width)
+  return single_section('Action', 'search', width)
 end
 
-function M.detail()
-  return section('Action', 'detail')
+function M.detail(width)
+  return single_section('Action', 'detail', width)
 end
 
 function M.color(width)

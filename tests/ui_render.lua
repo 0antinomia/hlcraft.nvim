@@ -531,6 +531,12 @@ local fg_row = detail_geometry.detail_menu.fg
 h.assert_true(fg_row.label_start_col ~= nil, 'detail row lacks label highlight start', scope)
 h.assert_true(fg_row.label_end_col > fg_row.label_start_col, 'detail row label highlight range is invalid', scope)
 h.assert_true(fg_row.value_col > fg_row.label_end_col, 'detail row lacks value highlight start', scope)
+local narrow_detail_lines = detail_renderer.build(instance, { detail_menu = {} }, result, 30, 0)
+h.assert_true(
+  vim.tbl_contains(narrow_detail_lines, '        [s] save  [?] help'),
+  'detail renderer did not wrap narrow hints',
+  scope
+)
 h.with_temp_buf(function(buf)
   local detail_ns = vim.api.nvim_create_namespace('hlcraft-ui-render-detail-test')
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, detail_lines)
