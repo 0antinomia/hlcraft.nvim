@@ -23,6 +23,13 @@ local function assert_input_value(value)
   end
 end
 
+local function assert_clear_old(clear_old)
+  if type(clear_old) ~= 'boolean' then
+    error('input clear_old flag must be boolean', 3)
+  end
+  return clear_old
+end
+
 local function instance_state(instance)
   if type(instance) ~= 'table' or type(instance.state) ~= 'table' then
     error('input model requires an instance', 3)
@@ -65,6 +72,19 @@ local function assert_namespace(ns)
     error('input namespace must be a non-negative finite integer', 3)
   end
   return ns
+end
+
+local function extmark_id(value, label)
+  if value == nil then
+    return nil
+  end
+  if type(value) ~= 'number' then
+    error(('%s must be a number'):format(label), 3)
+  end
+  if not numbers.is_finite(value) or math.floor(value) ~= value or value < 1 then
+    error(('%s must be a positive finite integer'):format(label), 3)
+  end
+  return value
 end
 
 local function input_geometry(instance)
@@ -171,8 +191,8 @@ function M.get_input_pos(instance, name)
   end
 
   local ids = extmark_ids(instance)
-  local start_id = ids[name .. ':start']
-  local end_id = ids[name .. ':end']
+  local start_id = extmark_id(ids[name .. ':start'], 'input start extmark id')
+  local end_id = extmark_id(ids[name .. ':end'], 'input end extmark id')
   if not start_id or not end_id then
     return nil, nil, field
   end
@@ -238,6 +258,7 @@ end
 --- @param clear_old boolean Whether to clear and proceed even if value is nil
 --- @return boolean changed Whether the buffer was changed
 function M.fill_input(instance, name, value, clear_old)
+  clear_old = assert_clear_old(clear_old)
   if value == nil and not clear_old then
     return false
   end

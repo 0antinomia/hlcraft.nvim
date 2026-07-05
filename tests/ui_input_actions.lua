@@ -95,6 +95,8 @@ h.with_temp_buf(function(buf)
     'fill_input type error changed',
     scope
   )
+  local invalid_clear_old_ok = pcall(input_model.fill_input, instance, 'name', nil, 'yes')
+  h.assert_true(not invalid_clear_old_ok, 'fill_input accepted non-boolean clear flag', scope)
 
   h.assert_true(not input_model.fill_input(instance, 'name', nil, false), 'nil fill without clear changed input', scope)
   h.assert_true(input_model.fill_input(instance, 'name', nil, true), 'nil fill with clear did not report change', scope)
@@ -184,6 +186,16 @@ h.with_temp_buf(function(buf)
     },
   }, 'name')
   h.assert_true(not missing_extmarks_ok, 'input model accepted missing extmark ids', scope)
+  local invalid_extmark_id_ok = pcall(input_model.get_input_pos, {
+    ns = instance.ns,
+    state = vim.tbl_extend('force', instance.state, {
+      extmark_ids = {
+        ['name:start'] = false,
+        ['name:end'] = instance.state.extmark_ids['name:end'],
+      },
+    }),
+  }, 'name')
+  h.assert_true(not invalid_extmark_id_ok, 'input model accepted invalid extmark id', scope)
 end, { current = true })
 
 local invalid_geometry_ok = pcall(input_model.get_input_at_row, {
