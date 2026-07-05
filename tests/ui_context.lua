@@ -142,6 +142,15 @@ h.assert_equal(failed_scene_instance.state.scene.name, 'search', 'failed scene e
 assert_fails(function()
   scene.handle(instance, '')
 end, 'scene handle accepted an empty action')
+assert_fails(function()
+  scene.handle({
+    state = {
+      scene = {
+        name = 'missing-scene',
+      },
+    },
+  }, 'activate')
+end, 'scene handle accepted an unknown current scene')
 
 local detail_instance = {
   state = {

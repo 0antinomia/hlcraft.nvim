@@ -68,7 +68,12 @@ function M.current_name(instance)
 end
 
 function M.current(instance)
-  return registry[M.current_name(instance)]
+  local name = M.current_name(instance)
+  local current = registry[name]
+  if not current then
+    error(('unknown current scene: %s'):format(name), 2)
+  end
+  return current
 end
 
 function M.set(instance, name, opts)
@@ -93,7 +98,7 @@ end
 
 function M.render(instance)
   local scene = M.current(instance)
-  if scene and scene.render then
+  if scene.render then
     return scene.render(instance)
   end
 end
@@ -101,7 +106,7 @@ end
 function M.handle(instance, action, ...)
   action = assert_scene_name(action, 'scene action', 2)
   local scene = M.current(instance)
-  if scene and scene.handle then
+  if scene.handle then
     return scene.handle(instance, action, ...)
   end
   return false, ('unsupported action: %s'):format(tostring(action))
@@ -109,7 +114,7 @@ end
 
 function M.back(instance)
   local scene = M.current(instance)
-  if scene and scene.back then
+  if scene.back then
     return scene.back(instance)
   end
   return false, 'current scene cannot go back'
