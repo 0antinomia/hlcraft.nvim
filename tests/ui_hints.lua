@@ -33,6 +33,14 @@ local empty_item_action_ok = pcall(hints.format, {
 h.assert_true(not empty_item_action_ok, 'hint formatter accepted empty item action', scope)
 local nil_items_ok = pcall(hints.format, nil)
 h.assert_true(not nil_items_ok, 'hint formatter accepted nil items', scope)
+local sparse_items_ok = pcall(hints.format, {
+  [2] = { 'x', 'action' },
+})
+h.assert_true(not sparse_items_ok, 'hint formatter accepted sparse items', scope)
+local keyed_items_ok = pcall(hints.format, {
+  extra = { 'x', 'action' },
+})
+h.assert_true(not keyed_items_ok, 'hint formatter accepted keyed items', scope)
 local false_options_ok = pcall(hints.section_lines, 'Action', 'search', false)
 h.assert_true(not false_options_ok, 'hint sections accepted false options', scope)
 local invalid_max_items_ok = pcall(hints.section_lines, 'Action', 'search', { max_items = false })
@@ -51,6 +59,13 @@ local invalid_group_ok = pcall(hints.section_lines, 'Action', false)
 h.assert_true(not invalid_group_ok, 'hint sections accepted non-string groups', scope)
 local unknown_group_ok = pcall(hints.section_lines, 'Action', 'unknown')
 h.assert_true(not unknown_group_ok, 'hint sections accepted unknown groups', scope)
+local original_search_group = hints.groups.search
+hints.groups.search = {
+  [2] = { 'x', 'action' },
+}
+local sparse_group_ok = pcall(hints.section_lines, 'Action', 'search')
+hints.groups.search = original_search_group
+h.assert_true(not sparse_group_ok, 'hint sections accepted sparse group items', scope)
 
 local dynamic_hint_lines = hints.dynamic()
 h.assert_equal(dynamic_hint_lines[1], 'Edit    [i] row  [m] preset', 'dynamic edit hint first row changed', scope)
@@ -99,6 +114,16 @@ h.assert_true(not numeric_line_ok, 'help item detector accepted a non-string lin
 local original_sections = help_model.sections
 help_model.sections = function()
   return {
+    [2] = {
+      title = 'Broken',
+      items = {},
+    },
+  }
+end
+local sparse_help_sections_ok = pcall(help_model.lines)
+h.assert_true(not sparse_help_sections_ok, 'help model accepted sparse sections', scope)
+help_model.sections = function()
+  return {
     {
       title = 'Broken',
     },
@@ -106,6 +131,18 @@ help_model.sections = function()
 end
 local invalid_help_items_ok = pcall(help_model.lines)
 h.assert_true(not invalid_help_items_ok, 'help model accepted a section without items', scope)
+help_model.sections = function()
+  return {
+    {
+      title = 'Broken',
+      items = {
+        [2] = { 'x', 'action' },
+      },
+    },
+  }
+end
+local sparse_help_items_ok = pcall(help_model.lines)
+h.assert_true(not sparse_help_items_ok, 'help model accepted sparse help items', scope)
 help_model.sections = function()
   return {
     {
