@@ -83,6 +83,34 @@ assert_fails(function()
   })
 end, 'search scene accepted missing list cursor state')
 assert_fails(function()
+  search_scene.update_results({
+    state = {
+      name_query = '',
+      color_query = '',
+      list_cursor = 0,
+    },
+  })
+end, 'search scene accepted invalid list cursor state')
+local invalid_cursor_instance = {
+  state = {
+    name_query = '',
+    color_query = '',
+    list_cursor = 0,
+    results = {
+      { name = 'Preserved' },
+    },
+  },
+}
+assert_fails(function()
+  search_scene.update_results(invalid_cursor_instance)
+end, 'search scene accepted invalid list cursor state before updating results')
+h.assert_equal(
+  invalid_cursor_instance.state.results[1].name,
+  'Preserved',
+  'failed search update changed result state',
+  scope
+)
+assert_fails(function()
   search_scene.rows({
     state = {
       results = {

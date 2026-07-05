@@ -177,6 +177,31 @@ assert_fails(function()
     state = refresh_instance.state,
   }, 'HlcraftUiContextNormal', true)
 end, 'detail refresh accepted missing rerender callback')
+local invalid_refresh_cursor_instance = {
+  state = {
+    detail_index = 1,
+    field_editor = { field = 'fg' },
+    list_cursor = 0,
+    results = {},
+    scene = { name = 'detail' },
+  },
+  rerender = function() end,
+}
+assert_fails(function()
+  detail_scene.refresh(invalid_refresh_cursor_instance, 'MissingResult', true)
+end, 'detail refresh accepted invalid list cursor')
+h.assert_equal(
+  invalid_refresh_cursor_instance.state.detail_index,
+  1,
+  'failed detail refresh changed detail index',
+  scope
+)
+h.assert_equal(
+  invalid_refresh_cursor_instance.state.field_editor.field,
+  'fg',
+  'failed detail refresh changed active field',
+  scope
+)
 assert_fails(function()
   detail_scene.handle(refresh_instance, '')
 end, 'detail handle accepted empty action')
