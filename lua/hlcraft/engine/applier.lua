@@ -3,6 +3,7 @@ local config = require('hlcraft.config')
 local dynamic_runtime = require('hlcraft.dynamic.runtime')
 local notify = require('hlcraft.notify')
 local presets = require('hlcraft.core.presets')
+local highlight_names = require('hlcraft.core.highlight_names')
 local snapshot = require('hlcraft.engine.snapshot')
 local store = require('hlcraft.engine.store')
 local tables = require('hlcraft.core.tables')
@@ -19,10 +20,7 @@ local function assert_table(value, label)
 end
 
 local function assert_name(name)
-  if type(name) ~= 'string' or name == '' then
-    error('highlight name must be a non-empty string', 3)
-  end
-  return name
+  return highlight_names.assert(name, 'highlight name', 3)
 end
 
 local function assert_replay(replay)
@@ -104,7 +102,7 @@ function M.install_pending_hook()
     if state.applying then
       return
     end
-    if ns_id ~= 0 or type(name) ~= 'string' or name == '' then
+    if ns_id ~= 0 or not highlight_names.validate(name, 'highlight name') then
       return
     end
 

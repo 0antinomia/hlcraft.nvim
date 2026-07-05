@@ -195,6 +195,20 @@ assert_fails(function()
   detail_scene.refresh(refresh_instance, '', true)
 end, 'detail refresh accepted empty name')
 assert_fails(function()
+  detail_scene.refresh({
+    state = {
+      detail_index = 1,
+      field_editor = { field = 'fg' },
+      list_cursor = 1,
+      results = {
+        { name = 'HlcraftUiContextNormal' },
+      },
+      scene = { name = 'detail' },
+    },
+    rerender = function() end,
+  }, 'Bad Name', true)
+end, 'detail refresh accepted whitespace in name')
+assert_fails(function()
   detail_scene.refresh(refresh_instance, 'HlcraftUiContextNormal', 'yes')
 end, 'detail refresh accepted invalid reopen flag')
 assert_fails(function()

@@ -3,16 +3,14 @@ local M = {}
 local dynamic_runtime = require('hlcraft.dynamic.runtime')
 local storage = require('hlcraft.persistence.repository')
 local applier = require('hlcraft.engine.applier')
+local highlight_names = require('hlcraft.core.highlight_names')
 local snapshot = require('hlcraft.engine.snapshot')
 local store = require('hlcraft.engine.store')
 
 local data = store.data
 
 local function assert_name(name)
-  if type(name) ~= 'string' or name == '' then
-    error('highlight name must be a non-empty string', 3)
-  end
-  return name
+  return highlight_names.assert(name, 'highlight name', 3)
 end
 
 local function assert_replay(replay)

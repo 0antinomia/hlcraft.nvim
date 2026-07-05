@@ -1,6 +1,7 @@
 local search_scene = require('hlcraft.ui.scene.search')
 local session = require('hlcraft.ui.session')
 local style_editor = require('hlcraft.ui.editor.style')
+local highlight_names = require('hlcraft.core.highlight_names')
 local numbers = require('hlcraft.core.number')
 local tables = require('hlcraft.core.tables')
 local rows = require('hlcraft.ui.scene.rows')
@@ -70,10 +71,7 @@ local function optional_boolean(value, label)
 end
 
 local function assert_name(name)
-  if type(name) ~= 'string' or name == '' then
-    error('detail result name must be a non-empty string', 3)
-  end
-  return name
+  return highlight_names.assert(name, 'detail result name', 3)
 end
 
 local function assert_action(action)

@@ -2,6 +2,7 @@
 local M = {}
 
 local fields = require('hlcraft.core.fields')
+local highlight_names = require('hlcraft.core.highlight_names')
 local highlight_entry = require('hlcraft.core.highlight_entry')
 
 local LINK_CHAIN_LIMIT = 20
@@ -14,10 +15,7 @@ local cache = {
 }
 
 local function assert_name(name)
-  if type(name) ~= 'string' or name == '' then
-    error('highlight group name must be a non-empty string', 3)
-  end
-  return name
+  return highlight_names.assert(name, 'highlight group name', 3)
 end
 
 local function link_target(attrs)
@@ -29,10 +27,7 @@ local function link_target(attrs)
   if target == nil then
     return nil
   end
-  if type(target) ~= 'string' or target == '' then
-    error('highlight link target must be a non-empty string', 3)
-  end
-  return target
+  return highlight_names.assert(target, 'highlight link target', 3)
 end
 
 local function resolve_chain(name, get_attrs)

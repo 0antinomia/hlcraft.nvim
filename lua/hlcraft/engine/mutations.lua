@@ -2,6 +2,7 @@ local M = {}
 
 local highlights = require('hlcraft.core.highlights')
 local applier = require('hlcraft.engine.applier')
+local highlight_names = require('hlcraft.core.highlight_names')
 local patch_model = require('hlcraft.engine.patch')
 local snapshot = require('hlcraft.engine.snapshot')
 local store = require('hlcraft.engine.store')
@@ -9,10 +10,7 @@ local store = require('hlcraft.engine.store')
 local data = store.data
 
 local function assert_name(name)
-  if type(name) ~= 'string' or name == '' then
-    error('highlight name must be a non-empty string', 3)
-  end
-  return name
+  return highlight_names.assert(name, 'highlight name', 3)
 end
 
 local function draft_entry(name)

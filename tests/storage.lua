@@ -12,15 +12,15 @@ config.setup({ persist_dir = persist_dir })
 h.write_file(persist_dir .. '/manual.toml', {
   '# comment',
   '["ui.group"]',
-  '"Normal Float" = { bg = "NONE", blend = 12, bold = true, fg = "#AABBCC" }',
+  '"NormalFloat" = { bg = "NONE", blend = 12, bold = true, fg = "#AABBCC" }',
 })
 
 local decoded = storage.load(persist_dir)
-h.assert_equal(decoded.groups['Normal Float'], 'ui.group', 'manual TOML group did not load', scope)
-h.assert_equal(decoded.entries['Normal Float'].fg, '#aabbcc', 'manual TOML fg did not load', scope)
-h.assert_equal(decoded.entries['Normal Float'].bg, 'NONE', 'manual TOML NONE did not load', scope)
-h.assert_equal(decoded.entries['Normal Float'].blend, 12, 'manual TOML number did not load', scope)
-h.assert_equal(decoded.entries['Normal Float'].bold, true, 'manual TOML boolean did not load', scope)
+h.assert_equal(decoded.groups.NormalFloat, 'ui.group', 'manual TOML group did not load', scope)
+h.assert_equal(decoded.entries.NormalFloat.fg, '#aabbcc', 'manual TOML fg did not load', scope)
+h.assert_equal(decoded.entries.NormalFloat.bg, 'NONE', 'manual TOML NONE did not load', scope)
+h.assert_equal(decoded.entries.NormalFloat.blend, 12, 'manual TOML number did not load', scope)
+h.assert_equal(decoded.entries.NormalFloat.bold, true, 'manual TOML boolean did not load', scope)
 
 local invalid_persist_dir = h.temp_dir('hlcraft-storage-invalid')
 vim.fn.mkdir(invalid_persist_dir, 'p')
@@ -174,6 +174,19 @@ local invalid_name_ok, invalid_name_err = storage.save({
 }, persist_dir)
 h.assert_true(not invalid_name_ok, 'storage.save accepted a non-string highlight name', scope)
 h.assert_equal(invalid_name_err, 'Highlight name must be a non-empty string', 'highlight name error changed', scope)
+
+local spaced_name_ok, spaced_name_err = storage.save({
+  ['Bad Name'] = { fg = '#111111' },
+}, {
+  ['Bad Name'] = 'group',
+}, persist_dir)
+h.assert_true(not spaced_name_ok, 'storage.save accepted whitespace in highlight name', scope)
+h.assert_equal(
+  spaced_name_err,
+  'Highlight name must not contain whitespace or command separators',
+  'spaced highlight name error changed',
+  scope
+)
 
 local invalid_entry_ok, invalid_entry_err = storage.save({
   InvalidEntry = false,

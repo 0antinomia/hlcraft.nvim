@@ -1,6 +1,7 @@
 local M = {}
 
 local config = require('hlcraft.config')
+local highlight_names = require('hlcraft.core.highlight_names')
 local tables = require('hlcraft.core.tables')
 local codec = require('hlcraft.persistence.codec')
 local files = require('hlcraft.persistence.files')
@@ -20,8 +21,9 @@ local function optional_path(path)
   return path
 end
 
-local function highlight_name_is_valid(name)
-  return type(name) == 'string' and vim.trim(name) ~= ''
+local function highlight_name_error(name)
+  local _, err = highlight_names.validate(name, 'Highlight name')
+  return err
 end
 
 local function validate_save_inputs(overrides, groups)
@@ -33,8 +35,9 @@ local function validate_save_inputs(overrides, groups)
   end
 
   for highlight_name, entry in pairs(overrides) do
-    if not highlight_name_is_valid(highlight_name) then
-      return false, 'Highlight name must be a non-empty string'
+    local err = highlight_name_error(highlight_name)
+    if err then
+      return false, err
     end
     if type(entry) ~= 'table' then
       return false, ('Override entry %s must be a table'):format(highlight_name)
@@ -42,8 +45,9 @@ local function validate_save_inputs(overrides, groups)
   end
 
   for highlight_name, group_name in pairs(groups) do
-    if not highlight_name_is_valid(highlight_name) then
-      return false, 'Highlight name must be a non-empty string'
+    local err = highlight_name_error(highlight_name)
+    if err then
+      return false, err
     end
     if type(group_name) ~= 'string' then
       return false, ('Group for highlight %s must be a string'):format(highlight_name)

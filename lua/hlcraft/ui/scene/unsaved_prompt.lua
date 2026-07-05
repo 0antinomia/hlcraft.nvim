@@ -1,4 +1,5 @@
 local notify = require('hlcraft.notify')
+local highlight_names = require('hlcraft.core.highlight_names')
 local line_highlights = require('hlcraft.ui.render.line_highlights')
 local numbers = require('hlcraft.core.number')
 local session = require('hlcraft.ui.session')
@@ -44,10 +45,7 @@ local function prompt_namespace(instance)
 end
 
 local function assert_name(name)
-  if type(name) ~= 'string' or name == '' then
-    error('unsaved prompt name must be a non-empty string', 3)
-  end
-  return name
+  return highlight_names.assert(name, 'unsaved prompt name', 3)
 end
 
 local function assert_on_done(on_done)

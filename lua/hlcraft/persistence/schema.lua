@@ -1,3 +1,4 @@
+local highlight_names = require('hlcraft.core.highlight_names')
 local override_entries = require('hlcraft.core.override_entries')
 
 local M = {}
@@ -18,6 +19,10 @@ end
 
 local function normalize_non_empty_string(value, label)
   return vim.trim(assert_non_empty_string(value, label))
+end
+
+local function assert_highlight_name(value, label)
+  return highlight_names.assert(value, label, 3)
 end
 
 local function assert_entry_exists(data, name, label)
@@ -80,7 +85,7 @@ local function normalize_entry_options(opts)
 end
 
 function M.normalize_entry(name, entry, opts)
-  name = assert_non_empty_string(name, 'persistence highlight name')
+  name = assert_highlight_name(name, 'persistence highlight name')
   entry = assert_table(entry, ('persistence entry %s'):format(tostring(name)))
   opts = normalize_entry_options(opts)
 
@@ -104,7 +109,7 @@ function M.normalize_loaded_data(data)
   local section_keys = normalized_section_keys(data)
 
   for name, group_name in pairs(data.groups) do
-    assert_non_empty_string(name, 'loaded persistence highlight name')
+    assert_highlight_name(name, 'loaded persistence highlight name')
     group_name = normalize_non_empty_string(group_name, ('loaded persistence group for %s'):format(name))
     assert_entry_exists(data, name, 'loaded persistence group')
     normalized_data.groups[name] = group_name
@@ -112,7 +117,7 @@ function M.normalize_loaded_data(data)
 
   local normalized_by_name = {}
   for name, entry in pairs(data.entries) do
-    assert_non_empty_string(name, 'loaded persistence highlight name')
+    assert_highlight_name(name, 'loaded persistence highlight name')
     local group_name = assert_group_exists(data, name, 'loaded persistence entry')
     assert_section_contains(data, section_keys, group_name, name)
     local normalized, err = M.normalize_entry(name, entry)
@@ -128,7 +133,7 @@ function M.normalize_loaded_data(data)
     entries = assert_table(entries, 'loaded persistence section entries')
     local section = {}
     for name, entry in pairs(entries) do
-      assert_non_empty_string(name, 'loaded persistence highlight name')
+      assert_highlight_name(name, 'loaded persistence highlight name')
       local group_name = assert_group_exists(data, name, 'loaded persistence section entry')
       if group_name ~= section_name then
         error(('loaded persistence section %s contains %s assigned to %s'):format(section_name, name, group_name), 3)

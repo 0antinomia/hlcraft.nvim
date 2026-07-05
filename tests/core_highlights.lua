@@ -49,6 +49,10 @@ local invalid_chain_name_ok = pcall(highlights.resolve_link_chain, nil)
 h.assert_true(not invalid_chain_name_ok, 'resolve_link_chain accepted missing name', scope)
 local empty_group_name_ok = pcall(highlights.get_group, '')
 h.assert_true(not empty_group_name_ok, 'get_group accepted empty name', scope)
+local spaced_group_name_ok = pcall(highlights.get_group, 'Bad Name')
+h.assert_true(not spaced_group_name_ok, 'get_group accepted whitespace in name', scope)
+local command_group_name_ok = pcall(highlights.resolve_link_chain, 'Bad|Name')
+h.assert_true(not command_group_name_ok, 'resolve_link_chain accepted command separators in name', scope)
 
 highlights.invalidate_cache()
 
