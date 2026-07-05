@@ -26,10 +26,14 @@ end
 
 local function preview_key()
   local lhs = config.config.preview_key
-  if lhs == false or lhs == nil or lhs == '' then
+  if lhs == false or lhs == nil then
     return nil
   end
   if type(lhs) ~= 'string' then
+    error('preview key must be a non-empty string or false', 3)
+  end
+  lhs = vim.trim(lhs)
+  if lhs == '' then
     error('preview key must be a non-empty string or false', 3)
   end
   return lhs

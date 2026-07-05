@@ -18,12 +18,20 @@ local function raw_dynamic_state(state)
   if raw_state ~= nil and type(raw_state) ~= 'table' then
     error('raw dynamic editor state must be a table', 3)
   end
+  if raw_state ~= nil then
+    if raw_state.buf ~= nil and type(raw_state.buf) ~= 'number' then
+      error('raw dynamic editor buffer handle must be a number or nil', 3)
+    end
+    if raw_state.win ~= nil and type(raw_state.win) ~= 'number' then
+      error('raw dynamic editor window handle must be a number or nil', 3)
+    end
+  end
   return raw_state
 end
 
 local function active_dynamic(result, field)
   if type(result) ~= 'table' or type(result.name) ~= 'string' or result.name == '' then
-    return nil
+    error('raw dynamic editor requires a highlight result', 3)
   end
   if type(field) ~= 'string' or field == '' then
     error('raw dynamic field must be a non-empty string', 3)
