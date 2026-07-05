@@ -1,5 +1,6 @@
 local line_model = require('hlcraft.ui.render.line_model')
 local numbers = require('hlcraft.core.number')
+local render_util = require('hlcraft.render.util')
 local theme = require('hlcraft.ui.theme')
 local window = require('hlcraft.ui.workspace.window')
 
@@ -153,9 +154,7 @@ end
 function M.apply_workbench_lines(instance, lines, start_line)
   local state = instance_state(instance)
   local buf = state.buf
-  if type(lines) ~= 'table' then
-    error('render lines must be a table', 2)
-  end
+  lines = render_util.string_list(lines, 'render lines', 2)
   start_line = start_line == nil and 1 or positive_integer(start_line, 'render start line')
   if not valid_buffer(buf) then
     return

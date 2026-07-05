@@ -67,6 +67,14 @@ local invalid_input_line_ok = pcall(render_buffer.new_input_field, 'name', 'name
 h.assert_true(not invalid_input_line_ok, 'input field helper accepted an invalid line', scope)
 local invalid_editor_row_lines_ok = pcall(editor_rows.append, false, { editor_rows = {} }, 'sample', 'Sample')
 h.assert_true(not invalid_editor_row_lines_ok, 'editor row helper accepted non-table lines', scope)
+local non_sequence_editor_row_lines_ok = pcall(
+  editor_rows.append,
+  { [2] = 'stale' },
+  { editor_rows = {} },
+  'sample',
+  'Sample'
+)
+h.assert_true(not non_sequence_editor_row_lines_ok, 'editor row helper accepted non-sequence lines', scope)
 local invalid_editor_row_geometry_ok = pcall(editor_rows.append, {}, {}, 'sample', 'Sample')
 h.assert_true(not invalid_editor_row_geometry_ok, 'editor row helper accepted missing row geometry', scope)
 local invalid_editor_row_key_ok = pcall(editor_rows.append, {}, { editor_rows = {} }, '', 'Sample')
@@ -127,6 +135,8 @@ h.with_temp_buf(function(buf)
   )
   local invalid_lines_ok = pcall(render_buffer.set_lines, render_instance, { 'ok', false })
   h.assert_true(not invalid_lines_ok, 'render buffer accepted non-string lines', scope)
+  local non_sequence_lines_ok = pcall(render_buffer.set_lines, render_instance, { [2] = 'late' })
+  h.assert_true(not non_sequence_lines_ok, 'render buffer accepted non-sequence lines', scope)
   local invalid_finish_ns_ok = pcall(render_buffer.finish, {
     state = {
       buf = buf,
@@ -243,6 +253,8 @@ local strict_truncate_text_ok = pcall(render_util.truncate, nil, 4)
 h.assert_true(not strict_truncate_text_ok, 'render truncate accepted nil text', scope)
 local strict_truncate_width_ok = pcall(render_util.truncate, 'abc', math.huge)
 h.assert_true(not strict_truncate_width_ok, 'render truncate accepted non-finite width', scope)
+local strict_string_list_ok = pcall(render_util.string_list, { [2] = 'late' }, 'test lines')
+h.assert_true(not strict_string_list_ok, 'render string list accepted non-sequence lines', scope)
 local strict_pad_text_ok = pcall(render_util.pad, 1, 4)
 h.assert_true(not strict_pad_text_ok, 'render pad accepted non-string text', scope)
 local strict_pad_width_ok = pcall(render_util.pad, 'abc', 1.5)

@@ -62,15 +62,7 @@ local function positive_integer(value, label)
 end
 
 local function string_list(lines, label)
-  if type(lines) ~= 'table' then
-    error(('%s must be a table'):format(label), 3)
-  end
-  for _, line in ipairs(lines) do
-    if type(line) ~= 'string' then
-      error(('%s entries must be strings'):format(label), 3)
-    end
-  end
-  return lines
+  return render_util.string_list(lines, label, 3)
 end
 
 local function geometry_table(geometry)

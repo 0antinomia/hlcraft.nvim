@@ -84,6 +84,13 @@ h.with_temp_bufs(2, function(workspace_buf, help_buf)
     },
   }, nil)
   h.assert_true(not invalid_lines_ok, 'workbench highlighter accepted non-table lines', scope)
+  local non_sequence_lines_ok = pcall(line_highlights.apply_workbench_lines, {
+    ns = ns,
+    state = {
+      buf = help_buf,
+    },
+  }, { [2] = '[q] close' })
+  h.assert_true(not non_sequence_lines_ok, 'workbench highlighter accepted non-sequence lines', scope)
   local invalid_start_line_ok = pcall(line_highlights.apply_workbench_lines, {
     ns = ns,
     state = {
