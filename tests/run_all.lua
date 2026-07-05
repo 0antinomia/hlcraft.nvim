@@ -16,6 +16,7 @@ local tests = {
   'tests/core_highlights.lua',
   'tests/core_source.lua',
   'tests/core_search.lua',
+  'tests/render_util.lua',
   'tests/dynamic_presets.lua',
   'tests/dynamic_model.lua',
   'tests/dynamic_effects.lua',
