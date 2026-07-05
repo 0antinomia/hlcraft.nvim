@@ -136,13 +136,13 @@ end
 function M.refresh(instance, name, reopen_detail)
   local state = instance_state(instance)
   local field_editor = field_editor_state(state)
-  local results = result_list(state)
   name = assert_name(name)
   reopen_detail = optional_boolean(reopen_detail, 'detail reopen flag')
   assert_rerender(instance)
 
   local active_field = field_editor.field
   instance:rerender()
+  local results = result_list(state)
   for index, result in ipairs(results) do
     if result.name == name then
       state.list_cursor = index
