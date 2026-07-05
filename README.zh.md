@@ -181,7 +181,7 @@ dynamic = {
 
 - 在颜色编辑器中按 `d`，为当前 `FG`、`BG` 或 `SP` 通道切换动态模式。
 - 按 `m` 循环切换 preset：`pulse`、`breath`、`hue`、`gradient`、`blink`、`duotone`。
-- 按 `+` / `-` 调整动态动画时长。
+- 按 `+` / `-` 调整动态动画时长；当选中 phase 行时调整 phase。
 - 按 `e` 打开当前动态通道的原始 JSON 编辑器。
 - 在详情页按 `s` 保存，保存流程和静态颜色 override 一致。
 
