@@ -36,6 +36,8 @@ local invalid_data_decode_ok = pcall(codec.decode_lines, {}, {
 h.assert_true(not invalid_data_decode_ok, 'codec decode accepted incomplete data container', scope)
 local numeric_load_ok = pcall(codec.load_file, 1)
 h.assert_true(not numeric_load_ok, 'codec load_file accepted a non-string path', scope)
+local empty_load_ok = pcall(codec.load_file, '   ')
+h.assert_true(not empty_load_ok, 'codec load_file accepted an empty path', scope)
 local invalid_data_load_ok = pcall(codec.load_file, 'missing.toml', false)
 h.assert_true(not invalid_data_load_ok, 'codec load_file accepted invalid data container', scope)
 local missing_file_data = codec.load_file('missing.toml')

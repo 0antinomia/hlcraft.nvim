@@ -15,6 +15,16 @@ local function assert_string(value, label)
   return value
 end
 
+local function assert_path(value, label)
+  if type(value) ~= 'string' then
+    error(('%s must be a string'):format(label), 3)
+  end
+  if vim.trim(value) == '' then
+    error(('%s must be a non-empty string'):format(label), 3)
+  end
+  return value
+end
+
 local function assert_lines(value)
   value = tables.assert_sequence(value, 'TOML lines', 3)
   for index, line in ipairs(value) do
@@ -95,7 +105,7 @@ function M.decode_lines(lines, data)
 end
 
 function M.load_file(target, data)
-  target = assert_string(target, 'TOML file path')
+  target = assert_path(target, 'TOML file path')
   data = assert_data(data)
   local file = io.open(target, 'r')
   if not file then

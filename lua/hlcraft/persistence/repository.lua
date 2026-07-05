@@ -14,8 +14,8 @@ local function optional_path(path)
   if path == nil then
     return storage_dir()
   end
-  if type(path) ~= 'string' then
-    error('Persistence path must be a string', 3)
+  if type(path) ~= 'string' or vim.trim(path) == '' then
+    error('Persistence path must be a non-empty string', 3)
   end
   return path
 end
