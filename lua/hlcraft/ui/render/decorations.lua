@@ -9,11 +9,117 @@ local theme = require('hlcraft.ui.theme')
 
 local M = {}
 
+local function instance_state(instance)
+  if type(instance) ~= 'table' or type(instance.state) ~= 'table' then
+    error('render decorations require an instance', 3)
+  end
+  return instance.state
+end
+
+local function instance_namespace(instance)
+  if type(instance.ns) ~= 'number' then
+    error('render decoration namespace must be a number', 3)
+  end
+  if not numbers.is_finite(instance.ns) or math.floor(instance.ns) ~= instance.ns or instance.ns < 0 then
+    error('render decoration namespace must be a non-negative finite integer', 3)
+  end
+  return instance.ns
+end
+
+local function instance_id(instance)
+  if type(instance.id) ~= 'string' or instance.id == '' then
+    error('render decoration instance id must be a non-empty string', 3)
+  end
+  return instance.id
+end
+
+local function input_label_hl(instance)
+  if type(instance.input_label_hl) ~= 'string' or instance.input_label_hl == '' then
+    error('input label highlight must be a non-empty string', 3)
+  end
+  return instance.input_label_hl
+end
+
+local function input_marks(state)
+  if type(state.input_marks) ~= 'table' then
+    error('render decoration input marks must be a table', 3)
+  end
+  return state.input_marks
+end
+
+local function valid_buffer(buf)
+  return type(buf) == 'number' and window.is_valid_buf(buf)
+end
+
+local function positive_integer(value, label)
+  if type(value) ~= 'number' then
+    error(('%s must be a number'):format(label), 3)
+  end
+  if not numbers.is_finite(value) or math.floor(value) ~= value or value < 1 then
+    error(('%s must be a positive finite integer'):format(label), 3)
+  end
+  return value
+end
+
+local function non_negative_integer(value, label)
+  if type(value) ~= 'number' then
+    error(('%s must be a number'):format(label), 3)
+  end
+  if not numbers.is_finite(value) or math.floor(value) ~= value or value < 0 then
+    error(('%s must be a non-negative finite integer'):format(label), 3)
+  end
+  return value
+end
+
+local function non_empty_string(value, label)
+  if type(value) ~= 'string' or value == '' then
+    error(('%s must be a non-empty string'):format(label), 3)
+  end
+  return value
+end
+
+local function optional_string(value, label)
+  if value ~= nil and type(value) ~= 'string' then
+    error(('%s must be a string or nil'):format(label), 3)
+  end
+  return value
+end
+
+local function optional_boolean(value, label)
+  if value ~= nil and type(value) ~= 'boolean' then
+    error(('%s must be boolean or nil'):format(label), 3)
+  end
+  return value == true
+end
+
+local function field_line(field)
+  if type(field) ~= 'table' then
+    error('input header field must be a table', 3)
+  end
+  return positive_integer(field.line, 'input header field line')
+end
+
+local function optional_virt_lines(lines)
+  if lines == nil then
+    return nil
+  end
+  if type(lines) ~= 'table' then
+    error('input header virtual lines must be a table or nil', 3)
+  end
+  for _, line in ipairs(lines) do
+    if type(line) ~= 'table' then
+      error('input header virtual line must be a table', 3)
+    end
+  end
+  return lines
+end
+
 --- Build virtual lines with detail info (name, colors, source, links, file) for a highlight group
 --- @param instance table The Instance object holding UI state
 --- @param result table Highlight group result from search
 --- @return table[] Virtual lines for extmark display
 function M.detail_info_virt_lines(instance, result)
+  instance_state(instance)
   local win = window.get_win(instance)
   local width = window.is_valid_win(win) and math.max(50, vim.api.nvim_win_get_width(win) - 1) or 50
   return ui_detail.build_virt_lines(result, function(bg, suffix)
@@ -60,6 +166,14 @@ local function optional_opts(opts, label)
   return opts
 end
 
+local function detail_row(row)
+  if type(row) ~= 'table' then
+    error('detail menu row must be a table', 3)
+  end
+  row.line = positive_integer(row.line, 'detail menu row line')
+  return row
+end
+
 --- Set the virtual text header (label and optional extra text) above an input field
 --- @param instance table The Instance object holding UI state
 --- @param field table Field descriptor with a `line` key
@@ -67,7 +181,18 @@ end
 --- @param opts table|nil Options: top_virt_lines (table[]), extra (string)
 --- @return nil
 function M.set_input_header(instance, field, label, opts)
+  local state = instance_state(instance)
   opts = optional_opts(opts, 'input header options')
+  local line = field_line(field)
+  label = non_empty_string(label, 'input header label')
+  optional_virt_lines(opts.top_virt_lines)
+  local extra = optional_string(opts.extra, 'input header extra')
+  local marks = input_marks(state)
+  local ns = instance_namespace(instance)
+  if not valid_buffer(state.buf) then
+    return
+  end
+
   local virt_lines = {}
   if opts.top_virt_lines then
     for _, line in ipairs(opts.top_virt_lines) do
@@ -75,15 +200,15 @@ function M.set_input_header(instance, field, label, opts)
     end
   end
 
-  local header = { { label, instance.input_label_hl } }
-  if opts.extra and opts.extra ~= '' then
-    header[#header + 1] = { '  ' .. opts.extra, theme.groups.muted }
+  local header = { { label, input_label_hl(instance) } }
+  if extra and extra ~= '' then
+    header[#header + 1] = { '  ' .. extra, theme.groups.muted }
   end
   virt_lines[#virt_lines + 1] = header
 
-  local key = label .. ':' .. field.line
-  instance.state.input_marks[key] = vim.api.nvim_buf_set_extmark(instance.state.buf, instance.ns, field.line - 1, 0, {
-    id = instance.state.input_marks[key],
+  local key = label .. ':' .. line
+  marks[key] = vim.api.nvim_buf_set_extmark(state.buf, ns, line - 1, 0, {
+    id = marks[key],
     virt_lines = virt_lines,
     virt_lines_leftcol = true,
     virt_lines_above = true,
@@ -97,53 +222,80 @@ end
 --- @param width integer Display width for the separator
 --- @return nil
 function M.set_results_header(instance, row1, width)
+  local state = instance_state(instance)
+  local marks = input_marks(state)
+  local ns = instance_namespace(instance)
+  row1 = positive_integer(row1, 'results header row')
+  width = positive_integer(width, 'results header width')
+  if not valid_buffer(state.buf) then
+    return
+  end
+
   local separator = string.rep('─', math.max(20, width))
-  instance.state.input_marks.results_header =
-    vim.api.nvim_buf_set_extmark(instance.state.buf, instance.ns, row1 - 1, 0, {
-      id = instance.state.input_marks.results_header,
-      virt_lines = {
-        { { separator, theme.groups.rule } },
-      },
-      virt_lines_leftcol = true,
-      virt_lines_above = true,
-      right_gravity = false,
-    })
+  marks.results_header = vim.api.nvim_buf_set_extmark(state.buf, ns, row1 - 1, 0, {
+    id = marks.results_header,
+    virt_lines = {
+      { { separator, theme.groups.rule } },
+    },
+    virt_lines_leftcol = true,
+    virt_lines_above = true,
+    right_gravity = false,
+  })
 end
 
 function M.set_detail_menu_header(instance, row1, result)
+  local state = instance_state(instance)
+  local marks = input_marks(state)
+  local ns = instance_namespace(instance)
+  row1 = positive_integer(row1, 'detail menu header row')
   local detail_virt_lines = select(1, M.detail_info_virt_lines(instance, result))
-  instance.state.input_marks.detail_menu_header =
-    vim.api.nvim_buf_set_extmark(instance.state.buf, instance.ns, row1 - 1, 0, {
-      id = instance.state.input_marks.detail_menu_header,
-      virt_lines = detail_virt_lines,
-      virt_lines_leftcol = true,
-      virt_lines_above = true,
-      right_gravity = false,
-    })
+  if not valid_buffer(state.buf) then
+    return
+  end
+
+  marks.detail_menu_header = vim.api.nvim_buf_set_extmark(state.buf, ns, row1 - 1, 0, {
+    id = marks.detail_menu_header,
+    virt_lines = detail_virt_lines,
+    virt_lines_leftcol = true,
+    virt_lines_above = true,
+    right_gravity = false,
+  })
 end
 
-local function add_row_highlight(instance, buf, line_idx, line_len, hl, start_col, end_col)
-  if start_col and start_col < line_len then
-    vim.api.nvim_buf_add_highlight(buf, instance.ns, hl, line_idx, start_col, math.min(end_col or line_len, line_len))
+local function add_row_highlight(ns, buf, line_idx, line_len, hl, start_col, end_col)
+  line_idx = non_negative_integer(line_idx, 'detail menu highlight line')
+  if start_col == nil then
+    return
+  end
+  start_col = non_negative_integer(start_col, 'detail menu highlight start column')
+  if start_col < line_len then
+    if end_col ~= nil then
+      end_col = non_negative_integer(end_col, 'detail menu highlight end column')
+    end
+    vim.api.nvim_buf_add_highlight(buf, ns, hl, line_idx, start_col, math.min(end_col or line_len, line_len))
   end
 end
 
 function M.apply_detail_menu_highlights(instance, detail_menu, dirty)
-  local buf = instance.state.buf
-  if not window.is_valid_buf(buf) then
+  local state = instance_state(instance)
+  local ns = instance_namespace(instance)
+  dirty = optional_boolean(dirty, 'detail dirty flag')
+  local buf = state.buf
+  if not valid_buffer(buf) then
     return
   end
 
   for _, row in pairs(assert_detail_menu(detail_menu)) do
+    row = detail_row(row)
     local line_idx = row.line - 1
     local line = buffer_lines.line(buf, line_idx, 'detail menu geometry')
     local line_len = #line
 
     if dirty and line_len > 0 then
-      vim.api.nvim_buf_add_highlight(buf, instance.ns, theme.groups.dirty, line_idx, 0, 1)
+      vim.api.nvim_buf_add_highlight(buf, ns, theme.groups.dirty, line_idx, 0, 1)
     end
-    add_row_highlight(instance, buf, line_idx, line_len, theme.groups.section, row.label_start_col, row.label_end_col)
-    add_row_highlight(instance, buf, line_idx, line_len, theme.groups.value, row.value_col, nil)
+    add_row_highlight(ns, buf, line_idx, line_len, theme.groups.section, row.label_start_col, row.label_end_col)
+    add_row_highlight(ns, buf, line_idx, line_len, theme.groups.value, row.value_col, nil)
   end
 end
 
@@ -157,16 +309,28 @@ end
 --- @param suffix string Color key suffix ('fg', 'bg', 'sp')
 --- @return nil
 function M.apply_color_cell(instance, buf, line_idx, start_col, text, bg, suffix)
-  if not bg or bg == 'NONE' then
+  instance_state(instance)
+  local ns = instance_namespace(instance)
+  local id = instance_id(instance)
+  if not valid_buffer(buf) then
+    error('color cell target buffer must be valid', 3)
+  end
+  line_idx = non_negative_integer(line_idx, 'color cell line')
+  start_col = non_negative_integer(start_col, 'color cell start column')
+  text = non_empty_string(text, 'color cell text')
+  suffix = non_empty_string(suffix, 'color cell suffix')
+  if bg == nil or bg == 'NONE' then
     return
   end
-  local hl_name = ('hlcraft_ui_%s_%s_%d_%d'):format(instance.id, suffix, line_idx, start_col)
-  vim.api.nvim_set_hl(instance.ns, hl_name, {
+  bg = non_empty_string(bg, 'color cell background')
+
+  local hl_name = ('hlcraft_ui_%s_%s_%d_%d'):format(id, suffix, line_idx, start_col)
+  vim.api.nvim_set_hl(ns, hl_name, {
     bg = bg,
     fg = color.contrast_fg(bg),
     bold = true,
   })
-  vim.api.nvim_buf_add_highlight(buf, instance.ns, hl_name, line_idx, start_col, start_col + #text)
+  vim.api.nvim_buf_add_highlight(buf, ns, hl_name, line_idx, start_col, start_col + #text)
 end
 
 --- Create or retrieve a highlight group for a detail view color swatch
@@ -175,11 +339,17 @@ end
 --- @param suffix string Color key suffix ('fg', 'bg', 'sp')
 --- @return string Highlight group name
 function M.detail_color_hl(instance, bg, suffix)
-  if not bg or bg == 'NONE' then
+  suffix = non_empty_string(suffix, 'detail color suffix')
+  if bg == nil or bg == 'NONE' then
     return theme.groups.muted
   end
-  local hl_name = ('hlcraft_ui_%s_detail_%s_%s'):format(instance.id, suffix, bg:gsub('#', ''))
-  vim.api.nvim_set_hl(instance.ns, hl_name, {
+  instance_state(instance)
+  local ns = instance_namespace(instance)
+  local id = instance_id(instance)
+  bg = non_empty_string(bg, 'detail color background')
+
+  local hl_name = ('hlcraft_ui_%s_detail_%s_%s'):format(id, suffix, bg:gsub('#', ''))
+  vim.api.nvim_set_hl(ns, hl_name, {
     bg = bg,
     fg = color.contrast_fg(bg),
     bold = true,
