@@ -3,7 +3,25 @@ local M = {}
 local handles = require('hlcraft.ui.handles')
 local help_model = require('hlcraft.ui.help_model')
 local line_highlights = require('hlcraft.ui.render.line_highlights')
+local numbers = require('hlcraft.core.number')
 local theme = require('hlcraft.ui.theme')
+
+local function instance_state(instance)
+  if type(instance) ~= 'table' or type(instance.state) ~= 'table' then
+    error('help window requires an instance', 3)
+  end
+  return instance.state
+end
+
+local function instance_namespace(instance)
+  if type(instance.ns) ~= 'number' then
+    error('help window namespace must be a number', 3)
+  end
+  if not numbers.is_finite(instance.ns) or math.floor(instance.ns) ~= instance.ns or instance.ns < 0 then
+    error('help window namespace must be a non-negative finite integer', 3)
+  end
+  return instance.ns
+end
 
 local function refresh_buffer(buf)
   vim.bo[buf].modifiable = true
@@ -16,13 +34,14 @@ function M.lines()
 end
 
 function M.ensure_buffer(instance)
-  if handles.is_valid_buf(instance.state.help_buf) then
-    refresh_buffer(instance.state.help_buf)
-    return instance.state.help_buf
+  local state = instance_state(instance)
+  if handles.is_valid_buf(state.help_buf) then
+    refresh_buffer(state.help_buf)
+    return state.help_buf
   end
 
   local buf = vim.api.nvim_create_buf(false, true)
-  instance.state.help_buf = buf
+  state.help_buf = buf
   vim.bo[buf].bufhidden = 'wipe'
   vim.bo[buf].buftype = 'nofile'
   vim.bo[buf].swapfile = false
@@ -38,29 +57,33 @@ function M.ensure_buffer(instance)
 end
 
 function M.is_open(instance)
-  return handles.is_valid_win(instance.state.help_win)
+  return handles.is_valid_win(instance_state(instance).help_win)
 end
 
 function M.close(instance)
-  if handles.is_valid_win(instance.state.help_win) then
-    pcall(vim.api.nvim_win_close, instance.state.help_win, true)
+  local state = instance_state(instance)
+  if handles.is_valid_win(state.help_win) then
+    pcall(vim.api.nvim_win_close, state.help_win, true)
   end
-  instance.state.help_win = nil
+  state.help_win = nil
 end
 
 function M.delete_buffer(instance)
-  if handles.is_valid_buf(instance.state.help_buf) then
-    pcall(vim.api.nvim_buf_delete, instance.state.help_buf, { force = true })
+  local state = instance_state(instance)
+  if handles.is_valid_buf(state.help_buf) then
+    pcall(vim.api.nvim_buf_delete, state.help_buf, { force = true })
   end
-  instance.state.help_buf = nil
+  state.help_buf = nil
 end
 
 function M.toggle(instance)
+  local state = instance_state(instance)
   if M.is_open(instance) then
     M.close(instance)
     return
   end
 
+  local ns = instance_namespace(instance)
   local buf = M.ensure_buffer(instance)
   local line_count = vim.api.nvim_buf_line_count(buf)
   local max_height = math.max(1, vim.o.lines - 4)
@@ -70,7 +93,7 @@ function M.toggle(instance)
     max_line_width = math.max(max_line_width, vim.fn.strdisplaywidth(line))
   end
   local width = math.min(math.max(38, max_line_width + 2), math.max(1, vim.o.columns - 4))
-  instance.state.help_win = vim.api.nvim_open_win(buf, true, {
+  state.help_win = vim.api.nvim_open_win(buf, true, {
     relative = 'editor',
     style = 'minimal',
     border = 'rounded',
@@ -81,22 +104,22 @@ function M.toggle(instance)
     zindex = 80,
   })
 
-  vim.wo[instance.state.help_win].wrap = false
-  vim.wo[instance.state.help_win].cursorline = false
-  vim.wo[instance.state.help_win].number = false
-  vim.wo[instance.state.help_win].relativenumber = false
-  theme.apply(instance.ns)
-  vim.api.nvim_win_set_hl_ns(instance.state.help_win, instance.ns)
-  vim.api.nvim_buf_clear_namespace(instance.state.help_buf, instance.ns, 0, -1)
-  vim.api.nvim_buf_add_highlight(instance.state.help_buf, instance.ns, theme.groups.title, 0, 0, -1)
-  local line_count = vim.api.nvim_buf_line_count(instance.state.help_buf)
+  vim.wo[state.help_win].wrap = false
+  vim.wo[state.help_win].cursorline = false
+  vim.wo[state.help_win].number = false
+  vim.wo[state.help_win].relativenumber = false
+  theme.apply(ns)
+  vim.api.nvim_win_set_hl_ns(state.help_win, ns)
+  vim.api.nvim_buf_clear_namespace(state.help_buf, ns, 0, -1)
+  vim.api.nvim_buf_add_highlight(state.help_buf, ns, theme.groups.title, 0, 0, -1)
+  local line_count = vim.api.nvim_buf_line_count(state.help_buf)
   for line_nr = 2, line_count - 1 do
-    local line = vim.api.nvim_buf_get_lines(instance.state.help_buf, line_nr, line_nr + 1, false)[1]
+    local line = vim.api.nvim_buf_get_lines(state.help_buf, line_nr, line_nr + 1, false)[1]
     if line and line ~= '' then
       if help_model.is_item_line(line) then
-        line_highlights.apply_hint_line(instance, line_nr, line, { buf = instance.state.help_buf })
+        line_highlights.apply_hint_line(instance, line_nr, line, { buf = state.help_buf })
       else
-        vim.api.nvim_buf_add_highlight(instance.state.help_buf, instance.ns, theme.groups.section, line_nr, 0, -1)
+        vim.api.nvim_buf_add_highlight(state.help_buf, ns, theme.groups.section, line_nr, 0, -1)
       end
     end
   end
