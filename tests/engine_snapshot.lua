@@ -54,6 +54,24 @@ with_group_state(function()
   h.assert_true(not bad_persisted_ok, 'snapshot accepted numeric persisted group', scope)
 end)
 
+with_group_state(function()
+  store.data.persisted_groups = {
+    Persisted = ' shared ',
+  }
+  store.data.draft_groups = {
+    Draft = 'draft',
+    Same = 'shared',
+  }
+
+  local known = snapshot.known_groups()
+  h.assert_equal(known[1], 'draft', 'known groups did not include normalized draft group', scope)
+  h.assert_equal(known[2], 'shared', 'known groups did not normalize and deduplicate groups', scope)
+
+  store.data.draft_groups.BadKnown = false
+  local invalid_known_ok = pcall(snapshot.known_groups)
+  h.assert_true(not invalid_known_ok, 'snapshot known groups accepted invalid draft group', scope)
+end)
+
 local dynamic_spec = {
   version = 1,
   preset = 'pulse',
