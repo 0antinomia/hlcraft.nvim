@@ -3,6 +3,7 @@ local M = {}
 local buffer_fields = require('hlcraft.ui.input.buffer_fields')
 local core_fields = require('hlcraft.core.fields')
 local input_sequence = require('hlcraft.ui.input.sequence')
+local numbers = require('hlcraft.core.number')
 local theme = require('hlcraft.ui.theme')
 local ui_fields = require('hlcraft.ui.fields')
 local window = require('hlcraft.ui.workspace.window')
@@ -11,30 +12,87 @@ local function get_detail_scene()
   return require('hlcraft.ui.scene.detail')
 end
 
-local function geometry_inputs(instance)
-  local inputs = instance.state.geometry.inputs
+local function instance_state(instance)
+  if type(instance) ~= 'table' or type(instance.state) ~= 'table' then
+    error('placeholder renderer requires an instance', 3)
+  end
+  return instance.state
+end
+
+local function instance_namespace(instance)
+  if type(instance.ns) ~= 'number' then
+    error('placeholder namespace must be a number', 3)
+  end
+  if not numbers.is_finite(instance.ns) or math.floor(instance.ns) ~= instance.ns or instance.ns < 0 then
+    error('placeholder namespace must be a non-negative finite integer', 3)
+  end
+  return instance.ns
+end
+
+local function placeholder_marks(state)
+  if type(state.placeholder_marks) ~= 'table' then
+    error('placeholder marks must be a table', 3)
+  end
+  return state.placeholder_marks
+end
+
+local function geometry_inputs(state)
+  if type(state.geometry) ~= 'table' then
+    error('placeholder geometry must be a table', 3)
+  end
+  local inputs = state.geometry.inputs
   if type(inputs) ~= 'table' then
     error('placeholder geometry inputs must be a table', 3)
   end
   return inputs
 end
 
-local function set_overlay(instance, buf, key, row0, text, hl)
-  instance.state.placeholder_marks[key] = vim.api.nvim_buf_set_extmark(buf, instance.ns, row0, 0, {
-    id = instance.state.placeholder_marks[key],
+local function positive_integer(value, label)
+  if type(value) ~= 'number' then
+    error(('%s must be a number'):format(label), 3)
+  end
+  if not numbers.is_finite(value) or math.floor(value) ~= value or value < 1 then
+    error(('%s must be a positive finite integer'):format(label), 3)
+  end
+  return value
+end
+
+local function detail_active(state)
+  local index = state.detail_index
+  if index == nil then
+    return false
+  end
+  if type(index) ~= 'number' then
+    error('placeholder detail index must be a number or nil', 3)
+  end
+  if not numbers.is_finite(index) or math.floor(index) ~= index or index < 1 then
+    error('placeholder detail index must be a positive finite integer or nil', 3)
+  end
+  return true
+end
+
+local function valid_buffer(state)
+  return type(state.buf) == 'number' and window.is_valid_buf(state.buf)
+end
+
+local function set_overlay(state, ns, buf, key, row0, text, hl)
+  local marks = placeholder_marks(state)
+  marks[key] = vim.api.nvim_buf_set_extmark(buf, ns, row0, 0, {
+    id = marks[key],
     virt_text = { { text, hl } },
     virt_text_pos = 'overlay',
     right_gravity = false,
   })
 end
 
-local function clear_overlay(instance, key)
-  local mark_id = instance.state.placeholder_marks[key]
-  if not mark_id or not window.is_valid_buf(instance.state.buf) then
+local function clear_overlay(state, ns, key)
+  local marks = placeholder_marks(state)
+  local mark_id = marks[key]
+  if not mark_id or not valid_buffer(state) then
     return
   end
-  pcall(vim.api.nvim_buf_del_extmark, instance.state.buf, instance.ns, mark_id)
-  instance.state.placeholder_marks[key] = nil
+  pcall(vim.api.nvim_buf_del_extmark, state.buf, ns, mark_id)
+  marks[key] = nil
 end
 
 local function detail_values(result)
@@ -55,7 +113,7 @@ local function detail_values(result)
   return values
 end
 
-local function text_for_field(instance, field)
+local function text_for_field(instance, state, field)
   local name = input_sequence.name(field)
   if name == 'name' then
     return ui_fields.search_placeholders.name
@@ -63,7 +121,7 @@ local function text_for_field(instance, field)
   if name == 'color' then
     return ui_fields.search_placeholders.color
   end
-  if not instance.state.detail_index then
+  if not detail_active(state) then
     return nil
   end
 
@@ -75,18 +133,22 @@ local function text_for_field(instance, field)
 end
 
 function M.refresh(instance)
-  if not window.is_valid_buf(instance.state.buf) then
+  local state = instance_state(instance)
+  if not valid_buffer(state) then
     return
   end
 
-  for _, field in ipairs(geometry_inputs(instance)) do
+  local ns = instance_namespace(instance)
+  placeholder_marks(state)
+  for _, field in ipairs(geometry_inputs(state)) do
     local key = input_sequence.name(field)
-    local text = text_for_field(instance, field)
+    local line = positive_integer(field.line, 'placeholder field line')
+    local text = text_for_field(instance, state, field)
     local value = buffer_fields.field_line_text(instance, field)
     if value == '' and text and text ~= '' then
-      set_overlay(instance, instance.state.buf, key, field.line - 1, tostring(text), theme.groups.muted)
+      set_overlay(state, ns, state.buf, key, line - 1, tostring(text), theme.groups.muted)
     else
-      clear_overlay(instance, key)
+      clear_overlay(state, ns, key)
     end
   end
 end
