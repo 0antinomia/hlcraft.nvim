@@ -32,6 +32,19 @@ function M.assert_equal(actual, expected, message, scope)
   end
 end
 
+function M.assert_fails(fn, message, scope)
+  if type(fn) ~= 'function' then
+    M.fail(scope, 'assert_fails target must be a function')
+  end
+  M.assert_true(not pcall(fn), message, scope)
+end
+
+function M.scoped_assert_fails(scope)
+  return function(fn, message)
+    M.assert_fails(fn, message, scope)
+  end
+end
+
 function M.assert_file_exists(path, message, scope)
   M.assert_true(path ~= nil and vim.uv.fs_stat(path) ~= nil, message, scope)
 end

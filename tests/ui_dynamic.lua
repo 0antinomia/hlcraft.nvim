@@ -27,9 +27,7 @@ local instance = {
 }
 local result = { name = 'HlcraftUiDynamicNormal' }
 
-local function assert_fails(fn, message)
-  h.assert_true(not pcall(fn), message, scope)
-end
+local assert_fails = h.scoped_assert_fails(scope)
 
 local toggle_ok, toggle_err = editor.toggle(instance, result, 'fg')
 h.assert_true(toggle_ok, toggle_err or 'toggle dynamic failed', scope)

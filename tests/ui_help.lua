@@ -4,9 +4,7 @@ local scope = 'hlcraft ui help'
 local help = require('hlcraft.ui.help')
 local handles = require('hlcraft.ui.handles')
 
-local function assert_fails(fn, message)
-  h.assert_true(not pcall(fn), message, scope)
-end
+local assert_fails = h.scoped_assert_fails(scope)
 
 local instance = {
   ns = vim.api.nvim_create_namespace('hlcraft-ui-help-test'),

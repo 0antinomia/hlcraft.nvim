@@ -8,9 +8,7 @@ local ui_state = require('hlcraft.ui.state')
 local lhs = '<Plug>(HlcraftPreviewTest)'
 pcall(vim.keymap.del, 'n', lhs)
 
-local function assert_fails(fn, message)
-  h.assert_true(not pcall(fn), message, scope)
-end
+local assert_fails = h.scoped_assert_fails(scope)
 
 local ok, err = xpcall(function()
   assert_fails(function()
