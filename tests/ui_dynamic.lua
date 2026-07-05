@@ -232,6 +232,35 @@ h.assert_true(vim.api.nvim_buf_is_valid(preserved_raw_buf), 'failed raw dynamic 
 h.assert_equal(instance.state.raw_dynamic.win, preserved_raw_win, 'failed raw dynamic open changed raw state', scope)
 raw_dynamic.close(instance)
 
+local original_columns = vim.o.columns
+local original_lines = vim.o.lines
+local tiny_raw_instance = {
+  state = {},
+}
+local tiny_raw_ok, tiny_raw_err = xpcall(function()
+  vim.o.columns = 30
+  vim.o.lines = 10
+  local open_ok, open_err = raw_dynamic.open(tiny_raw_instance, result, 'fg')
+  h.assert_true(open_ok, open_err or 'tiny raw dynamic editor did not open', scope)
+  local raw_state = tiny_raw_instance.state.raw_dynamic
+  h.assert_true(
+    vim.api.nvim_win_get_width(raw_state.win) <= vim.o.columns - 2,
+    'tiny raw dynamic editor exceeded available width',
+    scope
+  )
+  h.assert_true(
+    vim.api.nvim_win_get_height(raw_state.win) <= math.max(1, vim.o.lines - 4),
+    'tiny raw dynamic editor exceeded available height',
+    scope
+  )
+end, debug.traceback)
+raw_dynamic.close(tiny_raw_instance)
+vim.o.columns = original_columns
+vim.o.lines = original_lines
+if not tiny_raw_ok then
+  error(tiny_raw_err, 0)
+end
+
 h.with_temp_buf(function(render_buf)
   local render_instance = {
     ns = vim.api.nvim_create_namespace('hlcraft-ui-dynamic-render-test'),

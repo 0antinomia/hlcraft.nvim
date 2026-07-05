@@ -40,6 +40,20 @@ local function buffer_text(buf)
   return table.concat(vim.api.nvim_buf_get_lines(buf, 0, -1, false), '\n')
 end
 
+local function popup_geometry(line_count)
+  local columns = math.max(1, vim.o.columns)
+  local lines = math.max(1, vim.o.lines)
+  local max_width = math.max(1, columns - 2)
+  local max_height = math.max(1, lines - 4)
+  local desired_width = math.max(48, math.min(96, math.floor(columns * 0.7)))
+  local desired_height = math.max(8, math.min(28, line_count + 2))
+  local width = math.min(max_width, desired_width)
+  local height = math.min(max_height, desired_height)
+  local row = math.max(0, math.floor((lines - height - 2) / 2))
+  local col = math.max(0, math.floor((columns - width - 2) / 2))
+  return width, height, row, col
+end
+
 local function clear_state(instance, buf, win)
   local state = instance_state(instance)
   local raw_state = raw_dynamic_state(state)
@@ -90,10 +104,7 @@ function M.open(instance, result, field)
 
   local text = json.format(dynamic)
   local lines = vim.split(text, '\n', { plain = true })
-  local width = math.max(48, math.min(96, math.floor(vim.o.columns * 0.7)))
-  local height = math.max(8, math.min(28, #lines + 2, vim.o.lines - 4))
-  local row = math.max(0, math.floor((vim.o.lines - height) / 2) - 1)
-  local col = math.max(0, math.floor((vim.o.columns - width) / 2))
+  local width, height, row, col = popup_geometry(#lines)
   local buf = vim.api.nvim_create_buf(false, true)
 
   vim.bo[buf].filetype = 'json'
