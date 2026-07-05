@@ -66,6 +66,27 @@ local tests = {
   'tests/overrides.lua',
 }
 
+local ignored_files = {
+  ['tests/helpers.lua'] = true,
+  ['tests/run_all.lua'] = true,
+}
+
+local function assert_all_tests_listed()
+  local listed = {}
+  for _, test_file in ipairs(tests) do
+    listed[test_file] = true
+  end
+
+  for _, path in ipairs(vim.fn.glob('tests/*.lua', false, true)) do
+    local test_file = vim.fn.fnamemodify(path, ':.')
+    if not ignored_files[test_file] and not listed[test_file] then
+      error(('tests/run_all.lua missing test file: %s'):format(test_file), 0)
+    end
+  end
+end
+
+assert_all_tests_listed()
+
 for _, test_file in ipairs(tests) do
   local ok, err = pcall(dofile, vim.fn.getcwd() .. '/' .. test_file)
   if not ok then
