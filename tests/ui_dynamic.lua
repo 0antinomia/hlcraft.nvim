@@ -169,12 +169,18 @@ h.assert_true(
 
 local missing_raw_instance_ok = pcall(raw_dynamic.close, nil)
 h.assert_true(not missing_raw_instance_ok, 'raw dynamic close accepted missing instance', scope)
+local missing_raw_open_instance_ok = pcall(raw_dynamic.open, nil, result, 'fg')
+h.assert_true(not missing_raw_open_instance_ok, 'raw dynamic open accepted missing instance', scope)
 local invalid_raw_state_ok = pcall(raw_dynamic.close, {
   state = {
     raw_dynamic = true,
   },
 })
 h.assert_true(not invalid_raw_state_ok, 'raw dynamic close accepted invalid state schema', scope)
+local invalid_raw_field_ok = pcall(raw_dynamic.open, {
+  state = {},
+}, result, false)
+h.assert_true(not invalid_raw_field_ok, 'raw dynamic open accepted invalid field', scope)
 
 h.with_temp_buf(function(render_buf)
   local render_instance = {

@@ -1,5 +1,6 @@
 local notify = require('hlcraft.notify')
 local line_highlights = require('hlcraft.ui.render.line_highlights')
+local numbers = require('hlcraft.core.number')
 local session = require('hlcraft.ui.session')
 local theme = require('hlcraft.ui.theme')
 local window = require('hlcraft.ui.workspace.window')
@@ -14,26 +15,58 @@ M.lines = {
   '[c/q/Esc] cancel',
 }
 
-local function prompt_state(instance)
-  if not instance or not instance.state then
+local function instance_state(instance)
+  if type(instance) ~= 'table' or type(instance.state) ~= 'table' then
     error('unsaved prompt requires an instance', 3)
   end
-  local prompt = instance.state.unsaved_prompt
+  return instance.state
+end
+
+local function prompt_state(state)
+  local prompt = state.unsaved_prompt
   if type(prompt) ~= 'table' then
     error('unsaved prompt state must be a table', 3)
   end
   return prompt
 end
 
+local function prompt_namespace(instance)
+  if instance.ns == nil then
+    return nil
+  end
+  if type(instance.ns) ~= 'number' then
+    error('unsaved prompt namespace must be a number', 3)
+  end
+  if not numbers.is_finite(instance.ns) or math.floor(instance.ns) ~= instance.ns or instance.ns < 0 then
+    error('unsaved prompt namespace must be a non-negative finite integer', 3)
+  end
+  return instance.ns
+end
+
+local function assert_name(name)
+  if type(name) ~= 'string' or name == '' then
+    error('unsaved prompt name must be a non-empty string', 3)
+  end
+  return name
+end
+
+local function assert_on_done(on_done)
+  if type(on_done) ~= 'function' then
+    error('unsaved prompt completion callback must be a function', 3)
+  end
+  return on_done
+end
+
 function M.close(instance)
-  local prompt = prompt_state(instance)
+  local state = instance_state(instance)
+  local prompt = prompt_state(state)
   if window.is_valid_win(prompt.win) then
     pcall(vim.api.nvim_win_close, prompt.win, true)
   end
   if window.is_valid_buf(prompt.buf) then
     pcall(vim.api.nvim_buf_delete, prompt.buf, { force = true })
   end
-  instance.state.unsaved_prompt = { win = nil, buf = nil }
+  state.unsaved_prompt = { win = nil, buf = nil }
 end
 
 local function create_buffer()
@@ -117,14 +150,21 @@ local function install_keymaps(instance, buf, name, on_done)
 end
 
 function M.open(instance, name, on_done)
+  local state = instance_state(instance)
+  prompt_state(state)
+  local ns = prompt_namespace(instance)
+  name = assert_name(name)
+  on_done = assert_on_done(on_done)
   M.close(instance)
 
   local buf = create_buffer()
   local win = open_window(buf)
 
-  instance.state.unsaved_prompt = { win = win, buf = buf }
+  state.unsaved_prompt = { win = win, buf = buf }
   apply_window_options(win)
-  apply_highlights(instance, buf, win)
+  if ns ~= nil then
+    apply_highlights(instance, buf, win)
+  end
   install_keymaps(instance, buf, name, on_done)
 end
 
