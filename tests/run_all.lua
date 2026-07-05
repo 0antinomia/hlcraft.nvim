@@ -38,6 +38,8 @@ local tests = {
   'tests/ui_input_actions.lua',
   'tests/ui_input_paste_plan.lua',
   'tests/ui_style_editor.lua',
+  'tests/ui_editor_rows.lua',
+  'tests/ui_editor_layout.lua',
   'tests/ui_hints.lua',
   'tests/ui_help.lua',
   'tests/ui_scene_rows.lua',

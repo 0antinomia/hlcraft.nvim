@@ -10,8 +10,6 @@ local detail_renderer = require('hlcraft.ui.render.detail')
 local dynamic_renderer = require('hlcraft.ui.render.editors.dynamic')
 local dynamic_model = require('hlcraft.dynamic.model')
 local engine = require('hlcraft.engine.service')
-local editor_layout = require('hlcraft.ui.render.editor_layout')
-local editor_rows = require('hlcraft.ui.render.editor_rows')
 local field_editor_renderer = require('hlcraft.ui.render.field_editor')
 local group_renderer = require('hlcraft.ui.render.editors.group')
 local list_renderer = require('hlcraft.ui.render.list')
@@ -49,13 +47,6 @@ local result = {
   sp = '#333333',
 }
 
-local editor_geometry = { editor_rows = {} }
-local editor_lines = {}
-local editor_row = editor_rows.append(editor_lines, editor_geometry, 'sample_row', 'Sample')
-h.assert_equal(editor_row.line, 1, 'editor row helper returned wrong line', scope)
-h.assert_equal(editor_row.key, 'sample_row', 'editor row helper returned wrong key', scope)
-h.assert_equal(editor_geometry.editor_rows.sample_row, editor_row, 'editor row helper did not register geometry', scope)
-h.assert_equal(editor_lines[1], 'Sample', 'editor row helper did not append line', scope)
 local invalid_input_extra_ok = pcall(render_buffer.new_input_field, 'name', 'name', 1, false)
 h.assert_true(not invalid_input_extra_ok, 'input field helper accepted non-table extra options', scope)
 local invalid_input_name_ok = pcall(render_buffer.new_input_field, '', 'name', 1)
@@ -64,30 +55,6 @@ local invalid_input_kind_ok = pcall(render_buffer.new_input_field, 'name', false
 h.assert_true(not invalid_input_kind_ok, 'input field helper accepted a non-string kind', scope)
 local invalid_input_line_ok = pcall(render_buffer.new_input_field, 'name', 'name', 0)
 h.assert_true(not invalid_input_line_ok, 'input field helper accepted an invalid line', scope)
-local invalid_editor_row_lines_ok = pcall(editor_rows.append, false, { editor_rows = {} }, 'sample', 'Sample')
-h.assert_true(not invalid_editor_row_lines_ok, 'editor row helper accepted non-table lines', scope)
-local non_sequence_editor_row_lines_ok = pcall(
-  editor_rows.append,
-  { [2] = 'stale' },
-  { editor_rows = {} },
-  'sample',
-  'Sample'
-)
-h.assert_true(not non_sequence_editor_row_lines_ok, 'editor row helper accepted non-sequence lines', scope)
-local invalid_editor_row_geometry_ok = pcall(editor_rows.append, {}, {}, 'sample', 'Sample')
-h.assert_true(not invalid_editor_row_geometry_ok, 'editor row helper accepted missing row geometry', scope)
-local invalid_editor_row_key_ok = pcall(editor_rows.append, {}, { editor_rows = {} }, '', 'Sample')
-h.assert_true(not invalid_editor_row_key_ok, 'editor row helper accepted empty key', scope)
-local invalid_editor_row_text_ok = pcall(editor_rows.append, {}, { editor_rows = {} }, 'sample', '')
-h.assert_true(not invalid_editor_row_text_ok, 'editor row helper accepted empty text', scope)
-local duplicate_editor_row_ok = pcall(editor_rows.append, {}, {
-  editor_rows = {
-    sample = {
-      line = 1,
-    },
-  },
-}, 'sample', 'Sample')
-h.assert_true(not duplicate_editor_row_ok, 'editor row helper accepted a duplicate key', scope)
 local missing_input_width_ok = pcall(render_buffer.append_input, {}, { inputs = {} }, 'name', 'name', 'value', {})
 h.assert_true(not missing_input_width_ok, 'input append helper accepted missing width', scope)
 local invalid_input_width_ok = pcall(render_buffer.append_input, {}, { inputs = {} }, 'name', 'name', 'value', {
@@ -287,16 +254,6 @@ h.with_temp_buf(function(buf)
   })
   h.assert_true(not invalid_search_color_ok, 'search renderer accepted invalid result color', scope)
 end, { current = true })
-local layout_lines = editor_layout.finish({ 'Current: abcdefghijklmnop' }, 12, { 'Action  [x] go' })
-h.assert_equal(layout_lines[2], '', 'editor layout did not separate hints from content', scope)
-h.assert_true(vim.fn.strdisplaywidth(layout_lines[1]) <= 12, 'editor layout did not truncate content lines', scope)
-h.assert_true(vim.fn.strdisplaywidth(layout_lines[3]) <= 12, 'editor layout did not truncate hint lines', scope)
-local invalid_layout_lines_ok = pcall(editor_layout.finish, false, 12, {})
-h.assert_true(not invalid_layout_lines_ok, 'editor layout accepted non-table lines', scope)
-local invalid_layout_width_ok = pcall(editor_layout.finish, {}, math.huge, {})
-h.assert_true(not invalid_layout_width_ok, 'editor layout accepted non-finite width', scope)
-local invalid_layout_hints_ok = pcall(editor_layout.finish, {}, 12, { false })
-h.assert_true(not invalid_layout_hints_ok, 'editor layout accepted non-string hint line', scope)
 local nil_find_line_ok = pcall(decorations.find_text_start, nil, 'x', 0)
 h.assert_true(not nil_find_line_ok, 'text finder accepted nil line', scope)
 local nil_find_text_ok = pcall(decorations.find_text_start, 'x', nil, 0)
