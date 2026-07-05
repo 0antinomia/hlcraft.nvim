@@ -26,6 +26,17 @@ local function result_list(state)
   return state.results
 end
 
+local function preview_key()
+  local lhs = config.config.preview_key
+  if lhs == false or lhs == nil or lhs == '' then
+    return nil
+  end
+  if type(lhs) ~= 'string' then
+    error('preview key must be a non-empty string or false', 3)
+  end
+  return lhs
+end
+
 local function snapshot_existing_keymap(lhs)
   local info = vim.fn.maparg(lhs, 'n', false, true)
   if type(info) ~= 'table' or vim.tbl_isempty(info) then
@@ -156,8 +167,8 @@ end
 --- @return nil
 function M.install_keymap(instance)
   local _, preview = preview_state(instance)
-  local lhs = config.config.preview_key
-  if lhs == false or lhs == nil or lhs == '' then
+  local lhs = preview_key()
+  if lhs == nil then
     return
   end
 
@@ -188,9 +199,6 @@ function M.uninstall_keymap(instance)
   end
   if type(map) ~= 'table' then
     error('preview keymap state must be a table', 2)
-  end
-  if not map.lhs then
-    return
   end
   if type(map.lhs) ~= 'string' or map.lhs == '' then
     error('preview keymap lhs must be a non-empty string', 2)
