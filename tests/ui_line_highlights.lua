@@ -53,6 +53,21 @@ h.with_temp_bufs(2, function(workspace_buf, help_buf)
     },
   }, 0, '[q] close', { buf = -1 })
   h.assert_true(not invalid_target_buf_ok, 'hint highlighter accepted invalid target buffer', scope)
+  local missing_instance_ok = pcall(line_highlights.apply_hint_line, nil, 0, '[q] close')
+  h.assert_true(not missing_instance_ok, 'hint highlighter accepted missing instance', scope)
+  local missing_namespace_ok = pcall(line_highlights.apply_hint_line, {
+    state = {
+      buf = help_buf,
+    },
+  }, 0, '[q] close')
+  h.assert_true(not missing_namespace_ok, 'hint highlighter accepted missing namespace', scope)
+  local invalid_line_index_ok = pcall(line_highlights.apply_hint_line, {
+    ns = ns,
+    state = {
+      buf = help_buf,
+    },
+  }, -1, '[q] close')
+  h.assert_true(not invalid_line_index_ok, 'hint highlighter accepted invalid line index', scope)
 
   local numeric_label_ok = pcall(line_highlights.apply_label_line, {
     ns = ns,
@@ -76,6 +91,8 @@ h.with_temp_bufs(2, function(workspace_buf, help_buf)
     },
   }, {}, 0)
   h.assert_true(not invalid_start_line_ok, 'workbench highlighter accepted invalid start line', scope)
+  local invalid_workspace_instance_ok = pcall(line_highlights.apply_workbench_lines, nil, {})
+  h.assert_true(not invalid_workspace_instance_ok, 'workbench highlighter accepted missing instance', scope)
 end)
 
 local line_highlights_module = 'hlcraft.ui.render.line_highlights'
@@ -102,6 +119,41 @@ h.with_temp_buf(function(buf)
       },
     }, 0, '[q] close')
     h.assert_true(not nil_spans_ok, 'line highlighter accepted nil spans', scope)
+  end, debug.traceback)
+
+  package.loaded[line_highlights_module] = original_line_highlights
+  package.loaded[line_model_module] = original_line_model
+
+  if not ok then
+    error(err, 0)
+  end
+end)
+
+h.with_temp_buf(function(buf)
+  local ok, err = xpcall(function()
+    package.loaded[line_highlights_module] = nil
+    package.loaded[line_model_module] = {
+      hint_spans = function()
+        return {
+          {
+            kind = 'key',
+            start_col = 2,
+            end_col = 1,
+          },
+        }
+      end,
+      label_spans = function()
+        return {}
+      end,
+    }
+    local strict_line_highlights = require(line_highlights_module)
+    local invalid_span_ok = pcall(strict_line_highlights.apply_hint_line, {
+      ns = ns,
+      state = {
+        buf = buf,
+      },
+    }, 0, '[q] close')
+    h.assert_true(not invalid_span_ok, 'line highlighter accepted an invalid span range', scope)
   end, debug.traceback)
 
   package.loaded[line_highlights_module] = original_line_highlights

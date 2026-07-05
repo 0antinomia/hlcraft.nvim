@@ -1,4 +1,5 @@
 local line_model = require('hlcraft.ui.render.line_model')
+local numbers = require('hlcraft.core.number')
 local theme = require('hlcraft.ui.theme')
 local window = require('hlcraft.ui.workspace.window')
 
@@ -11,6 +12,23 @@ local span_groups = {
   value = theme.groups.value,
 }
 
+local function instance_state(instance)
+  if type(instance) ~= 'table' or type(instance.state) ~= 'table' then
+    error('line highlighter requires an instance', 3)
+  end
+  return instance.state
+end
+
+local function instance_namespace(instance)
+  if type(instance.ns) ~= 'number' then
+    error('line highlighter namespace must be a number', 3)
+  end
+  if not numbers.is_finite(instance.ns) or math.floor(instance.ns) ~= instance.ns or instance.ns < 0 then
+    error('line highlighter namespace must be a non-negative finite integer', 3)
+  end
+  return instance.ns
+end
+
 local function optional_opts(opts)
   if opts == nil then
     return {}
@@ -22,18 +40,49 @@ local function optional_opts(opts)
 end
 
 local function positive_integer(value, label)
-  if type(value) ~= 'number' or math.floor(value) ~= value or value < 1 then
-    error(('%s must be a positive integer'):format(label), 3)
+  if type(value) ~= 'number' then
+    error(('%s must be a number'):format(label), 3)
+  end
+  if not numbers.is_finite(value) or math.floor(value) ~= value or value < 1 then
+    error(('%s must be a positive finite integer'):format(label), 3)
   end
   return value
 end
 
+local function non_negative_integer(value, label)
+  if type(value) ~= 'number' then
+    error(('%s must be a number'):format(label), 3)
+  end
+  if not numbers.is_finite(value) or math.floor(value) ~= value or value < 0 then
+    error(('%s must be a non-negative finite integer'):format(label), 3)
+  end
+  return value
+end
+
+local function span_end(value, start_col)
+  if type(value) ~= 'number' then
+    error('render span end column must be a number', 3)
+  end
+  if not numbers.is_finite(value) or math.floor(value) ~= value then
+    error('render span end column must be a finite integer', 3)
+  end
+  if value ~= -1 and value < start_col then
+    error('render span end column must be -1 or not precede the start column', 3)
+  end
+  return value
+end
+
+local function valid_buffer(buf)
+  return type(buf) == 'number' and window.is_valid_buf(buf)
+end
+
 local function target_buf(instance, opts)
+  local state = instance_state(instance)
   opts = optional_opts(opts)
-  if opts.buf ~= nil and not window.is_valid_buf(opts.buf) then
+  if opts.buf ~= nil and not valid_buffer(opts.buf) then
     error('line highlight target buffer must be valid', 3)
   end
-  return opts.buf or instance.state.buf
+  return opts.buf or state.buf
 end
 
 local function assert_line(line)
@@ -44,7 +93,7 @@ local function assert_line(line)
 end
 
 local function add_highlight(instance, buf, line_idx, hl, start_col, end_col)
-  vim.api.nvim_buf_add_highlight(buf, instance.ns, hl, line_idx, start_col, end_col)
+  vim.api.nvim_buf_add_highlight(buf, instance_namespace(instance), hl, line_idx, start_col, end_col)
 end
 
 local function assert_span(span)
@@ -54,9 +103,8 @@ local function assert_span(span)
   if type(span.kind) ~= 'string' then
     error('render span kind must be a string', 3)
   end
-  if type(span.start_col) ~= 'number' or type(span.end_col) ~= 'number' then
-    error('render span range must be numeric', 3)
-  end
+  span.start_col = non_negative_integer(span.start_col, 'render span start column')
+  span.end_col = span_end(span.end_col, span.start_col)
   return span
 end
 
@@ -79,7 +127,8 @@ end
 
 function M.apply_hint_line(instance, line_idx, line, opts)
   local buf = target_buf(instance, opts)
-  if not window.is_valid_buf(buf) then
+  line_idx = non_negative_integer(line_idx, 'line highlight index')
+  if not valid_buffer(buf) then
     return
   end
   line = assert_line(line)
@@ -93,7 +142,8 @@ end
 
 function M.apply_label_line(instance, line_idx, line, opts)
   local buf = target_buf(instance, opts)
-  if not window.is_valid_buf(buf) then
+  line_idx = non_negative_integer(line_idx, 'line highlight index')
+  if not valid_buffer(buf) then
     return
   end
   line = assert_line(line)
@@ -101,19 +151,24 @@ function M.apply_label_line(instance, line_idx, line, opts)
 end
 
 function M.apply_workbench_lines(instance, lines, start_line)
+  local state = instance_state(instance)
+  local buf = state.buf
   if type(lines) ~= 'table' then
     error('render lines must be a table', 2)
   end
-
   start_line = start_line == nil and 1 or positive_integer(start_line, 'render start line')
+  if not valid_buffer(buf) then
+    return
+  end
+
   for index, line in ipairs(lines) do
     if index >= start_line then
       local line_idx = index - 1
       local kind = line_model.line_kind(line)
       if kind == 'rule' then
-        vim.api.nvim_buf_add_highlight(instance.state.buf, instance.ns, theme.groups.rule, line_idx, 0, -1)
+        add_highlight(instance, buf, line_idx, theme.groups.rule, 0, -1)
       elseif kind == 'title' then
-        vim.api.nvim_buf_add_highlight(instance.state.buf, instance.ns, theme.groups.title, line_idx, 0, -1)
+        add_highlight(instance, buf, line_idx, theme.groups.title, 0, -1)
       elseif kind == 'hint' then
         M.apply_hint_line(instance, line_idx, line)
       elseif kind == 'label' then
