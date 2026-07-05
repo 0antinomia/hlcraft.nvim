@@ -166,6 +166,12 @@ h.assert_true(
   'invalid raw json changed draft',
   scope
 )
+local invalid_editor_result_ok = pcall(editor.toggle, instance, {}, 'fg')
+h.assert_true(not invalid_editor_result_ok, 'dynamic editor accepted a nameless result', scope)
+local invalid_editor_field_ok = pcall(editor.cycle_preset, instance, result, false)
+h.assert_true(not invalid_editor_field_ok, 'dynamic editor accepted an invalid field', scope)
+local invalid_editor_raw_text_ok = pcall(editor.set_raw_json, instance, result, 'fg', false)
+h.assert_true(not invalid_editor_raw_text_ok, 'dynamic editor accepted non-string raw JSON text', scope)
 
 local missing_raw_instance_ok = pcall(raw_dynamic.close, nil)
 h.assert_true(not missing_raw_instance_ok, 'raw dynamic close accepted missing instance', scope)

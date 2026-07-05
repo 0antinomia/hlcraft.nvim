@@ -1,5 +1,6 @@
 local color = require('hlcraft.core.color')
 local numbers = require('hlcraft.core.number')
+local context = require('hlcraft.ui.editor.context')
 local field_values = require('hlcraft.ui.field_values')
 local session = require('hlcraft.ui.session')
 
@@ -15,14 +16,18 @@ local channel_shifts = {
 }
 
 function M.set(instance, result, key, value)
+  local name = context.result_name(result, 'color editor')
+  key = context.field_key(key, 'color editor')
   local normalized, err = color.normalize(value)
   if err then
     return false, err
   end
-  return session.set_color(instance, result.name, key, normalized)
+  return session.set_color(instance, name, key, normalized)
 end
 
 function M.adjust(instance, result, key, channel, delta)
+  local name = context.result_name(result, 'color editor')
+  key = context.field_key(key, 'color editor')
   if type(channel) ~= 'string' then
     return false, 'Color channel must be a string'
   end
@@ -34,7 +39,7 @@ function M.adjust(instance, result, key, channel, delta)
   if not shift then
     return false, ('Unsupported color channel: %s'):format(channel)
   end
-  local current = session.field_value(result.name, key)
+  local current = session.field_value(name, key)
   if current == nil then
     current = field_values.fallback_value(result, key)
   end

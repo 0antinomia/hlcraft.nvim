@@ -1,4 +1,5 @@
 local numbers = require('hlcraft.core.number')
+local context = require('hlcraft.ui.editor.context')
 local session = require('hlcraft.ui.session')
 
 local M = {}
@@ -28,19 +29,21 @@ local function normalize_blend(value)
 end
 
 function M.set(instance, result, value)
+  local name = context.result_name(result, 'blend editor')
   local normalized, err = normalize_blend(value)
   if err then
     return false, err
   end
-  return session.set_blend(instance, result.name, normalized)
+  return session.set_blend(instance, name, normalized)
 end
 
 function M.adjust(instance, result, delta)
+  local name = context.result_name(result, 'blend editor')
   if not numbers.is_finite(delta) then
     return false, 'Blend adjustment delta must be a finite number'
   end
 
-  local draft_value = session.field_value(result.name, 'blend')
+  local draft_value = session.field_value(name, 'blend')
   local current = draft_value ~= nil and draft_value or result.blend
   if current == nil then
     current = 0

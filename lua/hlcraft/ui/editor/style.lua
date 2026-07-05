@@ -1,3 +1,4 @@
+local context = require('hlcraft.ui.editor.context')
 local session = require('hlcraft.ui.session')
 
 local M = {}
@@ -16,11 +17,13 @@ function M.next_boolean(value)
 end
 
 function M.toggle(instance, result, key)
-  local next_value, err = M.next_boolean(session.field_value(result.name, key))
+  local name = context.result_name(result, 'style editor')
+  key = context.field_key(key, 'style editor')
+  local next_value, err = M.next_boolean(session.field_value(name, key))
   if err then
     return false, err
   end
-  return session.set_style(instance, result.name, key, next_value)
+  return session.set_style(instance, name, key, next_value)
 end
 
 return M
