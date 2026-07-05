@@ -31,6 +31,17 @@ local ok, err = xpcall(function()
     })
   end, 'preview flash accepted missing results')
   assert_fails(function()
+    preview.flash_current({
+      state = {
+        preview = ui_state.preview(),
+        results = {
+          [2] = { name = 'Late' },
+        },
+        list_cursor = 2,
+      },
+    })
+  end, 'preview flash accepted sparse results')
+  assert_fails(function()
     preview.uninstall_keymap({
       state = {
         preview = {

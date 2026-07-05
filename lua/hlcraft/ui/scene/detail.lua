@@ -2,6 +2,7 @@ local search_scene = require('hlcraft.ui.scene.search')
 local session = require('hlcraft.ui.session')
 local style_editor = require('hlcraft.ui.editor.style')
 local numbers = require('hlcraft.core.number')
+local tables = require('hlcraft.core.tables')
 local ui_fields = require('hlcraft.ui.fields')
 local rows = require('hlcraft.ui.scene.rows')
 local unsaved_prompt = require('hlcraft.ui.scene.unsaved_prompt')
@@ -26,6 +27,9 @@ end
 local function result_list(state)
   if type(state.results) ~= 'table' then
     error('detail scene results must be a table', 3)
+  end
+  if not tables.is_sequence(state.results) then
+    error('detail scene results must be a sequence', 3)
   end
   return state.results
 end

@@ -1,5 +1,6 @@
 local render_util = require('hlcraft.render.util')
 local numbers = require('hlcraft.core.number')
+local tables = require('hlcraft.core.tables')
 local ui_fields = require('hlcraft.ui.fields')
 local dynamic_preview = require('hlcraft.ui.dynamic_preview')
 local buffer = require('hlcraft.ui.render.buffer')
@@ -30,6 +31,9 @@ end
 local function result_list(state)
   if type(state.results) ~= 'table' then
     error('search renderer results must be a table', 3)
+  end
+  if not tables.is_sequence(state.results) then
+    error('search renderer results must be a sequence', 3)
   end
   return state.results
 end

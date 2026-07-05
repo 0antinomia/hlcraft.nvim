@@ -64,6 +64,17 @@ assert_fails(function()
     },
   })
 end, 'UI context accepted missing results')
+assert_fails(function()
+  context.current_result({
+    state = {
+      detail_index = 1,
+      field_editor = {},
+      results = {
+        [2] = { name = 'Late' },
+      },
+    },
+  })
+end, 'UI context accepted sparse results')
 
 local missing_scene_ok = pcall(scene.current_name, {
   state = {},
