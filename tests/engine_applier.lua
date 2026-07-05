@@ -24,6 +24,11 @@ end
 
 local ok, err = xpcall(function()
   local name = 'HlcraftEngineApplierPending'
+  local missing_apply_name_ok = pcall(applier.apply_group, nil)
+  h.assert_true(not missing_apply_name_ok, 'applier accepted missing highlight name', scope)
+  local empty_apply_name_ok = pcall(applier.apply_group, '')
+  h.assert_true(not empty_apply_name_ok, 'applier accepted empty highlight name', scope)
+
   store.data.original_set_hl = function() end
   store.data.hooked = false
   store.data.pending = {
