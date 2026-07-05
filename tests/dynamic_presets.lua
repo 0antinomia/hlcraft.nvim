@@ -29,5 +29,11 @@ end
 local fallback_preset = presets.get('unknown')
 h.assert_true(fallback_preset == nil, 'unknown preset should not fall back', scope)
 h.assert_true(model.default_spec('unknown') == nil, 'unknown default spec should not fall back', scope)
+local missing_preset_ok = pcall(presets.get, nil)
+h.assert_true(not missing_preset_ok, 'preset lookup accepted nil name', scope)
+local empty_preset_ok = pcall(presets.get, '')
+h.assert_true(not empty_preset_ok, 'preset lookup accepted empty name', scope)
+local false_default_ok = pcall(model.default_spec, false)
+h.assert_true(not false_default_ok, 'default spec treated false as default preset', scope)
 
 print('hlcraft dynamic presets: OK')

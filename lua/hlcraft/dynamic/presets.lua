@@ -91,11 +91,19 @@ local templates = {
   },
 }
 
+local function assert_name(name)
+  if type(name) ~= 'string' or name == '' then
+    error('dynamic preset name must be a non-empty string', 3)
+  end
+  return name
+end
+
 function M.names()
   return vim.deepcopy(ordered_names)
 end
 
 function M.get(name)
+  name = assert_name(name)
   local template = templates[name]
   return template and vim.deepcopy(template) or nil
 end
