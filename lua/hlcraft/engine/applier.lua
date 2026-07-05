@@ -17,6 +17,13 @@ local function assert_table(value, label)
   return value
 end
 
+local function assert_name(name)
+  if type(name) ~= 'string' or name == '' then
+    error('highlight name must be a non-empty string', 3)
+  end
+  return name
+end
+
 function M.build_preset_overrides()
   if not config.from_none_enabled() then
     return {}
@@ -44,6 +51,7 @@ function M.uninstall_pending_hook()
 end
 
 function M.apply_group(name)
+  name = assert_name(name)
   local override = state.active[name]
   if not override or next(override) == nil then
     state.pending[name] = nil
