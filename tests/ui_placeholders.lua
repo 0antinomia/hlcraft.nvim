@@ -50,6 +50,56 @@ h.with_temp_buf(function(buf)
     },
   })
   h.assert_true(not invalid_geometry_ok, 'placeholders accepted missing geometry inputs', scope)
+  local missing_instance_ok = pcall(placeholders.refresh, nil)
+  h.assert_true(not missing_instance_ok, 'placeholders accepted missing instance', scope)
+  local missing_marks_ok = pcall(placeholders.refresh, {
+    ns = vim.api.nvim_create_namespace('hlcraft-ui-placeholders-missing-marks-test'),
+    state = {
+      buf = buf,
+      geometry = {
+        inputs = {},
+      },
+    },
+  })
+  h.assert_true(not missing_marks_ok, 'placeholders accepted missing mark state', scope)
+  local missing_namespace_ok = pcall(placeholders.refresh, {
+    state = {
+      buf = buf,
+      geometry = {
+        inputs = {},
+      },
+      placeholder_marks = {},
+    },
+  })
+  h.assert_true(not missing_namespace_ok, 'placeholders accepted missing namespace', scope)
+  local invalid_detail_index_ok = pcall(placeholders.refresh, {
+    ns = vim.api.nvim_create_namespace('hlcraft-ui-placeholders-invalid-detail-test'),
+    state = {
+      buf = buf,
+      detail_index = 0,
+      geometry = {
+        inputs = {
+          { key = 'fg', name = 'field', kind = 'detail', line = 1 },
+        },
+      },
+      placeholder_marks = {},
+      results = {},
+    },
+  })
+  h.assert_true(not invalid_detail_index_ok, 'placeholders accepted invalid detail index', scope)
+  local invalid_line_ok = pcall(placeholders.refresh, {
+    ns = vim.api.nvim_create_namespace('hlcraft-ui-placeholders-invalid-line-test'),
+    state = {
+      buf = buf,
+      geometry = {
+        inputs = {
+          { name = 'name', kind = 'name', line = 0 },
+        },
+      },
+      placeholder_marks = {},
+    },
+  })
+  h.assert_true(not invalid_line_ok, 'placeholders accepted invalid field line', scope)
 end)
 
 print('hlcraft ui placeholders: OK')
