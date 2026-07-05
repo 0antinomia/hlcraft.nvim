@@ -85,6 +85,8 @@ h.assert_true(not patch.changes_entry(group_only), 'group-only patch was treated
 local empty_dynamic, empty_dynamic_err = patch.normalize({ dynamic = {} })
 h.assert_true(empty_dynamic ~= nil, empty_dynamic_err or 'empty dynamic patch did not normalize', scope)
 h.assert_true(patch.changes_entry(empty_dynamic), 'empty dynamic patch did not preserve entry-change semantics', scope)
+local nil_changes_ok = pcall(patch.changes_entry, nil)
+h.assert_true(not nil_changes_ok, 'patch change detector accepted nil patch', scope)
 
 local entry = {
   bg = '#000000',

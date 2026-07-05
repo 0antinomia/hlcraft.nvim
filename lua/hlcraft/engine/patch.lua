@@ -144,6 +144,7 @@ function M.apply_entry(entry, patch)
 end
 
 function M.changes_entry(patch)
+  patch = assert_table(patch, 'normalized patch')
   for _, key in ipairs(store.override_keys) do
     if patch[key] ~= nil then
       return true
