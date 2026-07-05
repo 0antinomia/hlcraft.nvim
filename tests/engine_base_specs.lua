@@ -13,6 +13,10 @@ h.assert_equal(normalized.underdashed, true, 'normalized extended style changed'
 h.assert_equal(normalized.italic, nil, 'inactive style leaked into normalized spec', scope)
 h.assert_true(base_specs.group_exists(name), 'existing group was not detected', scope)
 h.assert_true(not base_specs.group_exists('HlcraftEngineMissingBaseSpecs'), 'missing group was detected', scope)
+local missing_name_ok = pcall(base_specs.normalized_set_hl_spec, nil)
+h.assert_true(not missing_name_ok, 'base specs accepted missing highlight name', scope)
+local empty_exists_name_ok = pcall(base_specs.group_exists, '')
+h.assert_true(not empty_exists_name_ok, 'base spec existence accepted empty highlight name', scope)
 
 local state = {
   base_specs = {},
@@ -32,6 +36,14 @@ h.assert_equal(merged.bold, true, 'base style was not preserved during merge', s
 h.assert_equal(merged.underdashed, true, 'base extended style was not preserved during merge', scope)
 h.assert_equal(merged.italic, true, 'active style override was not merged', scope)
 h.assert_equal(merged.blend, 12, 'active numeric override was not merged', scope)
+local invalid_capture_state_ok = pcall(base_specs.capture, {}, name)
+h.assert_true(not invalid_capture_state_ok, 'base spec capture accepted missing base_specs state', scope)
+local invalid_restore_state_ok = pcall(base_specs.restore, { base_specs = false }, name)
+h.assert_true(not invalid_restore_state_ok, 'base spec restore accepted invalid base_specs state', scope)
+local invalid_merged_state_ok = pcall(base_specs.merged, { base_specs = {} }, name)
+h.assert_true(not invalid_merged_state_ok, 'base spec merge accepted missing active state', scope)
+local invalid_merged_name_ok = pcall(base_specs.merged, state, nil)
+h.assert_true(not invalid_merged_name_ok, 'base spec merge accepted missing name', scope)
 
 vim.api.nvim_set_hl(0, name, { fg = '#445566', italic = true })
 base_specs.restore(state, name)

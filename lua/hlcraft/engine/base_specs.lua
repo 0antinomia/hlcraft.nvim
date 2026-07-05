@@ -4,7 +4,30 @@ local store = require('hlcraft.engine.store')
 
 local M = {}
 
+local function assert_name(name)
+  if type(name) ~= 'string' or name == '' then
+    error('base spec highlight name must be a non-empty string', 3)
+  end
+  return name
+end
+
+local function base_spec_state(state)
+  if type(state) ~= 'table' or type(state.base_specs) ~= 'table' then
+    error('base spec state must include base_specs table', 3)
+  end
+  return state
+end
+
+local function active_state(state)
+  state = base_spec_state(state)
+  if type(state.active) ~= 'table' then
+    error('base spec state must include active table', 3)
+  end
+  return state
+end
+
 function M.normalized_set_hl_spec(name)
+  name = assert_name(name)
   local group = highlights.get_group(name)
   if not group then
     return {}
@@ -29,11 +52,14 @@ function M.normalized_set_hl_spec(name)
 end
 
 function M.group_exists(name)
+  name = assert_name(name)
   local ok, spec = pcall(vim.api.nvim_get_hl, 0, { name = name, create = false })
   return ok and spec and not vim.tbl_isempty(spec)
 end
 
 function M.capture(state, name)
+  state = base_spec_state(state)
+  name = assert_name(name)
   if state.base_specs[name] ~= nil then
     return
   end
@@ -48,6 +74,8 @@ function M.capture(state, name)
 end
 
 function M.restore(state, name)
+  state = base_spec_state(state)
+  name = assert_name(name)
   local base = state.base_specs[name]
   if not base then
     return
@@ -57,6 +85,8 @@ function M.restore(state, name)
 end
 
 function M.merged(state, name)
+  state = active_state(state)
+  name = assert_name(name)
   M.capture(state, name)
 
   local spec = M.normalized_set_hl_spec(name)
