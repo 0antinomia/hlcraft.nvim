@@ -2,6 +2,7 @@
 local M = {}
 
 local config = require('hlcraft.config')
+local neovim = require('hlcraft.neovim')
 local storage = require('hlcraft.persistence.repository')
 
 local function loaded_entries(data)
@@ -15,10 +16,11 @@ end
 --- @return nil
 function M.check()
   vim.health.start('hlcraft: Neovim version')
-  if vim.version.ge(vim.version(), '0.10.0') then
-    vim.health.ok('Neovim version ' .. tostring(vim.version()) .. ' >= 0.10.0')
+  local supported, version = neovim.supports_minimum()
+  if supported then
+    vim.health.ok(('Neovim version %s >= %s'):format(tostring(version), neovim.minimum_version))
   else
-    vim.health.error('hlcraft requires Neovim >= 0.10.0, found ' .. tostring(vim.version()))
+    vim.health.error('hlcraft ' .. neovim.requirement_message(version))
   end
 
   vim.health.start('hlcraft: persist directory')

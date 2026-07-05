@@ -3,6 +3,7 @@ local M = {}
 
 local config = require('hlcraft.config')
 local highlights = require('hlcraft.core.highlights')
+local neovim = require('hlcraft.neovim')
 local notify = require('hlcraft.notify')
 local source = require('hlcraft.core.source')
 local search = require('hlcraft.core.search')
@@ -14,14 +15,9 @@ local initialized = false
 --- @param opts table|nil User configuration options
 --- @return table M The hlcraft module (fluent API)
 function M.setup(opts)
-  -- Version guard
-  if vim.version and vim.version.ge then
-    if not vim.version.ge(vim.version(), '0.10.0') then
-      notify.error('requires Neovim >= 0.10.0. Current version: ' .. tostring(vim.version()))
-      return M
-    end
-  else
-    notify.error('requires Neovim >= 0.10.0')
+  local supported, version = neovim.supports_minimum()
+  if not supported then
+    notify.error(neovim.requirement_message(version))
     return M
   end
 
