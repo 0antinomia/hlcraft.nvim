@@ -1,5 +1,6 @@
 local color = require('hlcraft.core.color')
 local numbers = require('hlcraft.core.number')
+local tables = require('hlcraft.core.tables')
 local ui_detail = require('hlcraft.ui.detail')
 local window = require('hlcraft.ui.workspace.window')
 local buffer_lines = require('hlcraft.ui.buffer_lines')
@@ -106,9 +107,23 @@ local function optional_virt_lines(lines)
   if type(lines) ~= 'table' then
     error('input header virtual lines must be a table or nil', 3)
   end
+  if not tables.is_sequence(lines) then
+    error('input header virtual lines must be a sequence or nil', 3)
+  end
   for _, line in ipairs(lines) do
     if type(line) ~= 'table' then
       error('input header virtual line must be a table', 3)
+    end
+    if not tables.is_sequence(line) then
+      error('input header virtual line must be a sequence', 3)
+    end
+    for _, chunk in ipairs(line) do
+      if type(chunk) ~= 'table' then
+        error('input header virtual line chunk must be a table', 3)
+      end
+      if not tables.is_sequence(chunk) then
+        error('input header virtual line chunk must be a sequence', 3)
+      end
     end
   end
   return lines
