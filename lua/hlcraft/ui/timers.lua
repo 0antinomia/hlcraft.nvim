@@ -7,7 +7,7 @@ function M.stop(timer)
 end
 
 function M.stop_debounce(instance)
-  if not instance or not instance.state then
+  if type(instance) ~= 'table' or type(instance.state) ~= 'table' then
     error('debounce timer stop requires an instance', 2)
   end
   local timer = instance.state.debounce_timer
