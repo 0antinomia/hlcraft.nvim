@@ -11,9 +11,7 @@ local function restore_original()
   window_options.restore(original)
 end
 
-local function assert_fails(fn, message)
-  h.assert_true(not pcall(fn), message, scope)
-end
+local assert_fails = h.scoped_assert_fails(scope)
 
 local ok, err = xpcall(function()
   vim.wo[win].number = true

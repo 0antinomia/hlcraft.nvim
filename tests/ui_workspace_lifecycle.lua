@@ -4,9 +4,7 @@ local scope = 'hlcraft ui workspace lifecycle'
 local lifecycle = require('hlcraft.ui.workspace.lifecycle')
 local ui_state = require('hlcraft.ui.state')
 
-local function assert_fails(fn, message)
-  h.assert_true(not pcall(fn), message, scope)
-end
+local assert_fails = h.scoped_assert_fails(scope)
 
 local function new_instance(name)
   return {

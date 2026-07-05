@@ -3,9 +3,7 @@ local scope = 'hlcraft ui unsaved prompt'
 
 local prompt = require('hlcraft.ui.scene.unsaved_prompt')
 
-local function assert_fails(fn, message)
-  h.assert_true(not pcall(fn), message, scope)
-end
+local assert_fails = h.scoped_assert_fails(scope)
 
 assert_fails(function()
   prompt.close(nil)

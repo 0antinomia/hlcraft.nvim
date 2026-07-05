@@ -3,9 +3,7 @@ local scope = 'hlcraft ui scene rows'
 
 local rows = require('hlcraft.ui.scene.rows')
 
-local function assert_fails(fn, message)
-  h.assert_true(not pcall(fn), message, scope)
-end
+local assert_fails = h.scoped_assert_fails(scope)
 
 local row_map = {
   fg = {

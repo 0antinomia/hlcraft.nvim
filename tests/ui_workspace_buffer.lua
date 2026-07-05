@@ -5,9 +5,7 @@ local workspace_buffer = require('hlcraft.ui.workspace.buffer')
 local ui_state = require('hlcraft.ui.state')
 local window = require('hlcraft.ui.workspace.window')
 
-local function assert_fails(fn, message)
-  h.assert_true(not pcall(fn), message, scope)
-end
+local assert_fails = h.scoped_assert_fails(scope)
 
 local function new_instance(name)
   return {

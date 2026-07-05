@@ -5,9 +5,7 @@ local autocmds = require('hlcraft.ui.autocmds')
 local config = require('hlcraft.config')
 local ui_state = require('hlcraft.ui.state')
 
-local function assert_fails(fn, message)
-  h.assert_true(not pcall(fn), message, scope)
-end
+local assert_fails = h.scoped_assert_fails(scope)
 
 local function set_input_marks(instance, name, start_row, end_boundary_row)
   instance.state.extmark_ids[name .. ':start'] =
