@@ -202,7 +202,7 @@ function M.tick(instance, now_ms)
   end
   local ns = preview_namespace(instance)
   clear_preview_marks(state, ns, preview)
-  for _, item in pairs(preview.items) do
+  for _, item in ipairs(preview.items) do
     local hl_name = set_preview_hl(ns, preview, item, now_ms)
     if hl_name then
       preview.marks[item.id] = set_preview_mark(state, ns, item, hl_name)
