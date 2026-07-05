@@ -6,6 +6,7 @@ local override_values = require('hlcraft.core.override_values')
 h.assert_true(override_values.is_unset(nil), 'nil was not treated as unset', scope)
 h.assert_true(override_values.is_unset(vim.NIL), 'vim.NIL was not treated as unset', scope)
 h.assert_true(override_values.is_unset(''), 'blank string was not treated as unset', scope)
+h.assert_true(override_values.is_unset('   '), 'whitespace string was not treated as unset', scope)
 h.assert_equal(override_values.entry_value(vim.NIL), nil, 'vim.NIL did not become nil entry value', scope)
 h.assert_equal(override_values.entry_value('#ffffff'), '#ffffff', 'entry value changed unexpectedly', scope)
 
