@@ -267,10 +267,13 @@ function M.normalize_channel(spec)
 
   local preset = nil
   if spec.preset ~= nil then
-    if type(spec.preset) ~= 'string' or spec.preset == '' then
+    if type(spec.preset) ~= 'string' then
       return nil
     end
-    preset = spec.preset
+    preset = vim.trim(spec.preset)
+    if preset == '' then
+      return nil
+    end
   end
 
   local duration = normalize_optional_duration(spec.duration)

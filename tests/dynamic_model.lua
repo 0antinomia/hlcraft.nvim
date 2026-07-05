@@ -71,7 +71,7 @@ end
 
 local normalized_custom = model.normalize_channel({
   version = 1,
-  preset = 'manual',
+  preset = ' manual ',
   duration = 1750,
   loop = 'repeat',
   phase = 0.25,
@@ -93,6 +93,7 @@ local normalized_custom = model.normalize_channel({
   },
 })
 h.assert_equal(normalized_custom.version, 1, 'custom version did not normalize', scope)
+h.assert_equal(normalized_custom.preset, 'manual', 'custom preset label did not normalize', scope)
 h.assert_equal(normalized_custom.duration, 1750, 'custom duration did not normalize', scope)
 h.assert_equal(normalized_custom.loop, 'repeat', 'custom loop did not normalize', scope)
 h.assert_equal(normalized_custom.phase, 0.25, 'custom phase did not normalize', scope)
@@ -216,6 +217,10 @@ for _, case in ipairs({
   {
     message = 'invalid preset was accepted',
     spec = channel_spec({ preset = '' }),
+  },
+  {
+    message = 'blank preset was accepted',
+    spec = channel_spec({ preset = '   ' }),
   },
   {
     message = 'missing color stop at was accepted',

@@ -2,6 +2,7 @@ local M = {}
 
 local constants = require('hlcraft.dynamic.constants')
 local numbers = require('hlcraft.core.number')
+local tables = require('hlcraft.core.tables')
 
 local function curve(amount, interpolation)
   if interpolation == 'step' then
@@ -21,11 +22,23 @@ local function valid_stop(stop)
 end
 
 local function valid_stops(stops)
-  if type(stops) ~= 'table' or #stops == 0 then
+  if type(stops) ~= 'table' or #stops == 0 or not tables.is_sequence(stops) then
     return false
   end
   for _, stop in ipairs(stops) do
     if not valid_stop(stop) then
+      return false
+    end
+  end
+  return true
+end
+
+local function valid_numeric_stops(stops)
+  if not valid_stops(stops) then
+    return false
+  end
+  for _, stop in ipairs(stops) do
+    if not numbers.is_finite(stop.value) then
       return false
     end
   end
@@ -89,6 +102,10 @@ function M.sample(stops, phase, interpolation, interpolate)
 end
 
 function M.sample_numeric(stops, phase, interpolation)
+  if not valid_numeric_stops(stops) then
+    return nil
+  end
+
   local sampled = M.sample(stops, phase, interpolation, function(left, right, amount)
     return {
       at = phase,
