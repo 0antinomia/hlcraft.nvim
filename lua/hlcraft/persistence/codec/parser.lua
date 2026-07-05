@@ -1,4 +1,5 @@
 local util = require('hlcraft.persistence.codec.util')
+local numbers = require('hlcraft.core.number')
 
 local M = {}
 
@@ -178,7 +179,7 @@ parse_value = function(raw)
   end
 
   local number_value = tonumber(value)
-  if number_value ~= nil then
+  if numbers.is_finite(number_value) then
     return number_value
   end
   return nil

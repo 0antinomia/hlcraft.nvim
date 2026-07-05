@@ -37,6 +37,9 @@ h.assert_true(
 )
 h.cleanup_dir(invalid_persist_dir)
 
+local invalid_load_path_ok = pcall(storage.load, false)
+h.assert_true(not invalid_load_path_ok, 'storage.load accepted a non-string path', scope)
+
 local symlink_target = persist_dir .. '-linked-target.toml'
 h.cleanup_dir(symlink_target)
 h.write_file(symlink_target, {
