@@ -107,7 +107,9 @@ function M.build(instance, geometry, result, width, line_offset)
   end
 
   lines[#lines + 1] = ''
-  lines[#lines + 1] = hints.detail()
+  for _, line in ipairs(render_util.string_list(hints.detail(width), 'detail hint lines', 3)) do
+    lines[#lines + 1] = line
+  end
 
   return lines
 end

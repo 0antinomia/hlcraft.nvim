@@ -67,6 +67,14 @@ local function add_line_highlight(buf, ns, lines, row1, hl)
   end
 end
 
+local function append_hint_lines(lines, width)
+  local start_line = #lines + 1
+  for _, line in ipairs(render_util.string_list(hints.search(width), 'search hint lines', 3)) do
+    lines[#lines + 1] = line
+  end
+  return start_line
+end
+
 function M.render(instance)
   local state = instance_state(instance)
   local results = result_list(state)
@@ -85,7 +93,7 @@ function M.render(instance)
     lines[#lines + 1] = line
   end
   lines[#lines + 1] = ''
-  lines[#lines + 1] = hints.search()
+  local hint_start_line = append_hint_lines(lines, width)
   for index, result_index in pairs(selectable) do
     geometry.result_lines[results_top + index - 1] = result_index
   end
@@ -103,7 +111,9 @@ function M.render(instance)
   decorations.set_results_header(instance, results_top, width)
   add_line_highlight(state.buf, ns, lines, results_top, theme.groups.header)
   add_line_highlight(state.buf, ns, lines, results_top + 1, theme.groups.rule)
-  decorations.apply_hint_line(instance, #lines - 1, lines[#lines])
+  for line_nr = hint_start_line, #lines do
+    decorations.apply_hint_line(instance, line_nr - 1, lines[line_nr])
+  end
   for line_nr, result_index in pairs(geometry.result_lines) do
     local result = result_at(results, result_index)
     local line = render_util.line_at(lines, line_nr, 'search result geometry')

@@ -14,9 +14,37 @@ h.assert_equal(
   'compact hint formatter changed unexpectedly',
   scope
 )
-h.assert_equal(hints.search(), 'Action  [Enter] open/apply  [Tab] input  [?] help', 'search hint is too verbose', scope)
-h.assert_true(not hints.search():find('Keys:', 1, true), 'search hint kept the crowded Keys prefix', scope)
-h.assert_equal(hints.detail(), 'Action  [Enter] edit/toggle  [s] save  [?] help', 'detail hint is too verbose', scope)
+local search_hint_lines = hints.search()
+h.assert_equal(#search_hint_lines, 1, 'search hint should stay compact by default', scope)
+h.assert_equal(
+  search_hint_lines[1],
+  'Action  [Enter] open/apply  [Tab] input  [?] help',
+  'search hint is too verbose',
+  scope
+)
+h.assert_true(
+  not table.concat(search_hint_lines, '\n'):find('Keys:', 1, true),
+  'search hint kept the crowded Keys prefix',
+  scope
+)
+local detail_hint_lines = hints.detail()
+h.assert_equal(#detail_hint_lines, 1, 'detail hint should stay compact by default', scope)
+h.assert_equal(
+  detail_hint_lines[1],
+  'Action  [Enter] edit/toggle  [s] save  [?] help',
+  'detail hint is too verbose',
+  scope
+)
+local narrow_search_hint_lines = hints.search(30)
+h.assert_true(#narrow_search_hint_lines > 1, 'narrow search hints did not wrap', scope)
+for _, line in ipairs(narrow_search_hint_lines) do
+  h.assert_true(vim.fn.strdisplaywidth(line) <= 30, 'narrow search hint exceeded target width', scope)
+end
+local narrow_detail_hint_lines = hints.detail(30)
+h.assert_true(#narrow_detail_hint_lines > 1, 'narrow detail hints did not wrap', scope)
+for _, line in ipairs(narrow_detail_hint_lines) do
+  h.assert_true(vim.fn.strdisplaywidth(line) <= 30, 'narrow detail hint exceeded target width', scope)
+end
 local numeric_options_ok = pcall(hints.section_lines, 'Action', 'search', 2)
 h.assert_true(not numeric_options_ok, 'hint sections accepted numeric options', scope)
 local keyed_item_shape_ok = pcall(hints.format, {
