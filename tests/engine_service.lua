@@ -62,12 +62,18 @@ with_entry_state(function()
   store.data.draft_groups.HlcraftEngineServiceBrokenDraftGroup = false
   local bad_draft_group_ok = pcall(engine.get_draft_group, 'HlcraftEngineServiceBrokenDraftGroup')
   h.assert_true(not bad_draft_group_ok, 'engine service accepted invalid draft group', scope)
+  store.data.draft_groups.HlcraftEngineServiceBrokenDraftGroup = nil
 
   store.data.draft_groups.HlcraftEngineServiceSpacedDraftGroup = ' service '
   h.assert_equal(
     engine.get_draft_group('HlcraftEngineServiceSpacedDraftGroup'),
     'service',
     'engine service did not normalize draft group reads',
+    scope
+  )
+  h.assert_true(
+    vim.tbl_contains(engine.known_groups(), 'service'),
+    'engine service known groups did not normalize draft groups',
     scope
   )
 

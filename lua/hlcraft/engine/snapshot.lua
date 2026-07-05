@@ -66,13 +66,15 @@ function M.known_groups()
   local groups = {}
 
   for _, group_name in pairs(data.persisted_groups) do
-    if type(group_name) == 'string' and vim.trim(group_name) ~= '' then
-      groups[group_name] = true
+    local normalized = M.normalize_group_name(group_name, 'persisted group')
+    if normalized ~= nil then
+      groups[normalized] = true
     end
   end
   for _, group_name in pairs(data.draft_groups) do
-    if type(group_name) == 'string' and vim.trim(group_name) ~= '' then
-      groups[group_name] = true
+    local normalized = M.normalize_group_name(group_name, 'draft group')
+    if normalized ~= nil then
+      groups[normalized] = true
     end
   end
 
