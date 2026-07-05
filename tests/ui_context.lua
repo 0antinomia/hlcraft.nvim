@@ -103,6 +103,8 @@ local invalid_register_scene_ok = pcall(scene.register, 'broken', false)
 h.assert_true(not invalid_register_scene_ok, 'scene register accepted a non-table scene', scope)
 local invalid_register_method_ok = pcall(scene.register, 'broken_method', { handle = 'bad' })
 h.assert_true(not invalid_register_method_ok, 'scene register accepted a non-function scene method', scope)
+local duplicate_register_ok = pcall(scene.register, 'search', {})
+h.assert_true(not duplicate_register_ok, 'scene register accepted a duplicate scene name', scope)
 local invalid_scene_opts_ok = pcall(scene.set, instance, 'field_editor', false)
 h.assert_true(not invalid_scene_opts_ok, 'scene set accepted non-table options', scope)
 local missing_scene_instance_ok = pcall(scene.set, nil, 'field_editor', {})
@@ -113,6 +115,16 @@ local scene_name_option_ok = pcall(scene.set, instance, 'field_editor', { name =
 h.assert_true(not scene_name_option_ok, 'scene set accepted a name option override', scope)
 local empty_scene_set_ok = pcall(scene.set, instance, '', {})
 h.assert_true(not empty_scene_set_ok, 'scene set accepted an empty scene name', scope)
+local failed_scene_instance = {
+  state = {
+    scene = {
+      name = 'search',
+    },
+  },
+}
+local failed_detail_set_ok = pcall(scene.set, failed_scene_instance, 'detail', { index = 0 })
+h.assert_true(not failed_detail_set_ok, 'scene set accepted an invalid detail entry index', scope)
+h.assert_equal(failed_scene_instance.state.scene.name, 'search', 'failed scene entry kept partial scene switch', scope)
 assert_fails(function()
   scene.handle(instance, '')
 end, 'scene handle accepted an empty action')
