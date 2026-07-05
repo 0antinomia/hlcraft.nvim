@@ -53,6 +53,7 @@ local tests = {
   'tests/persistence_codec.lua',
   'tests/persistence_schema.lua',
   'tests/storage.lua',
+  'tests/override_entries.lua',
   'tests/override_values.lua',
   'tests/engine_patch.lua',
   'tests/engine_snapshot.lua',
