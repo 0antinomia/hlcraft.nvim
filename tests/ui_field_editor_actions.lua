@@ -124,6 +124,8 @@ h.assert_equal(instance.state.scene.field, 'bg', 'field editor enter did not mir
 h.assert_equal(instance.state.scene.kind, nil, 'field editor enter kept stale scene kind', scope)
 local invalid_enter_opts_ok = pcall(field_scene.enter, instance, false)
 h.assert_true(not invalid_enter_opts_ok, 'field editor enter accepted non-table options', scope)
+local missing_enter_field_ok = pcall(field_scene.enter, instance, {})
+h.assert_true(not missing_enter_field_ok, 'field editor enter accepted a missing field', scope)
 local invalid_enter_field_ok = pcall(field_scene.enter, instance, { field = false })
 h.assert_true(not invalid_enter_field_ok, 'field editor enter accepted non-string field', scope)
 local unknown_enter_option_ok = pcall(field_scene.enter, instance, { kind = 'color' })

@@ -25,6 +25,14 @@ local function result_list(state)
   return tables.assert_sequence(state.results, 'UI context results', 3)
 end
 
+local function current_field_state(state)
+  local field = field_editor_state(state).field
+  if field ~= nil and (type(field) ~= 'string' or field == '') then
+    error('UI context field must be a non-empty string or nil', 3)
+  end
+  return field
+end
+
 function M.editor_scene_is_active(instance)
   local state = instance_state(instance)
   local current_scene = scene.current_name(instance)
@@ -32,7 +40,7 @@ function M.editor_scene_is_active(instance)
 end
 
 function M.current_field(instance)
-  return field_editor_state(instance_state(instance)).field
+  return current_field_state(instance_state(instance))
 end
 
 function M.current_field_kind(instance)
@@ -43,7 +51,11 @@ function M.current_field_kind(instance)
   if not field then
     return nil
   end
-  return ui_fields.detail_kinds[field]
+  local kind = ui_fields.detail_kinds[field]
+  if kind == nil then
+    error(('UI context field is not supported: %s'):format(field), 2)
+  end
+  return kind
 end
 
 function M.current_result(instance)

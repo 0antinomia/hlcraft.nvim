@@ -57,6 +57,22 @@ assert_fails(function()
   })
 end, 'UI context accepted missing field editor state')
 assert_fails(function()
+  context.current_field({
+    state = {
+      field_editor = { field = false },
+    },
+  })
+end, 'UI context accepted an invalid field')
+assert_fails(function()
+  context.current_field_kind({
+    state = {
+      scene = { name = 'field_editor' },
+      detail_index = 1,
+      field_editor = { field = 'unknown_field' },
+    },
+  })
+end, 'UI context accepted an unsupported field')
+assert_fails(function()
   context.current_result({
     state = {
       detail_index = 1,
@@ -136,8 +152,10 @@ local detail_instance = {
 }
 detail_scene.enter(detail_instance, { index = 2 })
 h.assert_equal(detail_instance.state.detail_index, 2, 'detail enter did not set index', scope)
-detail_scene.enter(detail_instance, {})
-h.assert_equal(detail_instance.state.detail_index, 2, 'detail enter did not preserve missing index', scope)
+assert_fails(function()
+  detail_scene.enter(detail_instance, {})
+end, 'detail enter accepted a missing index')
+h.assert_equal(detail_instance.state.detail_index, 2, 'failed detail enter changed index', scope)
 assert_fails(function()
   detail_scene.enter(nil, {})
 end, 'detail enter accepted missing instance')

@@ -97,9 +97,10 @@ function M.enter(instance, opts)
       error(('unknown detail entry option: %s'):format(tostring(key)), 3)
     end
   end
-  if opts.index ~= nil then
-    state.detail_index = positive_integer(opts.index, 'detail entry index')
+  if opts.index == nil then
+    error('detail entry requires an index', 3)
   end
+  state.detail_index = positive_integer(opts.index, 'detail entry index')
 end
 
 function M.render(instance)
