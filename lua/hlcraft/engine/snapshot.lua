@@ -39,24 +39,27 @@ function M.normalize_draft_entry(entry)
   return M.normalize_entry(entry, 'draft entry')
 end
 
-local function assert_group_name(value, label)
+function M.normalize_group_name(value, label)
   if value == nil then
     return nil
   end
   if type(value) ~= 'string' then
     error(('%s must be a string'):format(label), 3)
   end
-  if vim.trim(value) == '' then
+  local normalized = vim.trim(value)
+  if normalized == '' then
     error(('%s must be a non-empty string'):format(label), 3)
   end
-  return value
+  return normalized
 end
 
 function M.ensure_draft_group(name)
-  local draft_group = assert_group_name(data.draft_groups[name], 'draft group')
-  if draft_group == nil then
-    data.draft_groups[name] = assert_group_name(data.persisted_groups[name], 'persisted group')
+  local draft_group = M.normalize_group_name(data.draft_groups[name], 'draft group')
+  if draft_group ~= nil then
+    data.draft_groups[name] = draft_group
+    return
   end
+  data.draft_groups[name] = M.normalize_group_name(data.persisted_groups[name], 'persisted group')
 end
 
 function M.known_groups()

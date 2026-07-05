@@ -7,11 +7,15 @@ local store = require('hlcraft.engine.store')
 local function with_entry_state(fn)
   local original_draft = vim.deepcopy(store.data.draft)
   local original_persisted = vim.deepcopy(store.data.persisted)
+  local original_draft_groups = vim.deepcopy(store.data.draft_groups)
+  local original_persisted_groups = vim.deepcopy(store.data.persisted_groups)
 
   local ok, err = xpcall(fn, debug.traceback)
 
   store.data.draft = original_draft
   store.data.persisted = original_persisted
+  store.data.draft_groups = original_draft_groups
+  store.data.persisted_groups = original_persisted_groups
 
   if not ok then
     error(err, 0)
@@ -54,6 +58,22 @@ with_entry_state(function()
   store.data.persisted.HlcraftEngineServiceBrokenPersisted = false
   local bad_persisted_ok = pcall(engine.get_persisted, 'HlcraftEngineServiceBrokenPersisted')
   h.assert_true(not bad_persisted_ok, 'engine service accepted invalid persisted entry', scope)
+
+  store.data.draft_groups.HlcraftEngineServiceBrokenDraftGroup = false
+  local bad_draft_group_ok = pcall(engine.get_draft_group, 'HlcraftEngineServiceBrokenDraftGroup')
+  h.assert_true(not bad_draft_group_ok, 'engine service accepted invalid draft group', scope)
+
+  store.data.draft_groups.HlcraftEngineServiceSpacedDraftGroup = ' service '
+  h.assert_equal(
+    engine.get_draft_group('HlcraftEngineServiceSpacedDraftGroup'),
+    'service',
+    'engine service did not normalize draft group reads',
+    scope
+  )
+
+  store.data.persisted_groups.HlcraftEngineServiceEmptyPersistedGroup = ' '
+  local empty_persisted_group_ok = pcall(engine.get_persisted_group, 'HlcraftEngineServiceEmptyPersistedGroup')
+  h.assert_true(not empty_persisted_group_ok, 'engine service accepted empty persisted group', scope)
 
   store.data.persisted.HlcraftEngineServiceUnknownPersisted = {
     unknown = true,

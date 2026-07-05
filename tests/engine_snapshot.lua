@@ -31,6 +31,10 @@ with_group_state(function()
   snapshot.ensure_draft_group('Explicit')
   h.assert_equal(store.data.draft_groups.Explicit, 'draft', 'explicit draft group changed', scope)
 
+  store.data.draft_groups.Spaced = ' snapshot '
+  snapshot.ensure_draft_group('Spaced')
+  h.assert_equal(store.data.draft_groups.Spaced, 'snapshot', 'draft group was not normalized', scope)
+
   snapshot.ensure_draft_group('Inherited')
   h.assert_equal(store.data.draft_groups.Inherited, 'persisted', 'persisted group was not inherited', scope)
 
