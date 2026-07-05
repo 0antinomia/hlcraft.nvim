@@ -8,33 +8,88 @@ local ui_state = require('hlcraft.ui.state')
 local lhs = '<Plug>(HlcraftPreviewTest)'
 pcall(vim.keymap.del, 'n', lhs)
 
-vim.keymap.set('n', lhs, '<Nop>', {
-  silent = true,
-  desc = 'original preview test mapping',
-})
+local function assert_fails(fn, message)
+  h.assert_true(not pcall(fn), message, scope)
+end
 
-config.setup({
-  preview_key = lhs,
-})
+local ok, err = xpcall(function()
+  assert_fails(function()
+    preview.install_keymap(nil)
+  end, 'preview keymap install accepted missing instance')
+  assert_fails(function()
+    preview.cleanup({
+      state = {
+        preview = false,
+      },
+    })
+  end, 'preview cleanup accepted invalid preview state')
+  assert_fails(function()
+    preview.flash_current({
+      state = {
+        preview = ui_state.preview(),
+      },
+    })
+  end, 'preview flash accepted missing results')
+  assert_fails(function()
+    preview.uninstall_keymap({
+      state = {
+        preview = {
+          keymap = false,
+        },
+      },
+    })
+  end, 'preview keymap uninstall accepted invalid keymap state')
 
-local instance = {
-  state = {
-    preview = ui_state.preview(),
-    results = {},
-  },
-}
+  vim.keymap.set('n', lhs, '<Nop>', {
+    silent = true,
+    desc = 'original preview test mapping',
+  })
 
-preview.install_keymap(instance)
-local installed = vim.fn.maparg(lhs, 'n', false, true)
-h.assert_equal(installed.desc, 'hlcraft flash current highlight', 'preview mapping was not installed', scope)
+  config.setup({
+    preview_key = lhs,
+  })
 
-preview.uninstall_keymap(instance)
-local restored = vim.fn.maparg(lhs, 'n', false, true)
-h.assert_equal(restored.desc, 'original preview test mapping', 'preview mapping description was not restored', scope)
-h.assert_equal(restored.rhs, '<Nop>', 'preview mapping rhs was not restored', scope)
-h.assert_true(instance.state.preview.keymap == nil, 'preview keymap state was not cleared', scope)
+  local instance = {
+    state = {
+      preview = ui_state.preview(),
+      results = {},
+    },
+  }
+
+  preview.install_keymap(instance)
+  local installed = vim.fn.maparg(lhs, 'n', false, true)
+  h.assert_equal(installed.desc, 'hlcraft flash current highlight', 'preview mapping was not installed', scope)
+
+  preview.uninstall_keymap(instance)
+  local restored = vim.fn.maparg(lhs, 'n', false, true)
+  h.assert_equal(restored.desc, 'original preview test mapping', 'preview mapping description was not restored', scope)
+  h.assert_equal(restored.rhs, '<Nop>', 'preview mapping rhs was not restored', scope)
+  h.assert_true(instance.state.preview.keymap == nil, 'preview keymap state was not cleared', scope)
+
+  local preview_name = 'HlcraftUiPreviewFlash'
+  vim.api.nvim_set_hl(0, preview_name, { fg = '#111111' })
+  local flash_instance = {
+    state = {
+      preview = ui_state.preview(),
+      results = {
+        { name = preview_name },
+      },
+      list_cursor = 1,
+    },
+  }
+  preview.flash_current(flash_instance)
+  local flashed = vim.api.nvim_get_hl(0, { name = preview_name })
+  h.assert_equal(flashed.fg, 0x00e5ff, 'preview flash did not apply highlight color', scope)
+  preview.cleanup(flash_instance)
+  local restored_hl = vim.api.nvim_get_hl(0, { name = preview_name })
+  h.assert_equal(restored_hl.fg, 0x111111, 'preview cleanup did not restore highlight color', scope)
+end, debug.traceback)
 
 pcall(vim.keymap.del, 'n', lhs)
 config.setup({})
+
+if not ok then
+  error(err, 0)
+end
 
 print('hlcraft ui preview: OK')
