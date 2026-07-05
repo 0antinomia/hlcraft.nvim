@@ -6,15 +6,29 @@ local window = require('hlcraft.ui.workspace.window')
 
 local M = {}
 
-local function raw_dynamic_state(instance)
-  if not instance or not instance.state then
+local function instance_state(instance)
+  if type(instance) ~= 'table' or type(instance.state) ~= 'table' then
     error('raw dynamic editor requires an instance', 3)
   end
-  local state = instance.state.raw_dynamic
-  if state ~= nil and type(state) ~= 'table' then
+  return instance.state
+end
+
+local function raw_dynamic_state(state)
+  local raw_state = state.raw_dynamic
+  if raw_state ~= nil and type(raw_state) ~= 'table' then
     error('raw dynamic editor state must be a table', 3)
   end
-  return state
+  return raw_state
+end
+
+local function active_dynamic(result, field)
+  if type(result) ~= 'table' or type(result.name) ~= 'string' or result.name == '' then
+    return nil
+  end
+  if type(field) ~= 'string' or field == '' then
+    error('raw dynamic field must be a non-empty string', 3)
+  end
+  return session.dynamic_value(result.name, field)
 end
 
 local function buffer_text(buf)
@@ -22,9 +36,10 @@ local function buffer_text(buf)
 end
 
 local function clear_state(instance, buf, win)
-  local state = raw_dynamic_state(instance)
-  if state and state.buf == buf and state.win == win then
-    instance.state.raw_dynamic = nil
+  local state = instance_state(instance)
+  local raw_state = raw_dynamic_state(state)
+  if raw_state and raw_state.buf == buf and raw_state.win == win then
+    state.raw_dynamic = nil
   end
 end
 
@@ -46,22 +61,24 @@ local function register_cleanup(instance, buf, win)
 end
 
 function M.close(instance)
-  local state = raw_dynamic_state(instance)
-  if state then
-    if window.is_valid_win(state.win) then
-      pcall(vim.api.nvim_win_close, state.win, true)
+  local state = instance_state(instance)
+  local raw_state = raw_dynamic_state(state)
+  if raw_state then
+    if window.is_valid_win(raw_state.win) then
+      pcall(vim.api.nvim_win_close, raw_state.win, true)
     end
-    if window.is_valid_buf(state.buf) then
-      pcall(vim.api.nvim_buf_delete, state.buf, { force = true })
+    if window.is_valid_buf(raw_state.buf) then
+      pcall(vim.api.nvim_buf_delete, raw_state.buf, { force = true })
     end
   end
-  instance.state.raw_dynamic = nil
+  state.raw_dynamic = nil
 end
 
 function M.open(instance, result, field)
+  local state = instance_state(instance)
   M.close(instance)
 
-  local dynamic = result and result.name and session.dynamic_value(result.name, field) or nil
+  local dynamic = active_dynamic(result, field)
   if not dynamic then
     return false, 'No dynamic color field is active'
   end
@@ -93,7 +110,7 @@ function M.open(instance, result, field)
   })
 
   vim.wo[win].wrap = false
-  instance.state.raw_dynamic = { buf = buf, win = win }
+  state.raw_dynamic = { buf = buf, win = win }
   register_cleanup(instance, buf, win)
 
   vim.keymap.set('n', 'q', function()

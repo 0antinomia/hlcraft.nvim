@@ -3,10 +3,39 @@ local scope = 'hlcraft ui unsaved prompt'
 
 local prompt = require('hlcraft.ui.scene.unsaved_prompt')
 
+local function assert_fails(fn, message)
+  h.assert_true(not pcall(fn), message, scope)
+end
+
+assert_fails(function()
+  prompt.close(nil)
+end, 'unsaved prompt close accepted missing instance')
 local missing_prompt_state_ok = pcall(prompt.close, {
   state = {},
 })
 h.assert_true(not missing_prompt_state_ok, 'unsaved prompt accepted missing state schema', scope)
+assert_fails(function()
+  prompt.open({
+    ns = false,
+    state = {
+      unsaved_prompt = {},
+    },
+  }, 'HlcraftUiUnsavedPrompt', function() end)
+end, 'unsaved prompt accepted invalid namespace')
+assert_fails(function()
+  prompt.open({
+    state = {
+      unsaved_prompt = {},
+    },
+  }, '', function() end)
+end, 'unsaved prompt accepted empty name')
+assert_fails(function()
+  prompt.open({
+    state = {
+      unsaved_prompt = {},
+    },
+  }, 'HlcraftUiUnsavedPrompt', nil)
+end, 'unsaved prompt accepted missing callback')
 
 local instance = {
   ns = vim.api.nvim_create_namespace('hlcraft-ui-unsaved-prompt-test'),
