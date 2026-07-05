@@ -3,9 +3,49 @@ local paste_plan = require('hlcraft.ui.input.paste_plan')
 local input_sequence = require('hlcraft.ui.input.sequence')
 local buffer_lines = require('hlcraft.ui.buffer_lines')
 local navigation = require('hlcraft.ui.navigation')
+local numbers = require('hlcraft.core.number')
 local window = require('hlcraft.ui.workspace.window')
 
 local M = {}
+
+local function instance_state(instance)
+  if type(instance) ~= 'table' or type(instance.state) ~= 'table' then
+    error('input actions require an instance', 3)
+  end
+  return instance.state
+end
+
+local function geometry_inputs(state)
+  if type(state.geometry) ~= 'table' then
+    error('input actions geometry must be a table', 3)
+  end
+  local inputs = state.geometry.inputs
+  if type(inputs) ~= 'table' then
+    error('input actions geometry inputs must be a table', 3)
+  end
+  return inputs
+end
+
+local function assert_visual_flag(is_visual)
+  if type(is_visual) ~= 'boolean' then
+    error('input visual flag must be boolean', 3)
+  end
+  return is_visual
+end
+
+local function detail_active(state)
+  local index = state.detail_index
+  if index == nil then
+    return false
+  end
+  if type(index) ~= 'number' then
+    error('input action detail index must be a number or nil', 3)
+  end
+  if not numbers.is_finite(index) or math.floor(index) ~= index or index < 1 then
+    error('input action detail index must be a positive finite integer or nil', 3)
+  end
+  return true
+end
 
 local function get_search_scene()
   return require('hlcraft.ui.scene.search')
@@ -16,6 +56,7 @@ local function feed_key(key)
 end
 
 local function cursor_context(instance)
+  local state = instance_state(instance)
   local win = window.get_win(instance)
   if not window.is_valid_win(win) then
     return nil
@@ -25,6 +66,7 @@ local function cursor_context(instance)
   local row1, col = cursor[1], cursor[2]
   return {
     win = win,
+    state = state,
     row1 = row1,
     row0 = row1 - 1,
     col = col,
@@ -51,6 +93,7 @@ local function apply_paste_plan(instance, win, cursor_row, cursor_col, input, pl
 end
 
 local function paste_with_plan(instance, is_visual, planner)
+  is_visual = assert_visual_flag(is_visual)
   local context = cursor_context(instance)
   if not context or get_search_scene().is_on_row(instance) then
     return
@@ -66,7 +109,7 @@ local function goto_relative_input(instance, resolve_name)
     return
   end
 
-  local name = resolve_name(instance.state.geometry.inputs, context.input and context.input.name or nil)
+  local name = resolve_name(geometry_inputs(context.state), context.input and context.input.name or nil)
   if name then
     M.goto_input(instance, name)
   end
@@ -94,7 +137,7 @@ function M.should_block_forward_delete(instance)
   if not context then
     return false
   end
-  local line = buffer_lines.line(instance.state.buf, context.row0, 'cursor input action')
+  local line = buffer_lines.line(context.state.buf, context.row0, 'cursor input action')
   if context.col < #line then
     return false
   end
@@ -156,8 +199,10 @@ end
 --- @param instance table The Instance object holding UI state
 --- @return nil
 function M.goto_first_input(instance)
-  local name = input_sequence.first_name(instance.state.geometry.inputs, function(field)
-    return not instance.state.detail_index or field.kind == 'detail'
+  local state = instance_state(instance)
+  local is_detail = detail_active(state)
+  local name = input_sequence.first_name(geometry_inputs(state), function(field)
+    return not is_detail or field.kind == 'detail'
   end)
   if name then
     M.goto_input(instance, name)

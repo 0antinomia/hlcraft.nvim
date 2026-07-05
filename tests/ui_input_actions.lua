@@ -106,6 +106,25 @@ h.with_temp_buf(function(buf)
   h.assert_true(not invalid_input_row_ok, 'input model accepted a negative row', scope)
   local invalid_current_area_row_ok = pcall(input_model.current_area, instance, 0)
   h.assert_true(not invalid_current_area_row_ok, 'input model accepted a zero current-area row', scope)
+  local missing_action_instance_ok = pcall(actions.should_block_backward_delete, nil)
+  h.assert_true(not missing_action_instance_ok, 'input actions accepted missing instance', scope)
+  local missing_action_geometry_ok = pcall(actions.should_block_backward_delete, {
+    ns = instance.ns,
+    state = {
+      buf = buf,
+      extmark_ids = {},
+    },
+  })
+  h.assert_true(not missing_action_geometry_ok, 'input actions accepted missing geometry', scope)
+  local invalid_paste_below_visual_ok = pcall(actions.paste_below, instance, nil)
+  h.assert_true(not invalid_paste_below_visual_ok, 'paste below accepted missing visual flag', scope)
+  local invalid_paste_above_visual_ok = pcall(actions.paste_above, instance, 'visual')
+  h.assert_true(not invalid_paste_above_visual_ok, 'paste above accepted non-boolean visual flag', scope)
+  local invalid_first_geometry_ok = pcall(actions.goto_first_input, { state = { geometry = {} } })
+  h.assert_true(not invalid_first_geometry_ok, 'first input jump accepted missing geometry inputs', scope)
+  local invalid_first_detail_ok =
+    pcall(actions.goto_first_input, { state = { geometry = instance.state.geometry, detail_index = 0 } })
+  h.assert_true(not invalid_first_detail_ok, 'first input jump accepted invalid detail index', scope)
   local missing_extmarks_ok = pcall(input_model.get_input_pos, {
     state = {
       geometry = instance.state.geometry,
