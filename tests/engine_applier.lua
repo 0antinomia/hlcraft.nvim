@@ -2,10 +2,12 @@ local h = require('tests.helpers')
 local scope = 'hlcraft engine applier'
 
 local applier = require('hlcraft.engine.applier')
+local config = require('hlcraft.config')
 local store = require('hlcraft.engine.store')
 
 local original_set_hl = vim.api.nvim_set_hl
 local original_store_set_hl = store.data.original_set_hl
+local original_config = config.config
 local original_hooked = store.data.hooked
 local original_pending = vim.deepcopy(store.data.pending)
 local original_base_specs = vim.deepcopy(store.data.base_specs)
@@ -16,6 +18,7 @@ local function restore_state()
     vim.api.nvim_set_hl = original_set_hl
   end
   store.data.original_set_hl = original_store_set_hl
+  config.config = original_config
   store.data.hooked = original_hooked
   store.data.pending = original_pending
   store.data.base_specs = original_base_specs
@@ -48,6 +51,17 @@ local ok, err = xpcall(function()
   vim.api.nvim_set_hl(0, name, valid_spec)
   h.assert_equal(store.data.base_specs[name].fg, '#101010', 'pending hook did not capture valid base spec', scope)
   h.assert_true(store.data.base_specs[name] ~= valid_spec, 'pending hook kept mutable base spec reference', scope)
+
+  config.config = vim.tbl_deep_extend('force', vim.deepcopy(config.config), {
+    reapply_events = {
+      enabled = true,
+      events = {
+        [2] = 'ColorScheme',
+      },
+    },
+  })
+  local sparse_events_ok = pcall(applier.register_reapply_events, function() end)
+  h.assert_true(not sparse_events_ok, 'applier accepted sparse reapply events', scope)
 end, debug.traceback)
 
 restore_state()

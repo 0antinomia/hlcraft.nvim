@@ -77,13 +77,7 @@ end
 
 local function geometry_inputs(instance)
   local inputs = input_geometry(instance).inputs
-  if type(inputs) ~= 'table' then
-    error('input geometry inputs must be a table', 3)
-  end
-  if not tables.is_sequence(inputs) then
-    error('input geometry inputs must be a sequence', 3)
-  end
-  return inputs
+  return tables.assert_sequence(inputs, 'input geometry inputs', 3)
 end
 
 local function geometry_result_lines(instance)

@@ -9,12 +9,7 @@ local default_max_items = 3
 local relaxed_max_items = 2
 
 local function key_set(keys)
-  if type(keys) ~= 'table' then
-    error('key set values must be a table', 3)
-  end
-  if not tables.is_sequence(keys) then
-    error('key set values must be a sequence', 3)
-  end
+  keys = tables.assert_sequence(keys, 'key set values', 3)
   local result = {}
   for _, key in ipairs(keys) do
     result[key] = true
@@ -107,14 +102,6 @@ local function assert_table(value, message)
   return value
 end
 
-local function assert_sequence(value, table_message, sequence_message)
-  value = assert_table(value, table_message)
-  if not tables.is_sequence(value) then
-    error(sequence_message, 3)
-  end
-  return value
-end
-
 local function assert_positive_integer(value, message)
   if type(value) ~= 'number' or not numbers.is_finite(value) or math.floor(value) ~= value or value < 1 then
     error(message, 3)
@@ -157,7 +144,7 @@ end
 
 local function format_range(items, first, last)
   local parts = {}
-  items = assert_sequence(items, 'hint items must be a table', 'hint items must be a sequence')
+  items = tables.assert_sequence(items, 'hint items', 3)
   first = first or 1
   last = last or #items
 
@@ -183,7 +170,7 @@ function M.section_lines(label, group, options)
   if items == nil then
     error(('unknown hint group: %s'):format(tostring(group)), 2)
   end
-  items = assert_sequence(items, 'hint items must be a table', 'hint items must be a sequence')
+  items = tables.assert_sequence(items, 'hint items', 3)
   local lines = {}
 
   local first = 1
@@ -211,7 +198,7 @@ local function section(label, group)
 end
 
 local function block(spec, width)
-  spec = assert_sequence(spec, 'hint block spec must be a table', 'hint block spec must be a sequence')
+  spec = tables.assert_sequence(spec, 'hint block spec', 3)
   local lines = {}
   for index, item in ipairs(spec) do
     if index > 1 then

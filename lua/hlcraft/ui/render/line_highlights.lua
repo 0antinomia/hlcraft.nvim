@@ -111,13 +111,7 @@ local function assert_span(span)
 end
 
 local function assert_spans(spans)
-  if type(spans) ~= 'table' then
-    error('render spans must be a table', 3)
-  end
-  if not tables.is_sequence(spans) then
-    error('render spans must be a sequence', 3)
-  end
-  return spans
+  return tables.assert_sequence(spans, 'render spans', 3)
 end
 
 local function apply_spans(instance, buf, line_idx, spans)

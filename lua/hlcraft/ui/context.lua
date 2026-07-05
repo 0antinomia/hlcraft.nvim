@@ -22,13 +22,7 @@ local function field_editor_state(state)
 end
 
 local function result_list(state)
-  if type(state.results) ~= 'table' then
-    error('UI context results must be a table', 3)
-  end
-  if not tables.is_sequence(state.results) then
-    error('UI context results must be a sequence', 3)
-  end
-  return state.results
+  return tables.assert_sequence(state.results, 'UI context results', 3)
 end
 
 function M.editor_scene_is_active(instance)

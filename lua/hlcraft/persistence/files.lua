@@ -13,12 +13,7 @@ local function assert_string(value, label)
 end
 
 local function assert_lines(value)
-  if type(value) ~= 'table' then
-    error('File content lines must be a table', 3)
-  end
-  if not tables.is_sequence(value) then
-    error('File content lines must be a sequence', 3)
-  end
+  value = tables.assert_sequence(value, 'File content lines', 3)
   for index, line in ipairs(value) do
     if type(line) ~= 'string' then
       error(('File content line %d must be a string'):format(index), 3)
@@ -135,12 +130,7 @@ end
 
 function M.remove_stale_toml_files(path, active_section_names)
   assert_string(path, 'Directory path')
-  if type(active_section_names) ~= 'table' then
-    error('Active section names must be a table', 2)
-  end
-  if not tables.is_sequence(active_section_names) then
-    error('Active section names must be a sequence', 2)
-  end
+  active_section_names = tables.assert_sequence(active_section_names, 'Active section names', 2)
 
   local active_files = {}
   for _, section_name in ipairs(active_section_names) do

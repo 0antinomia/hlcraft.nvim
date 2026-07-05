@@ -24,12 +24,7 @@ local function preview_state(state)
   if type(preview.marks) ~= 'table' then
     error('dynamic preview marks must be a table', 3)
   end
-  if type(preview.items) ~= 'table' then
-    error('dynamic preview items must be a table', 3)
-  end
-  if not tables.is_sequence(preview.items) then
-    error('dynamic preview items must be a sequence', 3)
-  end
+  preview.items = tables.assert_sequence(preview.items, 'dynamic preview items', 3)
   return preview
 end
 

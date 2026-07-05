@@ -35,12 +35,7 @@ end
 
 function M.string_list(lines, label, level)
   local error_level = level or 3
-  if type(lines) ~= 'table' then
-    error(('%s must be a table'):format(label), error_level)
-  end
-  if not tables.is_sequence(lines) then
-    error(('%s must be a sequence'):format(label), error_level)
-  end
+  lines = tables.assert_sequence(lines, label, error_level)
   for _, line in ipairs(lines) do
     if type(line) ~= 'string' then
       error(('%s entries must be strings'):format(label), error_level)

@@ -13,6 +13,18 @@ h.assert_true(not tables.is_sequence({ [0] = 'zero' }), 'zero index table was ac
 h.assert_true(not tables.is_sequence({ [1.5] = 'half' }), 'fractional index table was accepted', scope)
 h.assert_true(not tables.is_sequence({ [1] = 'a', extra = 'b' }), 'mixed-key table was accepted', scope)
 h.assert_true(not tables.is_sequence('not a table'), 'non-table value was accepted', scope)
+local sample_sequence = { 'a', 'b' }
+h.assert_true(
+  tables.assert_sequence(sample_sequence, 'sample') == sample_sequence,
+  'sequence assertion changed value',
+  scope
+)
+local nil_sequence_ok = pcall(tables.assert_sequence, nil, 'sample')
+h.assert_true(not nil_sequence_ok, 'sequence assertion accepted nil', scope)
+local sparse_sequence_ok = pcall(tables.assert_sequence, { [2] = 'late' }, 'sample')
+h.assert_true(not sparse_sequence_ok, 'sequence assertion accepted sparse table', scope)
+local invalid_sequence_label_ok = pcall(tables.assert_sequence, {}, '')
+h.assert_true(not invalid_sequence_label_ok, 'sequence assertion accepted empty label', scope)
 
 local sorted = tables.sorted_keys({ b = true, a = true, c = true })
 h.assert_equal(table.concat(sorted, ','), 'a,b,c', 'keys were not sorted', scope)

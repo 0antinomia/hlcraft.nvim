@@ -24,14 +24,6 @@ local function assert_table(value, message)
   return value
 end
 
-local function assert_sequence(value, table_message, sequence_message)
-  value = assert_table(value, table_message)
-  if not tables.is_sequence(value) then
-    error(sequence_message, 3)
-  end
-  return value
-end
-
 local function keycap(item)
   item = assert_table(item, 'help item must be a table')
   assert_non_empty_string(item[1], 'help item key must be a non-empty string')
@@ -39,7 +31,7 @@ local function keycap(item)
 end
 
 local function keycap_width(items)
-  items = assert_sequence(items, 'help items must be a table', 'help items must be a sequence')
+  items = tables.assert_sequence(items, 'help items', 3)
   local width = 0
   for _, item in ipairs(items) do
     width = math.max(width, vim.fn.strdisplaywidth(keycap(item)))
@@ -144,13 +136,11 @@ function M.lines(preview_key)
     '',
   }
 
-  local sections =
-    assert_sequence(M.sections(preview_key), 'help sections must be a table', 'help sections must be a sequence')
+  local sections = tables.assert_sequence(M.sections(preview_key), 'help sections', 3)
   for section_index, section in ipairs(sections) do
     section = assert_table(section, 'help section must be a table')
     assert_non_empty_string(section.title, 'help section title must be a non-empty string')
-    local items =
-      assert_sequence(section.items, 'help section items must be a table', 'help section items must be a sequence')
+    local items = tables.assert_sequence(section.items, 'help section items', 3)
     lines[#lines + 1] = section.title
     local width = keycap_width(items)
     for _, item in ipairs(items) do

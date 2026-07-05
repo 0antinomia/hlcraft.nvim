@@ -16,12 +16,7 @@ local function assert_string(value, label)
 end
 
 local function assert_lines(value)
-  if type(value) ~= 'table' then
-    error('TOML lines must be a table', 3)
-  end
-  if not tables.is_sequence(value) then
-    error('TOML lines must be a sequence', 3)
-  end
+  value = tables.assert_sequence(value, 'TOML lines', 3)
   for index, line in ipairs(value) do
     if type(line) ~= 'string' then
       error(('TOML line %d must be a string'):format(index), 3)

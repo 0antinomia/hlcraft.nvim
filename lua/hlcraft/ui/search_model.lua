@@ -12,13 +12,7 @@ local function assert_string(value, label)
 end
 
 local function assert_results(value, label)
-  if type(value) ~= 'table' then
-    error(('%s must be a table'):format(label), 3)
-  end
-  if not tables.is_sequence(value) then
-    error(('%s must be a sequence'):format(label), 3)
-  end
-  return value
+  return tables.assert_sequence(value, label, 3)
 end
 
 local function assert_provider(provider)

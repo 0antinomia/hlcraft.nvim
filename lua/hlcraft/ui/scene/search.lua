@@ -38,13 +38,7 @@ local function geometry_table(state)
 end
 
 local function result_list(state)
-  if type(state.results) ~= 'table' then
-    error('search scene results must be a table', 3)
-  end
-  if not tables.is_sequence(state.results) then
-    error('search scene results must be a sequence', 3)
-  end
-  return state.results
+  return tables.assert_sequence(state.results, 'search scene results', 3)
 end
 
 local function positive_integer(value, label)
