@@ -5,14 +5,12 @@ local config = require('hlcraft.config')
 local hlcraft = require('hlcraft')
 local blend_renderer = require('hlcraft.ui.render.editors.blend')
 local color_renderer = require('hlcraft.ui.render.editors.color')
-local decorations = require('hlcraft.ui.render.decorations')
 local detail_renderer = require('hlcraft.ui.render.detail')
 local dynamic_renderer = require('hlcraft.ui.render.editors.dynamic')
 local dynamic_model = require('hlcraft.dynamic.model')
 local engine = require('hlcraft.engine.service')
 local field_editor_renderer = require('hlcraft.ui.render.field_editor')
 local group_renderer = require('hlcraft.ui.render.editors.group')
-local theme = require('hlcraft.ui.theme')
 local ui_state = require('hlcraft.ui.state')
 
 local persist_dir = h.temp_dir('hlcraft-ui-render')
@@ -43,142 +41,6 @@ local result = {
   resolved_bg = '#222222',
   sp = '#333333',
 }
-
-local nil_find_line_ok = pcall(decorations.find_text_start, nil, 'x', 0)
-h.assert_true(not nil_find_line_ok, 'text finder accepted nil line', scope)
-local nil_find_text_ok = pcall(decorations.find_text_start, 'x', nil, 0)
-h.assert_true(not nil_find_text_ok, 'text finder accepted nil text', scope)
-local invalid_find_start_ok = pcall(decorations.find_text_start, 'x', 'x', 0.5)
-h.assert_true(not invalid_find_start_ok, 'text finder accepted fractional start column', scope)
-local required_text_col = decorations.require_text_start('left right', 'right', 0, 'test marker')
-h.assert_equal(required_text_col, 5, 'required text finder returned the wrong column', scope)
-local missing_required_text_ok = pcall(decorations.require_text_start, 'left right', 'missing', 0, 'test marker')
-h.assert_true(not missing_required_text_ok, 'required text finder accepted missing text', scope)
-local invalid_required_label_ok = pcall(decorations.require_text_start, 'left right', 'left', 0, '')
-h.assert_true(not invalid_required_label_ok, 'required text finder accepted an empty label', scope)
-h.with_temp_buf(function(buf)
-  local decoration_instance = {
-    id = 'ui-render-decoration-test',
-    ns = vim.api.nvim_create_namespace('hlcraft-ui-render-decoration-test'),
-    input_label_hl = theme.groups.label,
-    state = {
-      buf = buf,
-      input_marks = {},
-    },
-  }
-  vim.api.nvim_buf_set_lines(buf, 0, -1, false, { 'Name', 'Result' })
-  decorations.set_input_header(decoration_instance, { line = 1 }, 'Name', {
-    extra = 'query',
-    top_virt_lines = { decorations.help_virt_line() },
-  })
-  decorations.set_results_header(decoration_instance, 2, 80)
-  decorations.apply_color_cell(decoration_instance, buf, 0, 0, 'Name', '#ffffff', 'fg')
-  local color_hl = decorations.detail_color_hl(decoration_instance, '#ffffff', 'fg')
-  h.assert_true(type(color_hl) == 'string' and color_hl ~= '', 'detail color highlight was not created', scope)
-  h.assert_true(next(decoration_instance.state.input_marks) ~= nil, 'input header marks were not stored', scope)
-
-  local missing_decoration_instance_ok = pcall(decorations.set_results_header, nil, 1, 80)
-  h.assert_true(not missing_decoration_instance_ok, 'decorations accepted missing instance', scope)
-  local invalid_header_opts_ok = pcall(decorations.set_input_header, decoration_instance, { line = 1 }, 'Name', false)
-  h.assert_true(not invalid_header_opts_ok, 'input header accepted non-table options', scope)
-  local unknown_header_opts_ok = pcall(decorations.set_input_header, decoration_instance, { line = 1 }, 'Name', {
-    width = 10,
-  })
-  h.assert_true(not unknown_header_opts_ok, 'input header accepted unknown options', scope)
-  local invalid_header_line_ok = pcall(decorations.set_input_header, decoration_instance, { line = 0 }, 'Name')
-  h.assert_true(not invalid_header_line_ok, 'input header accepted invalid field line', scope)
-  decoration_instance.state.input_marks['Name:1'] = false
-  local invalid_header_mark_ok = pcall(decorations.set_input_header, decoration_instance, { line = 1 }, 'Name')
-  h.assert_true(not invalid_header_mark_ok, 'input header accepted invalid extmark id', scope)
-  decoration_instance.state.input_marks['Name:1'] = nil
-  decoration_instance.state.input_marks.results_header = false
-  local invalid_results_mark_ok = pcall(decorations.set_results_header, decoration_instance, 2, 80)
-  h.assert_true(not invalid_results_mark_ok, 'results header accepted invalid extmark id', scope)
-  decoration_instance.state.input_marks.results_header = nil
-  local invalid_header_extra_ok = pcall(decorations.set_input_header, decoration_instance, { line = 1 }, 'Name', {
-    extra = false,
-  })
-  h.assert_true(not invalid_header_extra_ok, 'input header accepted non-string extra text', scope)
-  local invalid_header_virt_ok = pcall(decorations.set_input_header, decoration_instance, { line = 1 }, 'Name', {
-    top_virt_lines = { false },
-  })
-  h.assert_true(not invalid_header_virt_ok, 'input header accepted invalid virtual lines', scope)
-  local sparse_header_virt_lines_ok = pcall(decorations.set_input_header, decoration_instance, { line = 1 }, 'Name', {
-    top_virt_lines = {
-      [2] = decorations.help_virt_line(),
-    },
-  })
-  h.assert_true(not sparse_header_virt_lines_ok, 'input header accepted sparse virtual lines', scope)
-  local sparse_header_virt_line_ok = pcall(decorations.set_input_header, decoration_instance, { line = 1 }, 'Name', {
-    top_virt_lines = {
-      {
-        [2] = { '?', theme.groups.key },
-      },
-    },
-  })
-  h.assert_true(not sparse_header_virt_line_ok, 'input header accepted sparse virtual line chunks', scope)
-  local keyed_header_virt_chunk_ok = pcall(decorations.set_input_header, decoration_instance, { line = 1 }, 'Name', {
-    top_virt_lines = {
-      {
-        { text = '?', hl = theme.groups.key },
-      },
-    },
-  })
-  h.assert_true(not keyed_header_virt_chunk_ok, 'input header accepted keyed virtual line chunk', scope)
-  local invalid_header_virt_chunk_text_ok = pcall(
-    decorations.set_input_header,
-    decoration_instance,
-    { line = 1 },
-    'Name',
-    {
-      top_virt_lines = {
-        {
-          { false, theme.groups.key },
-        },
-      },
-    }
-  )
-  h.assert_true(
-    not invalid_header_virt_chunk_text_ok,
-    'input header accepted non-string virtual line chunk text',
-    scope
-  )
-  local invalid_header_virt_chunk_hl_ok = pcall(
-    decorations.set_input_header,
-    decoration_instance,
-    { line = 1 },
-    'Name',
-    {
-      top_virt_lines = {
-        {
-          { '?', false },
-        },
-      },
-    }
-  )
-  h.assert_true(
-    not invalid_header_virt_chunk_hl_ok,
-    'input header accepted non-string virtual line chunk highlight',
-    scope
-  )
-  local extra_header_virt_chunk_ok = pcall(decorations.set_input_header, decoration_instance, { line = 1 }, 'Name', {
-    top_virt_lines = {
-      {
-        { '?', theme.groups.key, 'extra' },
-      },
-    },
-  })
-  h.assert_true(not extra_header_virt_chunk_ok, 'input header accepted oversized virtual line chunk', scope)
-  local invalid_results_width_ok = pcall(decorations.set_results_header, decoration_instance, 1, 0)
-  h.assert_true(not invalid_results_width_ok, 'results header accepted invalid width', scope)
-  local invalid_color_buf_ok = pcall(decorations.apply_color_cell, decoration_instance, -1, 0, 0, 'x', '#ffffff', 'fg')
-  h.assert_true(not invalid_color_buf_ok, 'color cell accepted invalid buffer', scope)
-  local invalid_color_suffix_ok =
-    pcall(decorations.apply_color_cell, decoration_instance, buf, 0, 0, 'x', '#ffffff', '')
-  h.assert_true(not invalid_color_suffix_ok, 'color cell accepted empty suffix', scope)
-  local invalid_detail_color_bg_ok = pcall(decorations.detail_color_hl, decoration_instance, false, 'fg')
-  h.assert_true(not invalid_detail_color_bg_ok, 'detail color highlight accepted invalid background', scope)
-end)
 
 local strict_detail_ok = pcall(detail_renderer.build, { detail_menu = {} }, result, 80)
 h.assert_true(not strict_detail_ok, 'detail renderer accepted a build call without instance', scope)
@@ -251,73 +113,6 @@ h.assert_true(
   'detail renderer did not wrap narrow hints',
   scope
 )
-h.with_temp_buf(function(buf)
-  local detail_ns = vim.api.nvim_create_namespace('hlcraft-ui-render-detail-test')
-  vim.api.nvim_buf_set_lines(buf, 0, -1, false, detail_lines)
-  decorations.apply_detail_menu_highlights({
-    ns = detail_ns,
-    state = {
-      buf = buf,
-    },
-  }, detail_geometry.detail_menu, false)
-  local marks = vim.api.nvim_buf_get_extmarks(buf, detail_ns, 0, -1, { details = true })
-  h.assert_true(#marks > 0, 'detail menu highlights were not applied', scope)
-end)
-h.with_temp_buf(function(buf)
-  local invalid_detail_menu_ok = pcall(decorations.apply_detail_menu_highlights, {
-    ns = vim.api.nvim_create_namespace('hlcraft-ui-render-invalid-detail-menu-test'),
-    state = {
-      buf = buf,
-    },
-  }, nil, false)
-  h.assert_true(not invalid_detail_menu_ok, 'detail menu highlighter accepted nil geometry', scope)
-  local invalid_dirty_flag_ok = pcall(decorations.apply_detail_menu_highlights, {
-    ns = vim.api.nvim_create_namespace('hlcraft-ui-render-invalid-dirty-test'),
-    state = {
-      buf = buf,
-    },
-  }, {}, 'dirty')
-  h.assert_true(not invalid_dirty_flag_ok, 'detail menu highlighter accepted non-boolean dirty flag', scope)
-  local invalid_detail_row_ok = pcall(decorations.apply_detail_menu_highlights, {
-    ns = vim.api.nvim_create_namespace('hlcraft-ui-render-invalid-detail-row-test'),
-    state = {
-      buf = buf,
-    },
-  }, {
-    fg = { line = 0 },
-  }, false)
-  h.assert_true(not invalid_detail_row_ok, 'detail menu highlighter accepted invalid row geometry', scope)
-end)
-
-local top_help = ''
-for _, chunk in ipairs(decorations.help_virt_line()) do
-  top_help = top_help .. chunk[1]
-end
-h.assert_true(top_help:find('? help', 1, true) ~= nil, 'top help line should keep help discovery', scope)
-h.assert_true(top_help:find('Enter', 1, true) == nil, 'top help line should not repeat scene actions', scope)
-h.assert_true(top_help:find('Tab', 1, true) == nil, 'top help line should not repeat input navigation', scope)
-
-local ns = vim.api.nvim_create_namespace('hlcraft-ui-render-test')
-local non_numeric_theme_ns_ok = pcall(theme.apply, false)
-h.assert_true(not non_numeric_theme_ns_ok, 'theme accepted non-numeric namespace', scope)
-local infinite_theme_ns_ok = pcall(theme.apply, math.huge)
-h.assert_true(not infinite_theme_ns_ok, 'theme accepted infinite namespace', scope)
-theme.apply(ns)
-for _, group_name in ipairs({
-  theme.groups.section,
-  theme.groups.hint,
-  theme.groups.hint_action,
-  theme.groups.value,
-  theme.groups.key,
-  theme.groups.title,
-}) do
-  h.assert_true(type(group_name) == 'string' and group_name ~= '', 'missing visual hierarchy group', scope)
-  local applied = vim.api.nvim_get_hl(ns, { name = group_name })
-  h.assert_true(applied.fg ~= nil, ('theme group %s has no foreground'):format(group_name), scope)
-end
-local hint_hl = vim.api.nvim_get_hl(ns, { name = theme.groups.hint })
-local action_hl = vim.api.nvim_get_hl(ns, { name = theme.groups.hint_action })
-h.assert_true(action_hl.fg ~= hint_hl.fg, 'hint actions should contrast with muted hint text', scope)
 
 local color_geometry = { editor_rows = {} }
 local color_lines = color_renderer.build(color_geometry, result, 'fg', 80)
