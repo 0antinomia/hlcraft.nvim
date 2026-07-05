@@ -8,11 +8,15 @@ local M = {}
 
 local next_preview_instance_id = 0
 
-local function preview_state(instance)
-  if not instance or not instance.state then
+local function instance_state(instance)
+  if type(instance) ~= 'table' or type(instance.state) ~= 'table' then
     error('dynamic preview requires an instance', 3)
   end
-  local preview = instance.state.dynamic_preview
+  return instance.state
+end
+
+local function preview_state(state)
+  local preview = state.dynamic_preview
   if type(preview) ~= 'table' then
     error('dynamic preview state must be a table', 3)
   end
@@ -25,8 +29,29 @@ local function preview_state(instance)
   return preview
 end
 
-local function valid_buffer(instance)
-  return instance.state.buf and vim.api.nvim_buf_is_valid(instance.state.buf)
+local function preview_namespace(instance)
+  if type(instance.ns) ~= 'number' then
+    error('dynamic preview namespace must be a number', 3)
+  end
+  if not numbers.is_finite(instance.ns) or math.floor(instance.ns) ~= instance.ns or instance.ns < 0 then
+    error('dynamic preview namespace must be a non-negative finite integer', 3)
+  end
+  return instance.ns
+end
+
+local function valid_buffer(state)
+  return type(state.buf) == 'number' and vim.api.nvim_buf_is_valid(state.buf)
+end
+
+local function assert_time(now_ms)
+  if not numbers.is_finite(now_ms) then
+    error('dynamic preview time must be finite', 3)
+  end
+  return now_ms
+end
+
+local function is_non_negative_integer(value)
+  return type(value) == 'number' and numbers.is_finite(value) and math.floor(value) == value and value >= 0
 end
 
 local function instance_preview_key(preview)
@@ -50,7 +75,7 @@ local function expected_hl_name(preview, item_id)
   return ('HlcraftDynamicPreview_%s_%d'):format(tostring(preview.instance_id), item_id)
 end
 
-local function is_tracked_preview_mark(instance, preview, item_id, mark_id)
+local function is_tracked_preview_mark(state, ns, preview, item_id, mark_id)
   local item = preview.items[item_id]
   if not item then
     return false
@@ -59,7 +84,7 @@ local function is_tracked_preview_mark(instance, preview, item_id, mark_id)
   if not expected_hl then
     return false
   end
-  local ok, mark = pcall(vim.api.nvim_buf_get_extmark_by_id, instance.state.buf, instance.ns, mark_id, {
+  local ok, mark = pcall(vim.api.nvim_buf_get_extmark_by_id, state.buf, ns, mark_id, {
     details = true,
   })
   if not ok or #mark == 0 then
@@ -71,33 +96,32 @@ local function is_tracked_preview_mark(instance, preview, item_id, mark_id)
   return chunk and chunk[1] == item.text and chunk[2] == expected_hl
 end
 
-local function clear_preview_marks(instance, preview)
+local function clear_preview_marks(state, ns, preview)
   for item_id, mark_id in pairs(preview.marks) do
-    if is_tracked_preview_mark(instance, preview, item_id, mark_id) then
-      pcall(vim.api.nvim_buf_del_extmark, instance.state.buf, instance.ns, mark_id)
+    if is_tracked_preview_mark(state, ns, preview, item_id, mark_id) then
+      pcall(vim.api.nvim_buf_del_extmark, state.buf, ns, mark_id)
     end
   end
   preview.marks = {}
 end
 
-local function set_preview_hl(instance, preview, item, now_ms)
+local function set_preview_hl(ns, preview, item, now_ms)
   local value = effects.compute(item.dynamic, item.base, item.now_ms or now_ms)
   if not value then
     return nil
   end
   local hl_name = ('HlcraftDynamicPreview_%s_%d'):format(instance_preview_key(preview), item.id)
-  vim.api.nvim_set_hl(instance.ns, hl_name, { fg = value })
+  vim.api.nvim_set_hl(ns, hl_name, { fg = value })
   return hl_name
 end
 
-local function set_preview_mark(instance, item, hl_name)
-  local ok, mark_id =
-    pcall(vim.api.nvim_buf_set_extmark, instance.state.buf, instance.ns, item.line - 1, item.col_start, {
-      end_col = item.col_end,
-      virt_text = { { item.text, hl_name } },
-      virt_text_pos = 'overlay',
-      hl_mode = 'replace',
-    })
+local function set_preview_mark(state, ns, item, hl_name)
+  local ok, mark_id = pcall(vim.api.nvim_buf_set_extmark, state.buf, ns, item.line - 1, item.col_start, {
+    end_col = item.col_end,
+    virt_text = { { item.text, hl_name } },
+    virt_text_pos = 'overlay',
+    hl_mode = 'replace',
+  })
   if not ok then
     return nil
   end
@@ -116,10 +140,10 @@ local function normalize_item(item, dynamic)
   then
     return nil
   end
-  if type(item.col_start) ~= 'number' or not numbers.is_finite(item.col_start) or item.col_start < 0 then
+  if not is_non_negative_integer(item.col_start) then
     return nil
   end
-  if type(item.col_end) ~= 'number' or not numbers.is_finite(item.col_end) or item.col_end <= item.col_start then
+  if not is_non_negative_integer(item.col_end) or item.col_end <= item.col_start then
     return nil
   end
   if item.now_ms ~= nil and (type(item.now_ms) ~= 'number' or not numbers.is_finite(item.now_ms)) then
@@ -132,10 +156,12 @@ local function normalize_item(item, dynamic)
 end
 
 function M.register(instance, item)
-  local preview = preview_state(instance)
-  if not valid_buffer(instance) then
+  local state = instance_state(instance)
+  local preview = preview_state(state)
+  if not valid_buffer(state) then
     return nil
   end
+  preview_namespace(instance)
   local dynamic = model.normalize_channel(item and item.dynamic)
   if not dynamic then
     return nil
@@ -151,30 +177,34 @@ function M.register(instance, item)
 end
 
 function M.tick(instance, now_ms)
-  local preview = preview_state(instance)
-  if not valid_buffer(instance) then
+  local state = instance_state(instance)
+  local preview = preview_state(state)
+  now_ms = assert_time(now_ms)
+  if not valid_buffer(state) then
     return
   end
-  clear_preview_marks(instance, preview)
+  local ns = preview_namespace(instance)
+  clear_preview_marks(state, ns, preview)
   for _, item in pairs(preview.items) do
-    local hl_name = set_preview_hl(instance, preview, item, now_ms)
+    local hl_name = set_preview_hl(ns, preview, item, now_ms)
     if hl_name then
-      preview.marks[item.id] = set_preview_mark(instance, item, hl_name)
+      preview.marks[item.id] = set_preview_mark(state, ns, item, hl_name)
     end
   end
 end
 
 function M.reset_items(instance)
-  preview_state(instance).items = {}
+  preview_state(instance_state(instance)).items = {}
 end
 
 function M.reset_marks(instance)
-  preview_state(instance).marks = {}
+  preview_state(instance_state(instance)).marks = {}
 end
 
 function M.sync(instance)
-  local preview = preview_state(instance)
-  if not valid_buffer(instance) then
+  local state = instance_state(instance)
+  local preview = preview_state(state)
+  if not valid_buffer(state) then
     close_timer(preview)
     return
   end
@@ -182,13 +212,14 @@ function M.sync(instance)
     close_timer(preview)
     return
   end
+  preview_namespace(instance)
   if preview.timer then
     return
   end
   local interval = config.config.dynamic.interval_ms
   preview.timer = timers.repeating(interval, function()
     vim.schedule(function()
-      if not valid_buffer(instance) or next(preview.items) == nil then
+      if not valid_buffer(state) or next(preview.items) == nil then
         close_timer(preview)
         return
       end
@@ -198,9 +229,10 @@ function M.sync(instance)
 end
 
 function M.clear(instance)
-  local preview = preview_state(instance)
-  if valid_buffer(instance) then
-    clear_preview_marks(instance, preview)
+  local state = instance_state(instance)
+  local preview = preview_state(state)
+  if valid_buffer(state) then
+    clear_preview_marks(state, preview_namespace(instance), preview)
   else
     preview.marks = {}
   end

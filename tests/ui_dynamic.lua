@@ -27,6 +27,10 @@ local instance = {
 }
 local result = { name = 'HlcraftUiDynamicNormal' }
 
+local function assert_fails(fn, message)
+  h.assert_true(not pcall(fn), message, scope)
+end
+
 local toggle_ok, toggle_err = editor.toggle(instance, result, 'fg')
 h.assert_true(toggle_ok, toggle_err or 'toggle dynamic failed', scope)
 h.assert_equal(
@@ -240,6 +244,9 @@ h.with_temp_buf(function(preview_buf)
     now_ms = 500,
   })
   h.assert_equal(preview_id, 1, 'preview item was not registered', scope)
+  assert_fails(function()
+    dynamic_preview.register(nil, {})
+  end, 'dynamic preview accepted missing instance')
   local missing_preview_state_ok = pcall(dynamic_preview.register, {
     ns = preview_ns,
     state = {
@@ -254,6 +261,22 @@ h.with_temp_buf(function(preview_buf)
     dynamic = preview_dynamic,
   })
   h.assert_true(not missing_preview_state_ok, 'dynamic preview accepted missing state schema', scope)
+  assert_fails(function()
+    dynamic_preview.register({
+      ns = false,
+      state = {
+        buf = preview_buf,
+        dynamic_preview = ui_state.dynamic_preview(),
+      },
+    }, {
+      line = 1,
+      col_start = 0,
+      col_end = 4,
+      text = 'XXXX',
+      base = '#000000',
+      dynamic = preview_dynamic,
+    })
+  end, 'dynamic preview accepted invalid namespace')
   h.assert_true(dynamic_preview.register(preview_instance, {
     line = 1,
     col_start = 0,
@@ -281,6 +304,17 @@ h.with_temp_buf(function(preview_buf)
     base = '#000000',
     dynamic = preview_dynamic,
   }) == nil, 'invalid preview columns were registered', scope)
+  h.assert_true(dynamic_preview.register(preview_instance, {
+    line = 1,
+    col_start = 0.5,
+    col_end = 4,
+    text = 'XXXX',
+    base = '#000000',
+    dynamic = preview_dynamic,
+  }) == nil, 'fractional preview column was registered', scope)
+  assert_fails(function()
+    dynamic_preview.tick(preview_instance, math.huge)
+  end, 'dynamic preview accepted infinite tick time')
   dynamic_preview.tick(preview_instance, 0)
   local preview_hl_name = ('HlcraftDynamicPreview_%s_%d'):format(
     tostring(preview_instance.state.dynamic_preview.instance_id),
