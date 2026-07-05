@@ -192,6 +192,15 @@ h.assert_equal(
   scope
 )
 
+local invalid_create_dir = h.temp_dir('hlcraft-storage-invalid-save-dir')
+local invalid_create_ok = storage.save({
+  InvalidCreate = { fg = 123 },
+}, {
+  InvalidCreate = 'group',
+}, invalid_create_dir)
+h.assert_true(not invalid_create_ok, 'storage.save accepted invalid data for a new directory', scope)
+h.assert_file_missing(invalid_create_dir, 'invalid storage.save created the target directory', scope)
+
 local unknown_field_ok, unknown_field_err = storage.save({
   UnknownField = { unknown = true },
 }, {
