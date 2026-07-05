@@ -29,13 +29,7 @@ local function instance_namespace(instance)
 end
 
 local function result_list(state)
-  if type(state.results) ~= 'table' then
-    error('search renderer results must be a table', 3)
-  end
-  if not tables.is_sequence(state.results) then
-    error('search renderer results must be a sequence', 3)
-  end
-  return state.results
+  return tables.assert_sequence(state.results, 'search renderer results', 3)
 end
 
 local function positive_integer(value, label)

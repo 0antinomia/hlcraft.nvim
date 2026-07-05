@@ -75,13 +75,7 @@ end
 
 local function geometry_inputs(geometry)
   geometry = geometry_table(geometry)
-  if type(geometry.inputs) ~= 'table' then
-    error('render geometry inputs must be a table', 3)
-  end
-  if not tables.is_sequence(geometry.inputs) then
-    error('render geometry inputs must be a sequence', 3)
-  end
-  return geometry.inputs
+  return tables.assert_sequence(geometry.inputs, 'render geometry inputs', 3)
 end
 
 local function geometry_rows(geometry, key)

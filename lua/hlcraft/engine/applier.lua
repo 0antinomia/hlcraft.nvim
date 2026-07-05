@@ -5,6 +5,7 @@ local notify = require('hlcraft.notify')
 local presets = require('hlcraft.core.presets')
 local snapshot = require('hlcraft.engine.snapshot')
 local store = require('hlcraft.engine.store')
+local tables = require('hlcraft.core.tables')
 
 local M = {}
 
@@ -126,7 +127,7 @@ function M.register_reapply_events(replay)
     return
   end
 
-  for index, hook in ipairs(assert_table(config.config.reapply_events.events, 'reapply events')) do
+  for index, hook in ipairs(tables.assert_sequence(config.config.reapply_events.events, 'reapply events', 3)) do
     local event = hook
     local opts = {}
 

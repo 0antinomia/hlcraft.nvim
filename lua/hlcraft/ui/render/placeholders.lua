@@ -41,14 +41,7 @@ local function geometry_inputs(state)
   if type(state.geometry) ~= 'table' then
     error('placeholder geometry must be a table', 3)
   end
-  local inputs = state.geometry.inputs
-  if type(inputs) ~= 'table' then
-    error('placeholder geometry inputs must be a table', 3)
-  end
-  if not tables.is_sequence(inputs) then
-    error('placeholder geometry inputs must be a sequence', 3)
-  end
-  return inputs
+  return tables.assert_sequence(state.geometry.inputs, 'placeholder geometry inputs', 3)
 end
 
 local function positive_integer(value, label)

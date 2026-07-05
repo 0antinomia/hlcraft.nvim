@@ -44,11 +44,11 @@ local function geometry_table(state, key)
     error('navigation geometry must be a table', 3)
   end
   local value = state.geometry[key]
+  if key == 'inputs' then
+    return tables.assert_sequence(value, 'navigation geometry inputs', 3)
+  end
   if type(value) ~= 'table' then
     error(('navigation geometry %s must be a table'):format(key), 3)
-  end
-  if key == 'inputs' and not tables.is_sequence(value) then
-    error('navigation geometry inputs must be a sequence', 3)
   end
   return value
 end

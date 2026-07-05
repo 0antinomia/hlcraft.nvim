@@ -21,13 +21,7 @@ local function preview_state(instance)
 end
 
 local function result_list(state)
-  if type(state.results) ~= 'table' then
-    error('preview results must be a table', 3)
-  end
-  if not tables.is_sequence(state.results) then
-    error('preview results must be a sequence', 3)
-  end
-  return state.results
+  return tables.assert_sequence(state.results, 'preview results', 3)
 end
 
 local function preview_key()

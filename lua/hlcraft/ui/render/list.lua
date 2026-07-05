@@ -13,13 +13,7 @@ local function instance_state(instance)
 end
 
 local function result_list(state)
-  if type(state.results) ~= 'table' then
-    error('result list renderer results must be a table', 3)
-  end
-  if not tables.is_sequence(state.results) then
-    error('result list renderer results must be a sequence', 3)
-  end
-  return state.results
+  return tables.assert_sequence(state.results, 'result list renderer results', 3)
 end
 
 local function render_width(width)

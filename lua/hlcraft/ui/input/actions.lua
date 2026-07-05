@@ -20,14 +20,7 @@ local function geometry_inputs(state)
   if type(state.geometry) ~= 'table' then
     error('input actions geometry must be a table', 3)
   end
-  local inputs = state.geometry.inputs
-  if type(inputs) ~= 'table' then
-    error('input actions geometry inputs must be a table', 3)
-  end
-  if not tables.is_sequence(inputs) then
-    error('input actions geometry inputs must be a sequence', 3)
-  end
-  return inputs
+  return tables.assert_sequence(state.geometry.inputs, 'input actions geometry inputs', 3)
 end
 
 local function assert_visual_flag(is_visual)
