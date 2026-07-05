@@ -1,6 +1,7 @@
 local M = {}
 
 local handles = require('hlcraft.ui.handles')
+local numbers = require('hlcraft.core.number')
 
 M.managed = {
   'number',
@@ -20,7 +21,28 @@ function M.is_valid_win(win)
   return handles.is_valid_win(win)
 end
 
+local function assert_win(win, label)
+  if not M.is_valid_win(win) then
+    error(('%s requires a valid window'):format(label), 3)
+  end
+  return win
+end
+
+local function assert_namespace(ns)
+  if ns == nil then
+    return nil
+  end
+  if type(ns) ~= 'number' then
+    error('window option namespace must be a number', 3)
+  end
+  if not numbers.is_finite(ns) or math.floor(ns) ~= ns or ns < 0 then
+    error('window option namespace must be a non-negative finite integer', 3)
+  end
+  return ns
+end
+
 function M.read(win)
+  win = assert_win(win, 'window option read')
   local values = {}
   for _, option in ipairs(M.managed) do
     values[option] = vim.wo[win][option]
@@ -58,6 +80,8 @@ function M.restore(snapshot)
 end
 
 function M.apply(win, ns)
+  win = assert_win(win, 'window option apply')
+  ns = assert_namespace(ns)
   if ns ~= nil then
     vim.api.nvim_win_set_hl_ns(win, ns)
   end
