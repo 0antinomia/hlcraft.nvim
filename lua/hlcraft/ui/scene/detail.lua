@@ -3,7 +3,6 @@ local session = require('hlcraft.ui.session')
 local style_editor = require('hlcraft.ui.editor.style')
 local numbers = require('hlcraft.core.number')
 local tables = require('hlcraft.core.tables')
-local ui_fields = require('hlcraft.ui.fields')
 local rows = require('hlcraft.ui.scene.rows')
 local unsaved_prompt = require('hlcraft.ui.scene.unsaved_prompt')
 local window = require('hlcraft.ui.workspace.window')
@@ -237,7 +236,6 @@ function M.activate(instance)
   if row.kind == 'group' or row.kind == 'color' or row.kind == 'blend' then
     require('hlcraft.ui.scene').set(instance, 'field_editor', {
       field = row.key,
-      kind = ui_fields.detail_kinds[row.key],
     })
     instance:rerender()
     return true, nil

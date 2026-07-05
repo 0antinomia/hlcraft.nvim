@@ -24,13 +24,21 @@ local function action_context(instance, action, result, field)
   return instance, action, result, field
 end
 
-local function finish_edit(instance, ok, err, preserve_field)
+local function field_editor_state(instance)
+  local state = instance.state
+  if type(state.field_editor) ~= 'table' then
+    error('field editor action state must be a table', 3)
+  end
+  return state.field_editor
+end
+
+local function finish_edit(field_editor, ok, err, preserve_field)
   if not ok then
     return false, err
   end
 
   if preserve_field then
-    instance.state.field_editor.field = preserve_field
+    field_editor.field = preserve_field
   end
   return true, nil
 end
@@ -90,10 +98,11 @@ local field_kind_actions = {
 
 function M.handle(instance, action, result, field, ...)
   instance, action, result, field = action_context(instance, action, result, field)
+  local field_editor = field_editor_state(instance)
 
   if core_fields.color_set[field] and color_actions[action] then
     local ok, err = color_actions[action](instance, result, field, ...)
-    return true, finish_edit(instance, ok, err, field)
+    return true, finish_edit(field_editor, ok, err, field)
   end
 
   local kind = ui_fields.detail_kinds[field]
@@ -101,7 +110,7 @@ function M.handle(instance, action, result, field, ...)
   local handler = actions and actions[action] or nil
   if handler then
     local ok, err = handler(instance, result, field, ...)
-    return true, finish_edit(instance, ok, err, field)
+    return true, finish_edit(field_editor, ok, err, field)
   end
 
   return false, nil, nil
