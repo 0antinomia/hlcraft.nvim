@@ -3,6 +3,13 @@ local scope = 'hlcraft ui state'
 
 local ui_state = require('hlcraft.ui.state')
 
+local invalid_view_reset_ok = pcall(ui_state.reset_view, nil)
+h.assert_true(not invalid_view_reset_ok, 'view reset accepted missing target', scope)
+local invalid_workspace_reset_ok = pcall(ui_state.reset_workspace_handles, false)
+h.assert_true(not invalid_workspace_reset_ok, 'workspace reset accepted non-table target', scope)
+local invalid_lifecycle_reset_ok = pcall(ui_state.reset_lifecycle, false)
+h.assert_true(not invalid_lifecycle_reset_ok, 'lifecycle reset accepted non-table target', scope)
+
 local first = ui_state.initial()
 local second = ui_state.initial()
 

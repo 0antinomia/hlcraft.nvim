@@ -1,5 +1,12 @@
 local M = {}
 
+local function assert_target(target, label)
+  if type(target) ~= 'table' then
+    error(('%s state target must be a table'):format(label), 3)
+  end
+  return target
+end
+
 function M.geometry()
   return {
     inputs = {},
@@ -55,6 +62,7 @@ function M.initial()
 end
 
 function M.reset_view(target)
+  target = assert_target(target, 'view reset')
   target.results = {}
   target.detail_index = nil
   target.list_cursor = 1
@@ -74,6 +82,7 @@ function M.reset_view(target)
 end
 
 function M.reset_workspace_handles(target)
+  target = assert_target(target, 'workspace reset')
   target.buf = nil
   target.help_buf = nil
   target.help_win = nil
@@ -85,6 +94,7 @@ function M.reset_workspace_handles(target)
 end
 
 function M.reset_lifecycle(target)
+  target = assert_target(target, 'lifecycle reset')
   target.closing = false
   target.debounce_timer = nil
 end
