@@ -472,6 +472,20 @@ local strict_detail_geometry_ok = pcall(detail_renderer.build, instance, {}, res
 h.assert_true(not strict_detail_geometry_ok, 'detail renderer accepted missing detail geometry', scope)
 local strict_detail_result_ok = pcall(detail_renderer.build, instance, { detail_menu = {} }, {}, 80)
 h.assert_true(not strict_detail_result_ok, 'detail renderer accepted missing highlight result', scope)
+local strict_detail_empty_result_ok, strict_detail_empty_result_err = pcall(
+  detail_renderer.build,
+  instance,
+  { detail_menu = {} },
+  { name = '' },
+  80,
+  0
+)
+h.assert_true(not strict_detail_empty_result_ok, 'detail renderer accepted empty highlight result name', scope)
+h.assert_true(
+  tostring(strict_detail_empty_result_err):find('detail renderer requires a highlight result', 1, true) ~= nil,
+  'empty detail result bypassed renderer validation',
+  scope
+)
 local strict_detail_offset_ok = pcall(detail_renderer.build, instance, { detail_menu = {} }, result, 80)
 h.assert_true(not strict_detail_offset_ok, 'detail renderer accepted missing line offset', scope)
 local strict_field_editor_ok = pcall(field_editor_renderer.build, { editor_rows = {} }, result, 'fg', 80)
