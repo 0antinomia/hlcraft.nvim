@@ -93,6 +93,9 @@ end
 --- @return string|nil err
 function M.toggle_style(name, key)
   name = assert_name(name)
+  if not patch_model.is_style_key(key) then
+    return false, nil, ('Unsupported style key: %s'):format(tostring(key))
+  end
   local current = highlights.get_group(name)
   if not current then
     return false, nil, ('Unknown highlight group: %s'):format(name)

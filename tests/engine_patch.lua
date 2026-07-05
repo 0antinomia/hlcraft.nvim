@@ -7,6 +7,9 @@ h.assert_true(patch.is_color_key('fg'), 'fg was not recognized as a color key', 
 h.assert_true(patch.is_style_key('bold'), 'bold was not recognized as a style key', scope)
 h.assert_true(patch.is_dynamic_key('sp'), 'sp was not recognized as a dynamic key', scope)
 h.assert_true(not patch.is_color_key('bold'), 'style key was recognized as color key', scope)
+h.assert_true(not patch.is_color_key(nil), 'nil was recognized as a color key', scope)
+h.assert_true(not patch.is_style_key(false), 'boolean was recognized as a style key', scope)
+h.assert_true(not patch.is_dynamic_key(1), 'number was recognized as a dynamic key', scope)
 
 local invalid_patch_ok, invalid_patch_err = patch.validate(false)
 h.assert_true(not invalid_patch_ok, 'non-table patch was accepted', scope)

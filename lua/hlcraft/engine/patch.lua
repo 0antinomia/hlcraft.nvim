@@ -14,15 +14,15 @@ for _, key in ipairs(store.override_keys) do
 end
 
 function M.is_color_key(key)
-  return store.color_set[key] == true
+  return type(key) == 'string' and store.color_set[key] == true
 end
 
 function M.is_style_key(key)
-  return store.style_set[key] == true
+  return type(key) == 'string' and store.style_set[key] == true
 end
 
 function M.is_dynamic_key(key)
-  return dynamic_model.channel_set[key] == true
+  return type(key) == 'string' and dynamic_model.channel_set[key] == true
 end
 
 M.is_unset = override_values.is_unset

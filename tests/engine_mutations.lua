@@ -83,6 +83,12 @@ local nil_name_ok = pcall(mutations.apply_patch, nil, { fg = '#ffffff' })
 h.assert_true(not nil_name_ok, 'mutation accepted nil highlight name', scope)
 local empty_name_ok = pcall(mutations.toggle_style, '', 'bold')
 h.assert_true(not empty_name_ok, 'mutation accepted empty highlight name', scope)
+local invalid_toggle_key_ok, _, invalid_toggle_key_err = mutations.toggle_style('Normal', nil)
+h.assert_true(not invalid_toggle_key_ok, 'mutation accepted nil style key', scope)
+h.assert_equal(invalid_toggle_key_err, 'Unsupported style key: nil', 'nil style key error changed', scope)
+local color_toggle_key_ok, _, color_toggle_key_err = mutations.toggle_style('Normal', 'fg')
+h.assert_true(not color_toggle_key_ok, 'mutation accepted color field as style key', scope)
+h.assert_equal(color_toggle_key_err, 'Unsupported style key: fg', 'color style key error changed', scope)
 
 with_draft_state(function()
   local name = 'HlcraftEngineMutationsToggleFalse'
