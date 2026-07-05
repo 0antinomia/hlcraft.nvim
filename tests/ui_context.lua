@@ -227,6 +227,33 @@ h.assert_equal(
   'failed detail refresh changed active field',
   scope
 )
+
+local refreshed_results_instance = {
+  state = {
+    detail_index = 1,
+    field_editor = { field = 'fg' },
+    list_cursor = 1,
+    results = {
+      { name = 'OldResult' },
+      { name = 'FreshResult' },
+    },
+    scene = { name = 'detail' },
+  },
+  rerender = function(self)
+    self.state.results = {
+      { name = 'FreshResult' },
+    }
+  end,
+}
+detail_scene.refresh(refreshed_results_instance, 'FreshResult', true)
+h.assert_equal(refreshed_results_instance.state.list_cursor, 1, 'detail refresh used stale result cursor', scope)
+h.assert_equal(refreshed_results_instance.state.detail_index, 1, 'detail refresh used stale detail index', scope)
+h.assert_equal(
+  refreshed_results_instance.state.field_editor.field,
+  'fg',
+  'detail refresh did not preserve active field after refreshed results',
+  scope
+)
 assert_fails(function()
   detail_scene.handle(refresh_instance, '')
 end, 'detail handle accepted empty action')
