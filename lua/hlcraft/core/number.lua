@@ -7,11 +7,22 @@ function M.is_finite(value)
   return type(value) == 'number' and value == value and value ~= math.huge and value ~= -math.huge
 end
 
+local function finite_fallback(fallback, default, level)
+  if fallback == nil then
+    return default
+  end
+  if not M.is_finite(fallback) then
+    error('number fallback must be finite', level)
+  end
+  return fallback
+end
+
 --- Convert a value to a finite number, or return fallback.
 --- @param value any
 --- @param fallback number|nil
 --- @return number|nil
 function M.to_finite(value, fallback)
+  fallback = finite_fallback(fallback, nil, 2)
   local number = tonumber(value)
   if M.is_finite(number) then
     return number
@@ -47,16 +58,6 @@ function M.clamp(value, min, max)
   return value
 end
 
-local function finite_fallback(fallback)
-  if fallback == nil then
-    return 0
-  end
-  if not M.is_finite(fallback) then
-    error('number fallback must be finite', 3)
-  end
-  return fallback
-end
-
 --- Convert a value to a finite number and clamp it.
 --- @param value any
 --- @param min number
@@ -64,7 +65,7 @@ end
 --- @param fallback number|nil
 --- @return number
 function M.clamp_finite(value, min, max, fallback)
-  return M.clamp(M.to_finite(value, finite_fallback(fallback)), min, max)
+  return M.clamp(M.to_finite(value, finite_fallback(fallback, 0, 2)), min, max)
 end
 
 --- Clamp a value to the 0..1 range.

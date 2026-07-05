@@ -11,6 +11,8 @@ h.assert_true(not numbers.is_finite('1'), 'string was finite without conversion'
 h.assert_equal(numbers.to_finite('1.5', 0), 1.5, 'numeric string did not convert', scope)
 h.assert_equal(numbers.to_finite(0 / 0, 9), 9, 'NaN did not fall back', scope)
 h.assert_equal(numbers.to_finite(math.huge, 9), 9, 'infinity did not fall back', scope)
+local invalid_to_finite_fallback_ok = pcall(numbers.to_finite, 'bad', math.huge)
+h.assert_true(not invalid_to_finite_fallback_ok, 'finite conversion accepted non-finite fallback', scope)
 
 h.assert_equal(numbers.clamp(-1, 0, 10), 0, 'low value did not clamp', scope)
 h.assert_equal(numbers.clamp(11, 0, 10), 10, 'high value did not clamp', scope)
