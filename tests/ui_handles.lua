@@ -8,6 +8,8 @@ local ui = require('hlcraft.ui')
 
 h.assert_true(not handles.is_valid_buf(nil), 'nil buffer was valid', scope)
 h.assert_true(not handles.is_valid_win(nil), 'nil window was valid', scope)
+h.assert_true(not handles.is_valid_buf('1'), 'string buffer handle was valid', scope)
+h.assert_true(not handles.is_valid_win(false), 'boolean window handle was valid', scope)
 
 local buf = vim.api.nvim_create_buf(false, true)
 h.assert_true(handles.is_valid_buf(buf), 'created buffer was not valid', scope)
