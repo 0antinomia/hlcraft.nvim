@@ -67,6 +67,9 @@ end
 --- @param value string|nil Color value (#RRGGBB, NONE, etc.)
 --- @return string Formatted display string
 function M.display_color(value)
+  if value ~= nil and type(value) ~= 'string' then
+    error('render color display value must be a string or nil', 2)
+  end
   if value and value ~= 'NONE' then
     return (' %s '):format(value)
   end
@@ -109,9 +112,7 @@ end
 --- @param label string|nil Error label for diagnostics
 --- @return string line
 function M.line_at(lines, line_nr, label)
-  if type(lines) ~= 'table' then
-    error('render lines must be a table', 2)
-  end
+  lines = M.string_list(lines, 'render lines', 2)
   line_nr = assert_line_nr(line_nr)
   local line = lines[line_nr]
   if type(line) ~= 'string' then
