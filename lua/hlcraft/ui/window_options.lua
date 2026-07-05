@@ -46,6 +46,23 @@ local function assert_namespace(ns)
   return ns
 end
 
+local function assert_values(values, label, level)
+  if type(values) ~= 'table' then
+    error(('%s values must be a table'):format(label), level or 3)
+  end
+  for option in pairs(values) do
+    if not managed_set[option] then
+      error(('%s contains unmanaged option: %s'):format(label, tostring(option)), level or 3)
+    end
+  end
+  for _, option in ipairs(M.managed) do
+    if values[option] == nil then
+      error(('%s missing managed option: %s'):format(label, option), level or 3)
+    end
+  end
+  return values
+end
+
 function M.read(win)
   win = assert_win(win, 'window option read')
   local values = {}
@@ -77,17 +94,10 @@ function M.restore(snapshot)
     return false
   end
 
-  if type(snapshot.values) ~= 'table' then
-    error('window option snapshot values must be a table', 2)
-  end
+  local values = assert_values(snapshot.values, 'window option snapshot', 2)
 
-  for option, value in pairs(snapshot.values) do
-    if not managed_set[option] then
-      error(('window option snapshot contains unmanaged option: %s'):format(tostring(option)), 2)
-    end
-    pcall(function()
-      vim.wo[snapshot.win][option] = value
-    end)
+  for _, option in ipairs(M.managed) do
+    vim.wo[snapshot.win][option] = values[option]
   end
 
   return true
@@ -105,9 +115,7 @@ function M.apply(win, ns)
 end
 
 function M.matches_workspace(values)
-  if type(values) ~= 'table' then
-    error('window option values must be a table', 2)
-  end
+  values = assert_values(values, 'window option values', 2)
 
   for option, expected in pairs(M.workspace_values) do
     if values[option] ~= expected then
