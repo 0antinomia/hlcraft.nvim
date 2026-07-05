@@ -207,11 +207,36 @@ local strict_field_editor_geometry_ok = pcall(field_editor_renderer.build, insta
 h.assert_true(not strict_field_editor_geometry_ok, 'field editor renderer accepted missing editor geometry', scope)
 local strict_field_editor_result_ok = pcall(field_editor_renderer.build, instance, { editor_rows = {} }, {}, 'fg', 80)
 h.assert_true(not strict_field_editor_result_ok, 'field editor renderer accepted missing highlight result', scope)
+local strict_field_editor_result_name_ok = pcall(
+  field_editor_renderer.build,
+  instance,
+  { editor_rows = {} },
+  { name = '' },
+  'fg',
+  80,
+  0
+)
+h.assert_true(not strict_field_editor_result_name_ok, 'field editor renderer accepted empty result name', scope)
 local strict_field_editor_field_ok = pcall(field_editor_renderer.build, instance, { editor_rows = {} }, result, nil, 80)
 h.assert_true(not strict_field_editor_field_ok, 'field editor renderer accepted missing field', scope)
+local strict_field_editor_empty_field_ok =
+  pcall(field_editor_renderer.build, instance, { editor_rows = {} }, result, '', 80, 0)
+h.assert_true(not strict_field_editor_empty_field_ok, 'field editor renderer accepted empty field', scope)
 local strict_field_editor_offset_ok =
   pcall(field_editor_renderer.build, instance, { editor_rows = {} }, result, 'fg', 80)
 h.assert_true(not strict_field_editor_offset_ok, 'field editor renderer accepted missing line offset', scope)
+local strict_field_editor_render_state_ok = pcall(field_editor_renderer.render, { state = {} })
+h.assert_true(
+  not strict_field_editor_render_state_ok,
+  'field editor renderer accepted missing field editor state',
+  scope
+)
+local strict_field_editor_render_field_ok = pcall(field_editor_renderer.render, {
+  state = {
+    field_editor = { field = false },
+  },
+})
+h.assert_true(not strict_field_editor_render_field_ok, 'field editor renderer accepted invalid current field', scope)
 
 local detail_geometry = { detail_menu = {} }
 local detail_lines = detail_renderer.build(instance, detail_geometry, result, 80, 0)
