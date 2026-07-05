@@ -182,6 +182,32 @@ local invalid_raw_field_ok = pcall(raw_dynamic.open, {
 }, result, false)
 h.assert_true(not invalid_raw_field_ok, 'raw dynamic open accepted invalid field', scope)
 
+local preserved_raw_buf = vim.api.nvim_create_buf(false, true)
+local preserved_raw_win = vim.api.nvim_open_win(preserved_raw_buf, false, {
+  relative = 'editor',
+  style = 'minimal',
+  width = 1,
+  height = 1,
+  row = 0,
+  col = 0,
+})
+instance.state.raw_dynamic = {
+  buf = preserved_raw_buf,
+  win = preserved_raw_win,
+}
+local inactive_raw_ok, inactive_raw_err = raw_dynamic.open(instance, result, 'bg')
+h.assert_true(not inactive_raw_ok, 'raw dynamic open accepted inactive dynamic field', scope)
+h.assert_equal(
+  inactive_raw_err,
+  'No dynamic color field is active',
+  'inactive raw dynamic field reported wrong error',
+  scope
+)
+h.assert_true(vim.api.nvim_win_is_valid(preserved_raw_win), 'failed raw dynamic open closed existing window', scope)
+h.assert_true(vim.api.nvim_buf_is_valid(preserved_raw_buf), 'failed raw dynamic open deleted existing buffer', scope)
+h.assert_equal(instance.state.raw_dynamic.win, preserved_raw_win, 'failed raw dynamic open changed raw state', scope)
+raw_dynamic.close(instance)
+
 h.with_temp_buf(function(render_buf)
   local render_instance = {
     ns = vim.api.nvim_create_namespace('hlcraft-ui-dynamic-render-test'),

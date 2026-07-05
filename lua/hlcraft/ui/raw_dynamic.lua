@@ -76,12 +76,12 @@ end
 
 function M.open(instance, result, field)
   local state = instance_state(instance)
-  M.close(instance)
-
   local dynamic = active_dynamic(result, field)
   if not dynamic then
     return false, 'No dynamic color field is active'
   end
+
+  M.close(instance)
 
   local text = json.format(dynamic)
   local lines = vim.split(text, '\n', { plain = true })
