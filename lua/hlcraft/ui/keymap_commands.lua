@@ -142,9 +142,9 @@ function M.input_current_editor_field(instance)
   if not kind then
     return false
   end
-  local field = instance.state.field_editor and instance.state.field_editor.field
 
   if kind == 'color' then
+    local field = context.current_field(instance)
     if context.color_field_is_dynamic(instance) then
       return M.run_action(instance, 'input_dynamic_row', { default_raw = true })
     end
