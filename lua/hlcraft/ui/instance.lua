@@ -14,10 +14,18 @@ local input_label_hl = theme.groups.label
 local Instance = {}
 Instance.__index = Instance
 
+local function assert_id(id)
+  if id ~= nil and (type(id) ~= 'string' or id == '') then
+    error('UI instance id must be a non-empty string or nil', 3)
+  end
+  return id
+end
+
 --- Create a new Instance object with initialized state
 --- @param id string|nil Instance identifier, defaults to 'default'
 --- @return table New Instance object
 function Instance.new(id)
+  id = assert_id(id)
   local self = setmetatable({}, Instance)
   self.id = id or 'default'
   self.group_name = 'HlcraftUi-' .. self.id
