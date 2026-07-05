@@ -170,6 +170,9 @@ function M.append_input(lines, geometry, name, kind, value, extra)
   local inputs = geometry_inputs(geometry)
   local width = input_width(extra)
   value = input_value(value)
+  if geometry[name] ~= nil then
+    error(('render geometry input already exists: %s'):format(name), 3)
+  end
   local field = M.new_input_field(name, kind, #lines + 1, extra)
   geometry[name] = field
   inputs[#inputs + 1] = field

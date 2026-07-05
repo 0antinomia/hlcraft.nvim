@@ -81,6 +81,14 @@ local invalid_editor_row_key_ok = pcall(editor_rows.append, {}, { editor_rows = 
 h.assert_true(not invalid_editor_row_key_ok, 'editor row helper accepted empty key', scope)
 local invalid_editor_row_text_ok = pcall(editor_rows.append, {}, { editor_rows = {} }, 'sample', '')
 h.assert_true(not invalid_editor_row_text_ok, 'editor row helper accepted empty text', scope)
+local duplicate_editor_row_ok = pcall(editor_rows.append, {}, {
+  editor_rows = {
+    sample = {
+      line = 1,
+    },
+  },
+}, 'sample', 'Sample')
+h.assert_true(not duplicate_editor_row_ok, 'editor row helper accepted a duplicate key', scope)
 local missing_input_width_ok = pcall(render_buffer.append_input, {}, { inputs = {} }, 'name', 'name', 'value', {})
 h.assert_true(not missing_input_width_ok, 'input append helper accepted missing width', scope)
 local invalid_input_width_ok = pcall(render_buffer.append_input, {}, { inputs = {} }, 'name', 'name', 'value', {
@@ -103,6 +111,23 @@ local invalid_append_value_ok = pcall(render_buffer.append_input, {}, { inputs =
   width = 10,
 })
 h.assert_true(not invalid_append_value_ok, 'input append helper accepted non-string value', scope)
+local duplicate_append_input_ok = pcall(
+  render_buffer.append_input,
+  {},
+  {
+    inputs = {},
+    name = {
+      line = 1,
+    },
+  },
+  'name',
+  'name',
+  'value',
+  {
+    width = 10,
+  }
+)
+h.assert_true(not duplicate_append_input_ok, 'input append helper accepted a duplicate input name', scope)
 local invalid_search_instance_ok = pcall(render_buffer.append_search_inputs, nil, {}, render_buffer.new_geometry(), 80)
 h.assert_true(not invalid_search_instance_ok, 'search input append accepted missing instance', scope)
 local invalid_search_width_ok = pcall(
