@@ -55,6 +55,14 @@ local function assert_section_contains(data, section_keys, section_name, name)
   end
 end
 
+local function normalize_section_entry(name, entry)
+  local normalized, err = M.normalize_entry(name, entry)
+  if err then
+    error(err, 2)
+  end
+  return normalized
+end
+
 local function normalize_entry_options(opts)
   if opts == nil then
     return {}
@@ -126,13 +134,13 @@ function M.normalize_loaded_data(data)
         error(('loaded persistence section %s contains %s assigned to %s'):format(section_name, name, group_name), 3)
       end
       if normalized_by_name[name] then
+        local normalized = normalize_section_entry(name, entry)
+        if not vim.deep_equal(normalized, normalized_by_name[name]) then
+          error(('loaded persistence section %s contains divergent entry %s'):format(section_name, name), 3)
+        end
         section[name] = normalized_by_name[name]
       else
-        local normalized, err = M.normalize_entry(name, entry)
-        if err then
-          error(err, 2)
-        end
-        section[name] = normalized
+        section[name] = normalize_section_entry(name, entry)
       end
     end
     normalized_data.sections[section_name] = section

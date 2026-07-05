@@ -120,6 +120,25 @@ h.assert_true(
   scope
 )
 
+local mismatched_loaded_entry_ok = pcall(schema.normalize_loaded_data, {
+  entries = {
+    Diverged = {
+      fg = '#101010',
+    },
+  },
+  groups = {
+    Diverged = 'main',
+  },
+  sections = {
+    main = {
+      Diverged = {
+        fg = '#202020',
+      },
+    },
+  },
+})
+h.assert_true(not mismatched_loaded_entry_ok, 'schema accepted divergent loaded section entry', scope)
+
 for _, case in ipairs({
   {
     label = 'data',
