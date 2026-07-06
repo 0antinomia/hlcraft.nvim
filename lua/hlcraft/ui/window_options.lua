@@ -40,7 +40,7 @@ local function assert_namespace(ns)
   if type(ns) ~= 'number' then
     error('window option namespace must be a number', 3)
   end
-  if not numbers.is_finite(ns) or math.floor(ns) ~= ns or ns < 0 then
+  if not numbers.is_integer(ns, 0) then
     error('window option namespace must be a non-negative finite integer', 3)
   end
   return ns

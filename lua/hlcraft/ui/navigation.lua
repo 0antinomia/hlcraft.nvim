@@ -16,7 +16,7 @@ local function assert_row1(row1, label)
   if type(row1) ~= 'number' then
     error(('%s must be a number'):format(label), 3)
   end
-  if not numbers.is_finite(row1) or math.floor(row1) ~= row1 or row1 < 1 then
+  if not numbers.is_integer(row1, 1) then
     error(('%s must be a positive finite integer'):format(label), 3)
   end
   return row1
@@ -26,7 +26,7 @@ local function assert_step(step)
   if type(step) ~= 'number' then
     error('navigation step must be a number', 3)
   end
-  if not numbers.is_finite(step) or math.floor(step) ~= step then
+  if not numbers.is_integer(step) then
     error('navigation step must be a finite integer', 3)
   end
   return step

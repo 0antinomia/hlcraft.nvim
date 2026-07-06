@@ -28,7 +28,7 @@ local function display_width(width)
   if width == nil then
     return 96
   end
-  if type(width) ~= 'number' or not numbers.is_finite(width) or math.floor(width) ~= width or width < 0 then
+  if not numbers.is_integer(width, 0) then
     error('detail info width must be a non-negative finite integer', 3)
   end
   return width

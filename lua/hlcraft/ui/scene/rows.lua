@@ -33,7 +33,7 @@ local function assert_line(line, label)
   if type(line) ~= 'number' then
     error(('%s must be a number'):format(label), 3)
   end
-  if not numbers.is_finite(line) or math.floor(line) ~= line or line < 1 then
+  if not numbers.is_integer(line, 1) then
     error(('%s must be a positive finite integer'):format(label), 3)
   end
   return line

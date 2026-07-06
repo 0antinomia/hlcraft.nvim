@@ -1,3 +1,4 @@
+local numbers = require('hlcraft.core.number')
 local tables = require('hlcraft.core.tables')
 
 local M = {}
@@ -10,7 +11,7 @@ local function assert_object_key(key)
 end
 
 local function assert_indent(indent)
-  if type(indent) ~= 'number' or indent < 0 or math.floor(indent) ~= indent then
+  if not numbers.is_integer(indent, 0) then
     error('JSON indent must be a non-negative integer', 3)
   end
   return indent

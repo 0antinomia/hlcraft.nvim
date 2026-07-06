@@ -52,7 +52,7 @@ local function span_end(value, start_col)
   if type(value) ~= 'number' then
     error('render span end column must be a number', 3)
   end
-  if not numbers.is_finite(value) or math.floor(value) ~= value then
+  if not numbers.is_integer(value) then
     error('render span end column must be a finite integer', 3)
   end
   if value ~= -1 and value < start_col then

@@ -21,7 +21,7 @@ local function instance_namespace(instance)
   if type(instance.ns) ~= 'number' then
     error('render decoration namespace must be a number', 3)
   end
-  if not numbers.is_finite(instance.ns) or math.floor(instance.ns) ~= instance.ns or instance.ns < 0 then
+  if not numbers.is_integer(instance.ns, 0) then
     error('render decoration namespace must be a non-negative finite integer', 3)
   end
   return instance.ns
@@ -393,15 +393,7 @@ function M.find_text_start(line, text, start_col)
   if type(text) ~= 'string' then
     error('search text must be a string', 2)
   end
-  if
-    start_col ~= nil
-    and (
-      type(start_col) ~= 'number'
-      or not numbers.is_finite(start_col)
-      or start_col < 0
-      or math.floor(start_col) ~= start_col
-    )
-  then
+  if start_col ~= nil and (not numbers.is_integer(start_col, 0)) then
     error('search start column must be a non-negative integer', 2)
   end
 

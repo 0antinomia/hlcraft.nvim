@@ -57,7 +57,7 @@ local function positive_integer(value, label)
   if type(value) ~= 'number' then
     error(('%s must be a number'):format(label), 3)
   end
-  if not numbers.is_finite(value) or math.floor(value) ~= value or value < 1 then
+  if not numbers.is_integer(value, 1) then
     error(('%s must be a positive finite integer'):format(label), 3)
   end
   return value

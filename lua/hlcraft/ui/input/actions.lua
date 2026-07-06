@@ -38,7 +38,7 @@ local function detail_active(state)
   if type(index) ~= 'number' then
     error('input action detail index must be a number or nil', 3)
   end
-  if not numbers.is_finite(index) or math.floor(index) ~= index or index < 1 then
+  if not numbers.is_integer(index, 1) then
     error('input action detail index must be a positive finite integer or nil', 3)
   end
   return true

@@ -45,7 +45,7 @@ local function positive_integer(value, label)
   if type(value) ~= 'number' then
     error(('%s must be a number'):format(label), 3)
   end
-  if not numbers.is_finite(value) or math.floor(value) ~= value or value < 1 then
+  if not numbers.is_integer(value, 1) then
     error(('%s must be a positive finite integer'):format(label), 3)
   end
   return value
@@ -55,7 +55,7 @@ local function assert_step(step)
   if type(step) ~= 'number' then
     error('search navigation step must be a number', 3)
   end
-  if not numbers.is_finite(step) or math.floor(step) ~= step then
+  if not numbers.is_integer(step) then
     error('search navigation step must be a finite integer', 3)
   end
   return step

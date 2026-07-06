@@ -6,7 +6,7 @@ local function assert_row0(row0)
   if type(row0) ~= 'number' then
     error('paste plan row must be a number', 3)
   end
-  if not numbers.is_finite(row0) or math.floor(row0) ~= row0 or row0 < 0 then
+  if not numbers.is_integer(row0, 0) then
     error('paste plan row must be a non-negative finite integer', 3)
   end
   return row0
@@ -26,20 +26,10 @@ local function assert_input(input)
   if type(input) ~= 'table' then
     error('paste plan input must be a table or nil', 3)
   end
-  if
-    type(input.start_row) ~= 'number'
-    or not numbers.is_finite(input.start_row)
-    or math.floor(input.start_row) ~= input.start_row
-    or input.start_row < 0
-  then
+  if not numbers.is_integer(input.start_row, 0) then
     error('paste plan input start row must be a non-negative finite integer', 3)
   end
-  if
-    type(input.end_row) ~= 'number'
-    or not numbers.is_finite(input.end_row)
-    or math.floor(input.end_row) ~= input.end_row
-    or input.end_row < input.start_row
-  then
+  if not numbers.is_integer(input.end_row, input.start_row) then
     error('paste plan input end row must be a finite integer greater than or equal to start row', 3)
   end
   if type(input.value) ~= 'string' then

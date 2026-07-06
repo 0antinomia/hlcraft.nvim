@@ -7,7 +7,7 @@ local function assert_row0(row0)
   if type(row0) ~= 'number' then
     error('buffer row must be a number', 3)
   end
-  if not numbers.is_finite(row0) or math.floor(row0) ~= row0 or row0 < 0 then
+  if not numbers.is_integer(row0, 0) then
     error('buffer row must be a non-negative finite integer', 3)
   end
   return row0

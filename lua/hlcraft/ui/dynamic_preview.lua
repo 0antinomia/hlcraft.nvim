@@ -32,7 +32,7 @@ local function preview_namespace(instance)
   if type(instance.ns) ~= 'number' then
     error('dynamic preview namespace must be a number', 3)
   end
-  if not numbers.is_finite(instance.ns) or math.floor(instance.ns) ~= instance.ns or instance.ns < 0 then
+  if not numbers.is_integer(instance.ns, 0) then
     error('dynamic preview namespace must be a non-negative finite integer', 3)
   end
   return instance.ns
@@ -148,12 +148,7 @@ local function normalize_item(item, dynamic)
   if type(item) ~= 'table' or type(item.text) ~= 'string' or item.text == '' then
     return nil
   end
-  if
-    type(item.line) ~= 'number'
-    or not numbers.is_finite(item.line)
-    or item.line < 1
-    or math.floor(item.line) ~= item.line
-  then
+  if not numbers.is_integer(item.line, 1) then
     return nil
   end
   if not is_non_negative_integer(item.col_start) then
