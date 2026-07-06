@@ -30,7 +30,7 @@ local function refresh_buffer(buf)
 end
 
 function M.lines()
-  return help_model.lines(require('hlcraft.config').config.preview_key)
+  return help_model.lines(require('hlcraft.config').config.keymaps.preview)
 end
 
 function M.ensure_buffer(instance)

@@ -8,7 +8,7 @@ local files = require('hlcraft.persistence.files')
 local schema = require('hlcraft.persistence.schema')
 
 local function storage_dir()
-  return config.config.persist_dir
+  return config.config.persistence.dir
 end
 
 local function optional_path(path)

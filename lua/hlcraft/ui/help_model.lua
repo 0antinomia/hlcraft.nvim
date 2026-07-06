@@ -51,7 +51,15 @@ local function item_line(item, width)
   return '  ' .. key .. string.rep(' ', padding) .. action
 end
 
-function M.sections(preview_key)
+local function preview_lhs(preview_keymap)
+  if preview_keymap == nil or preview_keymap == false then
+    return nil
+  end
+  preview_keymap = assert_table(preview_keymap, 'preview keymap must be false or table')
+  return assert_non_empty_string(preview_keymap.lhs, 'preview keymap lhs must be a non-empty string')
+end
+
+function M.sections(preview_keymap)
   local action_items = {
     { 's', 'save draft' },
   }
@@ -62,9 +70,9 @@ function M.sections(preview_key)
     { 'S-Tab', 'previous input' },
   }
 
-  if preview_key ~= nil and preview_key ~= false then
-    preview_key = assert_non_empty_string(preview_key, 'preview key must be a non-empty string or false')
-    action_items[#action_items + 1] = { preview_key, 'preview result' }
+  local lhs = preview_lhs(preview_keymap)
+  if lhs then
+    action_items[#action_items + 1] = { lhs, 'preview result' }
   end
 
   return {
@@ -131,13 +139,13 @@ function M.sections(preview_key)
   }
 end
 
-function M.lines(preview_key)
+function M.lines(preview_keymap)
   local lines = {
     'hlcraft help',
     '',
   }
 
-  local sections = tables.assert_sequence(M.sections(preview_key), 'help sections', 3)
+  local sections = tables.assert_sequence(M.sections(preview_keymap), 'help sections', 3)
   for section_index, section in ipairs(sections) do
     section = assert_table(section, 'help section must be a table')
     local title = assert_non_empty_string(section.title, 'help section title must be a non-empty string')

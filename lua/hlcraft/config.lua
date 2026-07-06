@@ -23,12 +23,12 @@ function M.setup(user_config)
   return M.config
 end
 
-function M.from_none_enabled()
-  return M.config.from_none.enabled == true
+function M.transparent_enabled()
+  return M.config.transparent.enabled == true
 end
 
-function M.from_none_scope()
-  return M.config.from_none.scope
+function M.transparent_scope()
+  return M.config.transparent.scope
 end
 
 return M

@@ -24,26 +24,26 @@ function M.check()
   end
 
   vim.health.start('hlcraft: persist directory')
-  local dir = config.config.persist_dir
+  local dir = config.config.persistence.dir
   local stat = vim.uv.fs_stat(dir)
   if not stat then
-    vim.health.ok('persist_dir not yet created (will be created on first save): ' .. dir)
+    vim.health.ok('persistence.dir not yet created (will be created on first save): ' .. dir)
   else
-    vim.health.ok('persist_dir: ' .. dir)
+    vim.health.ok('persistence.dir: ' .. dir)
     local test_file = dir .. '/.hlcraft_health_check'
     local file = io.open(test_file, 'w')
     if file then
       file:close()
       os.remove(test_file)
-      vim.health.ok('persist_dir is writable')
+      vim.health.ok('persistence.dir is writable')
     else
-      vim.health.error('persist_dir is not writable: ' .. dir)
+      vim.health.error('persistence.dir is not writable: ' .. dir)
     end
   end
 
   vim.health.start('hlcraft: TOML file integrity')
   if not stat then
-    vim.health.ok('No TOML files to check (persist_dir does not exist yet)')
+    vim.health.ok('No TOML files to check (persistence.dir does not exist yet)')
   else
     local ok, data = pcall(storage.load, dir)
     if ok then
@@ -70,11 +70,7 @@ function M.check()
   end
 
   vim.health.start('hlcraft: dynamic colors')
-  if config.config.dynamic.enabled then
-    vim.health.ok(('dynamic colors enabled, interval %dms'):format(config.config.dynamic.interval_ms))
-  else
-    vim.health.ok('dynamic colors disabled')
-  end
+  vim.health.ok(('dynamic colors stable, interval %dms'):format(config.config.dynamic.interval_ms))
 end
 
 return M
