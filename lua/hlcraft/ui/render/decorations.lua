@@ -1,6 +1,5 @@
 local color = require('hlcraft.core.color')
 local numbers = require('hlcraft.core.number')
-local tables = require('hlcraft.core.tables')
 local ui_detail = require('hlcraft.ui.detail')
 local window = require('hlcraft.ui.workspace.window')
 local buffer_lines = require('hlcraft.ui.buffer_lines')
@@ -95,44 +94,6 @@ local function field_line(field)
   return positive_integer(field.line, 'input header field line')
 end
 
-local function optional_virt_lines(lines)
-  if lines == nil then
-    return nil
-  end
-  if type(lines) ~= 'table' then
-    error('input header virtual lines must be a table or nil', 3)
-  end
-  if not tables.is_sequence(lines) then
-    error('input header virtual lines must be a sequence or nil', 3)
-  end
-  for _, line in ipairs(lines) do
-    if type(line) ~= 'table' then
-      error('input header virtual line must be a table', 3)
-    end
-    if not tables.is_sequence(line) then
-      error('input header virtual line must be a sequence', 3)
-    end
-    for _, chunk in ipairs(line) do
-      if type(chunk) ~= 'table' then
-        error('input header virtual line chunk must be a table', 3)
-      end
-      if not tables.is_sequence(chunk) then
-        error('input header virtual line chunk must be a sequence', 3)
-      end
-      if #chunk > 2 then
-        error('input header virtual line chunk must contain text and optional highlight', 3)
-      end
-      if type(chunk[1]) ~= 'string' then
-        error('input header virtual line chunk text must be a string', 3)
-      end
-      if chunk[2] ~= nil and type(chunk[2]) ~= 'string' then
-        error('input header virtual line chunk highlight must be a string or nil', 3)
-      end
-    end
-  end
-  return lines
-end
-
 --- Build virtual lines with detail info (name, colors, source, links, file) for a highlight group
 --- @param instance table The Instance object holding UI state
 --- @param result table Highlight group result from search
@@ -144,24 +105,6 @@ function M.detail_info_virt_lines(instance, result)
   return ui_detail.build_virt_lines(result, function(bg, suffix)
     return M.detail_color_hl(instance, bg, suffix)
   end, width)
-end
-
---- Build the help keybinding hint virtual line tokens
---- @return table[] Array of {text, hl_group} pairs for virtual text
-function M.help_virt_line()
-  local tokens = {
-    { text = '? ', hl = theme.groups.key },
-    { text = 'help', hl = theme.groups.muted },
-    { text = '   ' },
-    { text = 'q ', hl = theme.groups.key },
-    { text = 'close', hl = theme.groups.muted },
-  }
-
-  local virt = {}
-  for _, token in ipairs(tokens) do
-    virt[#virt + 1] = { token.text, token.hl or theme.groups.text }
-  end
-  return virt
 end
 
 M.apply_hint_line = line_highlights.apply_hint_line
@@ -183,7 +126,7 @@ local function optional_opts(opts, label)
     error(('%s must be a table'):format(label), 3)
   end
   for key in pairs(opts) do
-    if key ~= 'top_virt_lines' and key ~= 'extra' then
+    if key ~= 'extra' then
       error(('unknown %s option: %s'):format(label, tostring(key)), 3)
     end
   end
@@ -202,14 +145,13 @@ end
 --- @param instance table The Instance object holding UI state
 --- @param field table Field descriptor with a `line` key
 --- @param label string Display label for the input
---- @param opts table|nil Options: top_virt_lines (table[]), extra (string)
+--- @param opts table|nil Options: extra (string)
 --- @return nil
 function M.set_input_header(instance, field, label, opts)
   local state = instance_state(instance)
   opts = optional_opts(opts, 'input header options')
   local line = field_line(field)
   label = non_empty_string(label, 'input header label')
-  optional_virt_lines(opts.top_virt_lines)
   local extra = optional_string(opts.extra, 'input header extra')
   local marks = input_marks(state)
   local ns = instance_namespace(instance)
@@ -217,23 +159,15 @@ function M.set_input_header(instance, field, label, opts)
     return
   end
 
-  local virt_lines = {}
-  if opts.top_virt_lines then
-    for _, line in ipairs(opts.top_virt_lines) do
-      virt_lines[#virt_lines + 1] = line
-    end
-  end
-
   local header = { { label, input_label_hl(instance) } }
   if extra and extra ~= '' then
     header[#header + 1] = { '  ' .. extra, theme.groups.muted }
   end
-  virt_lines[#virt_lines + 1] = header
 
   local key = label .. ':' .. line
   marks[key] = vim.api.nvim_buf_set_extmark(state.buf, ns, line - 1, 0, {
     id = extmark_id(marks[key], 'input header extmark id'),
-    virt_lines = virt_lines,
+    virt_lines = { header },
     virt_lines_leftcol = true,
     virt_lines_above = true,
     right_gravity = false,

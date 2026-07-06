@@ -89,12 +89,7 @@ function M.render(instance)
   buffer.set_lines(instance, lines)
   buffer.finish(instance, geometry)
 
-  decorations.set_input_header(
-    instance,
-    geometry.name,
-    ui_fields.search_prefixes.name,
-    { top_virt_lines = { decorations.help_virt_line() } }
-  )
+  decorations.set_input_header(instance, geometry.name, ui_fields.search_prefixes.name)
   decorations.set_input_header(instance, geometry.color, ui_fields.search_prefixes.color)
   decorations.set_results_header(instance, results_top, width)
   add_line_highlight(state.buf, ns, lines, results_top, theme.groups.header)
