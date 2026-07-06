@@ -17,7 +17,7 @@ local function instance_namespace(instance)
   if type(instance.ns) ~= 'number' then
     error('help window namespace must be a number', 3)
   end
-  if not numbers.is_finite(instance.ns) or math.floor(instance.ns) ~= instance.ns or instance.ns < 0 then
+  if not numbers.is_integer(instance.ns, 0) then
     error('help window namespace must be a non-negative finite integer', 3)
   end
   return instance.ns

@@ -103,7 +103,7 @@ local function assert_table(value, message)
 end
 
 local function assert_positive_integer(value, message)
-  if type(value) ~= 'number' or not numbers.is_finite(value) or math.floor(value) ~= value or value < 1 then
+  if not numbers.is_integer(value, 1) then
     error(message, 3)
   end
   return value

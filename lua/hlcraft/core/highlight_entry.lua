@@ -55,13 +55,7 @@ local function raw_color(attrs, key, label)
   if value == nil then
     return 'NONE'
   end
-  if
-    type(value) ~= 'number'
-    or not numbers.is_finite(value)
-    or math.floor(value) ~= value
-    or value < 0
-    or value > 0xffffff
-  then
+  if not numbers.is_integer(value, 0) or value > 0xffffff then
     error(('highlight color %s must be a 24-bit RGB integer or nil'):format(label or key), 3)
   end
   return color.int_to_hex(value)
@@ -72,13 +66,7 @@ local function blend_value(attrs)
   if value == nil then
     return nil
   end
-  if
-    type(value) ~= 'number'
-    or not numbers.is_finite(value)
-    or math.floor(value) ~= value
-    or value < 0
-    or value > 100
-  then
+  if not numbers.is_integer(value, 0) or value > 100 then
     error('highlight blend must be an integer from 0 to 100 or nil', 3)
   end
   return value

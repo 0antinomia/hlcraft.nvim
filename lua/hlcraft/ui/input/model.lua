@@ -48,7 +48,7 @@ local function assert_row0(row0)
   if type(row0) ~= 'number' then
     error('input row must be a number', 3)
   end
-  if not numbers.is_finite(row0) or math.floor(row0) ~= row0 or row0 < 0 then
+  if not numbers.is_integer(row0, 0) then
     error('input row must be a non-negative finite integer', 3)
   end
   return row0
@@ -58,7 +58,7 @@ local function assert_row1(row1)
   if type(row1) ~= 'number' then
     error('input row must be a number', 3)
   end
-  if not numbers.is_finite(row1) or math.floor(row1) ~= row1 or row1 < 1 then
+  if not numbers.is_integer(row1, 1) then
     error('input row must be a positive finite integer', 3)
   end
   return row1
@@ -68,7 +68,7 @@ local function result_index(value)
   if type(value) ~= 'number' then
     error('input result index must be a number', 3)
   end
-  if not numbers.is_finite(value) or math.floor(value) ~= value or value < 1 then
+  if not numbers.is_integer(value, 1) then
     error('input result index must be a positive finite integer', 3)
   end
   return value
@@ -78,7 +78,7 @@ local function assert_namespace(ns)
   if type(ns) ~= 'number' then
     error('input namespace must be a number', 3)
   end
-  if not numbers.is_finite(ns) or math.floor(ns) ~= ns or ns < 0 then
+  if not numbers.is_integer(ns, 0) then
     error('input namespace must be a non-negative finite integer', 3)
   end
   return ns
@@ -91,7 +91,7 @@ local function extmark_id(value, label)
   if type(value) ~= 'number' then
     error(('%s must be a number'):format(label), 3)
   end
-  if not numbers.is_finite(value) or math.floor(value) ~= value or value < 1 then
+  if not numbers.is_integer(value, 1) then
     error(('%s must be a positive finite integer'):format(label), 3)
   end
   return value

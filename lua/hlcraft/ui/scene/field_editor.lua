@@ -55,7 +55,7 @@ local function detail_index(state)
   if type(index) ~= 'number' then
     error('field editor detail index must be a number', 3)
   end
-  if not numbers.is_finite(index) or math.floor(index) ~= index or index < 1 then
+  if not numbers.is_integer(index, 1) then
     error('field editor detail index must be a positive finite integer', 3)
   end
   return index

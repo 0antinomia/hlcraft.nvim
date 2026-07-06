@@ -7,7 +7,7 @@ local function assert_timeout(value, label, allow_zero)
     error(('%s must be a number'):format(label), 3)
   end
   local minimum = allow_zero and 0 or 1
-  if not numbers.is_finite(value) or math.floor(value) ~= value or value < minimum then
+  if not numbers.is_integer(value, minimum) then
     local range = allow_zero and 'a non-negative finite integer' or 'a positive finite integer'
     error(('%s must be %s'):format(label, range), 3)
   end

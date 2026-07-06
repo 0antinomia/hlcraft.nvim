@@ -4,13 +4,7 @@ local M = {}
 local numbers = require('hlcraft.core.number')
 
 local function rgb_integer(value, label)
-  if
-    type(value) ~= 'number'
-    or not numbers.is_finite(value)
-    or math.floor(value) ~= value
-    or value < 0
-    or value > 0xffffff
-  then
+  if not numbers.is_integer(value, 0) or value > 0xffffff then
     error(('%s must be a 24-bit RGB integer'):format(label), 3)
   end
   return value
@@ -20,7 +14,7 @@ end
 --- @param n integer|nil Color value from nvim_get_hl
 --- @return string hex color as "#RRGGBB" or "NONE"
 function M.int_to_hex(n)
-  if type(n) ~= 'number' or not numbers.is_finite(n) or n < 0 or n > 0xffffff or math.floor(n) ~= n then
+  if not numbers.is_integer(n, 0) or n > 0xffffff then
     return 'NONE'
   end
   return ('#%06x'):format(n)
