@@ -81,7 +81,7 @@ h.assert_true(
 )
 h.assert_true(
   contains(messages.ok, 'persistence.dir: ' .. persist_dir),
-  'health reported the old persistence directory config name',
+  'health reported the wrong persistence directory label',
   scope
 )
 h.assert_true(
