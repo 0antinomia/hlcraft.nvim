@@ -9,9 +9,15 @@ local ui_state = require('hlcraft.ui.state')
 
 local persist_dir = h.temp_dir('hlcraft-ui-keymap-commands')
 hlcraft.setup({
-  persist_dir = persist_dir,
-  debounce_ms = 0,
-  reapply_events = false,
+  persistence = {
+    dir = persist_dir,
+    reapply_events = {
+      enabled = false,
+    },
+  },
+  search = {
+    debounce_ms = 0,
+  },
 })
 
 local assert_fails = h.scoped_assert_fails(scope)

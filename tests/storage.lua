@@ -7,7 +7,11 @@ local storage = require('hlcraft.persistence.repository')
 
 local persist_dir = h.temp_dir('hlcraft-storage')
 vim.fn.mkdir(persist_dir, 'p')
-config.setup({ persist_dir = persist_dir })
+config.setup({
+  persistence = {
+    dir = persist_dir,
+  },
+})
 
 h.write_file(persist_dir .. '/manual.toml', {
   '# comment',

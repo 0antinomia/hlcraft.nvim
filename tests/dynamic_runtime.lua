@@ -38,7 +38,6 @@ local runtime_dynamic = {
 
 config.setup({
   dynamic = {
-    enabled = false,
     interval_ms = 80,
   },
 })
@@ -70,21 +69,7 @@ h.assert_true(not command_name_ok, 'runtime clear_group accepted command separat
 runtime.sync_group('HlcraftDynamicRuntime', { fg = '#111111', bg = '#808080' }, {
   dynamic = runtime_dynamic,
 })
-h.assert_equal(runtime.active_count(), 0, 'disabled runtime registered a dynamic task', scope)
-runtime.tick(500)
-local disabled_spec = vim.api.nvim_get_hl(0, { name = 'HlcraftDynamicRuntime', create = false })
-h.assert_equal(disabled_spec.fg, tonumber('111111', 16), 'disabled runtime changed fg', scope)
-
-config.setup({
-  dynamic = {
-    enabled = true,
-    interval_ms = 80,
-  },
-})
-runtime.sync_group('HlcraftDynamicRuntime', { fg = '#111111', bg = '#808080' }, {
-  dynamic = runtime_dynamic,
-})
-h.assert_equal(runtime.active_count(), 1, 'enabled runtime did not register a dynamic task', scope)
+h.assert_equal(runtime.active_count(), 1, 'runtime did not register a dynamic task', scope)
 runtime.tick(1000)
 local enabled_spec = vim.api.nvim_get_hl(0, { name = 'HlcraftDynamicRuntime', create = false })
 h.assert_equal(enabled_spec.fg, tonumber('808080', 16), 'runtime did not use configured custom fg', scope)

@@ -10,9 +10,15 @@ local engine = require('hlcraft.engine.service')
 local name = 'HlcraftUiDynamicEditorNormal'
 local persist_dir = h.temp_dir('hlcraft-ui-dynamic-editor')
 hlcraft.setup({
-  persist_dir = persist_dir,
-  debounce_ms = 0,
-  reapply_events = false,
+  persistence = {
+    dir = persist_dir,
+    reapply_events = {
+      enabled = false,
+    },
+  },
+  search = {
+    debounce_ms = 0,
+  },
 })
 
 vim.api.nvim_set_hl(0, name, { fg = '#101010' })

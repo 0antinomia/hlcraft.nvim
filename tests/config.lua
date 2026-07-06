@@ -18,89 +18,104 @@ for _, case in ipairs({
   { value = 'bad', error = 'hlcraft config must be a table, got string', message = 'non-table config was accepted' },
   { value = { unknown = true }, error = 'unknown config key: "unknown"', message = 'unknown config key was accepted' },
   {
-    value = { persist_dir = '' },
-    error = 'persist_dir: must be a non-empty string',
-    message = 'empty persist_dir was accepted',
+    value = { search = { unknown = true } },
+    error = 'unknown config key: "search.unknown"',
+    message = 'unknown search key was accepted',
   },
   {
-    value = { threshold = -1 },
-    error = 'threshold: must be between 0 and 1000',
-    message = 'negative threshold was accepted',
+    value = { persistence = { unknown = true } },
+    error = 'unknown config key: "persistence.unknown"',
+    message = 'unknown persistence key was accepted',
   },
   {
-    value = { threshold = 1001 },
-    error = 'threshold: must be between 0 and 1000',
-    message = 'excessive threshold was accepted',
+    value = { persistence = { dir = '' } },
+    error = 'persistence.dir: must be a non-empty string',
+    message = 'empty persistence dir was accepted',
   },
   {
-    value = { threshold = 0 / 0, debounce_ms = math.huge },
-    error = 'threshold: must be finite',
-    message = 'non-finite numeric config was accepted',
+    value = { search = { threshold = -1 } },
+    error = 'search.threshold: must be between 0 and 1000',
+    message = 'negative search threshold was accepted',
   },
   {
-    value = { debounce_ms = -1 },
-    error = 'debounce_ms: must be >= 0',
-    message = 'negative debounce_ms was accepted',
+    value = { search = { threshold = 1001 } },
+    error = 'search.threshold: must be between 0 and 1000',
+    message = 'excessive search threshold was accepted',
   },
   {
-    value = { include_sp_in_color_search = 'yes' },
-    error = 'include_sp_in_color_search: must be boolean, got string',
+    value = { search = { threshold = 0 / 0, debounce_ms = math.huge } },
+    error = 'search.threshold: must be finite',
+    message = 'non-finite numeric search config was accepted',
+  },
+  {
+    value = { search = { debounce_ms = -1 } },
+    error = 'search.debounce_ms: must be >= 0',
+    message = 'negative search debounce was accepted',
+  },
+  {
+    value = { search = { include_sp = 'yes' } },
+    error = 'search.include_sp: must be boolean, got string',
     message = 'non-boolean color search config was accepted',
   },
   {
-    value = { from_none = { scope = 'bad' } },
-    error = 'from_none.scope: must be "core" or "extended", got "bad"',
-    message = 'invalid from_none scope was accepted',
+    value = { transparent = true },
+    error = 'transparent: must be a table, got boolean',
+    message = 'boolean transparent config was accepted',
   },
   {
-    value = { from_none = { unknown = true } },
-    error = 'unknown config key: "from_none.unknown"',
-    message = 'unknown from_none key was accepted',
+    value = { transparent = { scope = 'bad' } },
+    error = 'transparent.scope: must be "core" or "extended", got "bad"',
+    message = 'invalid transparent scope was accepted',
   },
   {
-    value = { reapply_events = { unknown = true } },
-    error = 'unknown config key: "reapply_events.unknown"',
-    message = 'unknown reapply_events key was accepted',
+    value = { transparent = { unknown = true } },
+    error = 'unknown config key: "transparent.unknown"',
+    message = 'unknown transparent key was accepted',
   },
   {
-    value = { reapply_events = { events = { ColorScheme = true } } },
-    error = 'reapply_events.events: must be a sequence',
+    value = { persistence = { reapply_events = false } },
+    error = 'persistence.reapply_events: must be a table, got boolean',
+    message = 'boolean persistence reapply_events was accepted',
+  },
+  {
+    value = { persistence = { reapply_events = { unknown = true } } },
+    error = 'unknown config key: "persistence.reapply_events.unknown"',
+    message = 'unknown persistence reapply_events key was accepted',
+  },
+  {
+    value = { persistence = { reapply_events = { events = { ColorScheme = true } } } },
+    error = 'persistence.reapply_events.events: must be a sequence',
     message = 'non-sequence reapply events were accepted',
   },
   {
-    value = { reapply_events = { events = { '' } } },
-    error = 'reapply_events.events[1]: must be a non-empty string',
+    value = { persistence = { reapply_events = { events = { '' } } } },
+    error = 'persistence.reapply_events.events[1]: must be a non-empty string',
     message = 'empty reapply event was accepted',
   },
   {
-    value = { reapply_events = { events = { '   ' } } },
-    error = 'reapply_events.events[1]: must be a non-empty string',
+    value = { persistence = { reapply_events = { events = { '   ' } } } },
+    error = 'persistence.reapply_events.events[1]: must be a non-empty string',
     message = 'blank reapply event was accepted',
   },
   {
-    value = { reapply_events = { events = { { event = '' } } } },
-    error = 'reapply_events.events[1].event: must be a non-empty string',
+    value = { persistence = { reapply_events = { events = { { event = '' } } } } },
+    error = 'persistence.reapply_events.events[1].event: must be a non-empty string',
     message = 'empty table event was accepted',
   },
   {
-    value = { reapply_events = { events = { { event = '   ' } } } },
-    error = 'reapply_events.events[1].event: must be a non-empty string',
+    value = { persistence = { reapply_events = { events = { { event = '   ' } } } } },
+    error = 'persistence.reapply_events.events[1].event: must be a non-empty string',
     message = 'blank table event was accepted',
   },
   {
-    value = { reapply_events = { events = { { event = 'ColorScheme', unknown = true } } } },
-    error = 'unknown config key: "reapply_events.events[1].unknown"',
+    value = { persistence = { reapply_events = { events = { { event = 'ColorScheme', unknown = true } } } } },
+    error = 'unknown config key: "persistence.reapply_events.events[1].unknown"',
     message = 'unknown reapply event key was accepted',
   },
   {
-    value = { reapply_events = { events = { { event = 'ColorScheme', pattern = '   ' } } } },
-    error = 'reapply_events.events[1].pattern: must be a non-empty string',
+    value = { persistence = { reapply_events = { events = { { event = 'ColorScheme', pattern = '   ' } } } } },
+    error = 'persistence.reapply_events.events[1].pattern: must be a non-empty string',
     message = 'blank reapply event pattern was accepted',
-  },
-  {
-    value = { dynamic = { enabled = 'yes', interval_ms = 0 } },
-    error = 'dynamic.enabled: must be boolean, got string',
-    message = 'invalid dynamic config was accepted',
   },
   {
     value = { dynamic = { interval_ms = 0 } },
@@ -118,47 +133,76 @@ for _, case in ipairs({
     message = 'unknown dynamic config key was accepted',
   },
   {
-    value = { preview_key = true },
-    error = 'preview_key: boolean value must be false when used',
-    message = 'preview_key=true was accepted',
+    value = { keymaps = { unknown = true } },
+    error = 'unknown config key: "keymaps.unknown"',
+    message = 'unknown keymaps config key was accepted',
   },
   {
-    value = { preview_key = 123 },
-    error = 'preview_key: must be a string or boolean, got number',
-    message = 'numeric preview_key was accepted',
+    value = { keymaps = { preview = true } },
+    error = 'keymaps.preview: must be false or table, got boolean',
+    message = 'invalid preview keymap config was accepted',
   },
   {
-    value = { preview_key = '' },
-    error = 'preview_key: must be a non-empty string when provided',
-    message = 'blank preview_key was accepted',
+    value = { keymaps = { preview = { lhs = '' } } },
+    error = 'keymaps.preview.lhs: must be a non-empty string',
+    message = 'blank preview keymap lhs was accepted',
+  },
+  {
+    value = { keymaps = { preview = { lhs = 'z', mode = 'i' } } },
+    error = 'keymaps.preview.mode: must be "n"',
+    message = 'non-normal preview keymap mode was accepted',
+  },
+  {
+    value = { keymaps = { preview = { lhs = 'z', opts = false } } },
+    error = 'keymaps.preview.opts: must be a table, got boolean',
+    message = 'non-table preview keymap opts were accepted',
+  },
+  {
+    value = { keymaps = { preview = { lhs = 'z', opts = { buffer = true } } } },
+    error = 'unknown config key: "keymaps.preview.opts.buffer"',
+    message = 'unknown preview keymap option was accepted',
   },
 }) do
   assert_invalid(case.value, case.error, case.message)
 end
 
-local invalid_setup_ok, invalid_setup_err = pcall(config.setup, { threshold = 0 / 0 })
+local invalid_setup_ok, invalid_setup_err = pcall(config.setup, { search = { threshold = 0 / 0 } })
 h.assert_true(not invalid_setup_ok, 'config.setup accepted invalid config directly', scope)
 h.assert_true(
-  tostring(invalid_setup_err):find('threshold: must be finite', 1, true) ~= nil,
+  tostring(invalid_setup_err):find('search.threshold: must be finite', 1, true) ~= nil,
   'config.setup reported the wrong validation error',
   scope
 )
 
 local valid_ok, valid_err = config.validate({
-  from_none = { enabled = true, scope = 'core' },
-  threshold = 42,
-  include_sp_in_color_search = true,
-  persist_dir = vim.fn.stdpath('cache') .. '/hlcraft-config-test',
-  reapply_events = {
-    enabled = true,
-    events = {
-      'ColorScheme',
-      { event = 'SessionLoadPost', pattern = '*', once = false },
+  transparent = { enabled = true, scope = 'core' },
+  search = {
+    threshold = 42,
+    include_sp = true,
+    debounce_ms = 0,
+  },
+  persistence = {
+    dir = vim.fn.stdpath('cache') .. '/hlcraft-config-test',
+    reapply_events = {
+      enabled = true,
+      events = {
+        'ColorScheme',
+        { event = 'SessionLoadPost', pattern = '*', once = false },
+      },
     },
   },
-  dynamic = { enabled = true, interval_ms = 120 },
-  debounce_ms = 0,
-  preview_key = false,
+  dynamic = { interval_ms = 120 },
+  keymaps = {
+    preview = {
+      lhs = '<leader>hp',
+      mode = 'n',
+      opts = {
+        desc = 'preview highlight',
+        silent = false,
+        nowait = false,
+      },
+    },
+  },
 })
 h.assert_true(valid_ok, valid_err or 'valid config was rejected', scope)
 
@@ -168,30 +212,49 @@ end
 
 local fractional_dynamic = normalize_with({ dynamic = { interval_ms = 120.9 } })
 h.assert_equal(fractional_dynamic.dynamic.interval_ms, 120, 'dynamic interval did not floor fractional values', scope)
-local trimmed_preview_key = normalize_with({ preview_key = ' zz ' })
-h.assert_equal(trimmed_preview_key.preview_key, 'zz', 'preview_key did not trim', scope)
+local trimmed_preview_keymap = normalize_with({
+  keymaps = {
+    preview = {
+      lhs = ' zz ',
+      mode = ' n ',
+      opts = {
+        desc = ' preview result ',
+      },
+    },
+  },
+})
+h.assert_equal(trimmed_preview_keymap.keymaps.preview.lhs, 'zz', 'preview keymap lhs did not trim', scope)
+h.assert_equal(trimmed_preview_keymap.keymaps.preview.mode, 'n', 'preview keymap mode did not trim', scope)
+h.assert_equal(
+  trimmed_preview_keymap.keymaps.preview.opts.desc,
+  'preview result',
+  'preview keymap desc did not trim',
+  scope
+)
 local trimmed_reapply_events = normalize_with({
-  reapply_events = {
-    events = {
-      ' ColorScheme ',
-      { event = ' SessionLoadPost ', pattern = ' * ', once = true },
+  persistence = {
+    reapply_events = {
+      events = {
+        ' ColorScheme ',
+        { event = ' SessionLoadPost ', pattern = ' * ', once = true },
+      },
     },
   },
 })
 h.assert_equal(
-  trimmed_reapply_events.reapply_events.events[1],
+  trimmed_reapply_events.persistence.reapply_events.events[1],
   'ColorScheme',
   'string reapply event did not trim',
   scope
 )
 h.assert_equal(
-  trimmed_reapply_events.reapply_events.events[2].event,
+  trimmed_reapply_events.persistence.reapply_events.events[2].event,
   'SessionLoadPost',
   'table reapply event did not trim',
   scope
 )
 h.assert_equal(
-  trimmed_reapply_events.reapply_events.events[2].pattern,
+  trimmed_reapply_events.persistence.reapply_events.events[2].pattern,
   '*',
   'reapply event pattern did not trim',
   scope
@@ -199,33 +262,59 @@ h.assert_equal(
 local invalid_normalize_ok = pcall(
   schema.normalize,
   vim.tbl_extend('force', vim.deepcopy(schema.defaults), {
-    preview_key = 123,
+    keymaps = {
+      preview = true,
+    },
   })
 )
-h.assert_true(not invalid_normalize_ok, 'config normalization accepted an invalid preview_key', scope)
+h.assert_true(not invalid_normalize_ok, 'config normalization accepted an invalid preview keymap', scope)
 
 local defaults = config.setup({})
-h.assert_equal(defaults.from_none.enabled, false, 'default from_none.enabled changed', scope)
-h.assert_equal(defaults.from_none.scope, 'extended', 'default from_none.scope changed', scope)
-h.assert_equal(defaults.reapply_events.enabled, true, 'default reapply_events.enabled changed', scope)
-h.assert_equal(defaults.reapply_events.events[1], 'ColorScheme', 'default reapply event changed', scope)
-h.assert_equal(defaults.dynamic.enabled, false, 'default dynamic.enabled changed', scope)
+h.assert_equal(defaults.transparent.enabled, false, 'default transparent.enabled changed', scope)
+h.assert_equal(defaults.transparent.scope, 'extended', 'default transparent.scope changed', scope)
+h.assert_equal(defaults.search.threshold, 100, 'default search.threshold changed', scope)
+h.assert_equal(defaults.search.include_sp, false, 'default search.include_sp changed', scope)
+h.assert_equal(defaults.search.debounce_ms, 100, 'default search.debounce_ms changed', scope)
+h.assert_equal(defaults.persistence.reapply_events.enabled, true, 'default persistence reapply enabled changed', scope)
+h.assert_equal(defaults.persistence.reapply_events.events[1], 'ColorScheme', 'default reapply event changed', scope)
 h.assert_equal(defaults.dynamic.interval_ms, 80, 'default dynamic interval changed', scope)
+h.assert_equal(defaults.keymaps.preview.lhs, 'z', 'default preview keymap lhs changed', scope)
+h.assert_equal(defaults.keymaps.preview.mode, 'n', 'default preview keymap mode changed', scope)
+h.assert_equal(
+  defaults.keymaps.preview.opts.desc,
+  'hlcraft flash current highlight',
+  'default preview desc changed',
+  scope
+)
 
 local merged = config.setup({
-  from_none = true,
-  reapply_events = false,
-  dynamic = { enabled = true, interval_ms = 120 },
-  debounce_ms = 0,
-  preview_key = false,
+  transparent = {
+    enabled = true,
+  },
+  persistence = {
+    reapply_events = {
+      enabled = false,
+    },
+  },
+  search = {
+    debounce_ms = 0,
+  },
+  dynamic = { interval_ms = 120 },
+  keymaps = {
+    preview = false,
+  },
 })
-h.assert_equal(merged.from_none.enabled, true, 'boolean from_none did not enable option', scope)
-h.assert_equal(merged.from_none.scope, 'extended', 'boolean from_none did not keep default scope', scope)
-h.assert_equal(merged.reapply_events.enabled, false, 'boolean reapply_events=false did not disable replay', scope)
-h.assert_equal(merged.dynamic.enabled, true, 'dynamic.enabled override was not preserved', scope)
+h.assert_equal(merged.transparent.enabled, true, 'transparent.enabled override was not preserved', scope)
+h.assert_equal(merged.transparent.scope, 'extended', 'transparent override did not keep default scope', scope)
+h.assert_equal(
+  merged.persistence.reapply_events.enabled,
+  false,
+  'persistence reapply override was not preserved',
+  scope
+)
 h.assert_equal(merged.dynamic.interval_ms, 120, 'dynamic.interval_ms override was not preserved', scope)
-h.assert_equal(merged.debounce_ms, 0, 'debounce_ms override was not preserved', scope)
-h.assert_equal(merged.preview_key, false, 'preview_key override was not preserved', scope)
+h.assert_equal(merged.search.debounce_ms, 0, 'search.debounce_ms override was not preserved', scope)
+h.assert_equal(merged.keymaps.preview, false, 'preview keymap override was not preserved', scope)
 
 config.setup({})
 

@@ -9,9 +9,15 @@ local raw_dynamic = require('hlcraft.ui.raw_dynamic')
 local name = 'HlcraftUiRawDynamicNormal'
 local persist_dir = h.temp_dir('hlcraft-ui-raw-dynamic')
 hlcraft.setup({
-  persist_dir = persist_dir,
-  debounce_ms = 0,
-  reapply_events = false,
+  persistence = {
+    dir = persist_dir,
+    reapply_events = {
+      enabled = false,
+    },
+  },
+  search = {
+    debounce_ms = 0,
+  },
 })
 
 vim.api.nvim_set_hl(0, name, { fg = '#101010' })

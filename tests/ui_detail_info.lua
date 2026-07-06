@@ -8,9 +8,15 @@ local theme = require('hlcraft.ui.theme')
 
 local persist_dir = h.temp_dir('hlcraft-ui-detail-info')
 hlcraft.setup({
-  persist_dir = persist_dir,
-  debounce_ms = 0,
-  reapply_events = false,
+  persistence = {
+    dir = persist_dir,
+    reapply_events = {
+      enabled = false,
+    },
+  },
+  search = {
+    debounce_ms = 0,
+  },
 })
 
 local result = {

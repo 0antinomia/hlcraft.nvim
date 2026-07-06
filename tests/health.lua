@@ -48,7 +48,9 @@ vim.health = {
 local persist_dir = h.temp_dir('hlcraft-health')
 vim.fn.mkdir(persist_dir, 'p')
 config.setup({
-  persist_dir = persist_dir,
+  persistence = {
+    dir = persist_dir,
+  },
 })
 
 package.loaded[repository_module] = {
@@ -77,7 +79,16 @@ h.assert_true(
   'health did not report invalid parsed TOML data',
   scope
 )
-h.assert_true(contains(messages.ok, 'dynamic colors disabled'), 'health stopped before dynamic color check', scope)
+h.assert_true(
+  contains(messages.ok, 'persistence.dir: ' .. persist_dir),
+  'health reported the old persistence directory config name',
+  scope
+)
+h.assert_true(
+  contains(messages.ok, 'dynamic colors stable, interval 80ms'),
+  'health stopped before dynamic color check',
+  scope
+)
 
 local old_version = setmetatable({ major = 0, minor = 9, patch = 5 }, {
   __tostring = function()

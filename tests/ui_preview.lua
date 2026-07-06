@@ -82,7 +82,9 @@ local ok, err = xpcall(function()
 
   local original_config = config.config
   config.config = vim.tbl_deep_extend('force', vim.deepcopy(original_config), {
-    preview_key = true,
+    keymaps = {
+      preview = true,
+    },
   })
   assert_fails(function()
     preview.install_keymap({
@@ -92,7 +94,11 @@ local ok, err = xpcall(function()
     })
   end, 'preview keymap install accepted invalid preview key')
   config.config = vim.tbl_deep_extend('force', vim.deepcopy(original_config), {
-    preview_key = '   ',
+    keymaps = {
+      preview = {
+        lhs = '   ',
+      },
+    },
   })
   assert_fails(function()
     preview.install_keymap({
@@ -109,7 +115,17 @@ local ok, err = xpcall(function()
   })
 
   config.setup({
-    preview_key = lhs,
+    keymaps = {
+      preview = {
+        lhs = lhs,
+        mode = 'n',
+        opts = {
+          desc = 'custom hlcraft preview',
+          silent = true,
+          nowait = true,
+        },
+      },
+    },
   })
 
   local instance = {
@@ -121,7 +137,7 @@ local ok, err = xpcall(function()
 
   preview.install_keymap(instance)
   local installed = vim.fn.maparg(lhs, 'n', false, true)
-  h.assert_equal(installed.desc, 'hlcraft flash current highlight', 'preview mapping was not installed', scope)
+  h.assert_equal(installed.desc, 'custom hlcraft preview', 'preview mapping did not use configured opts', scope)
 
   preview.uninstall_keymap(instance)
   local restored = vim.fn.maparg(lhs, 'n', false, true)
