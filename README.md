@@ -51,36 +51,49 @@ Default configuration:
 
 ```lua
 require('hlcraft').setup({
-  from_none = {
+  transparent = {
     enabled = false,
     scope = 'extended',
   },
-  threshold = 100,
-  include_sp_in_color_search = false,
-  persist_dir = vim.fn.stdpath('config') .. '/hlcraft',
-  reapply_events = {
-    enabled = true,
-    events = {
-      'ColorScheme',
+  search = {
+    threshold = 100,
+    include_sp = false,
+    debounce_ms = 100,
+  },
+  persistence = {
+    dir = vim.fn.stdpath('config') .. '/hlcraft',
+    reapply_events = {
+      enabled = true,
+      events = {
+        'ColorScheme',
+      },
     },
   },
   dynamic = {
-    enabled = false,
     interval_ms = 80,
   },
-  debounce_ms = 100,
-  preview_key = 'z',
+  keymaps = {
+    preview = {
+      lhs = 'z',
+      mode = 'n',
+      opts = {
+        desc = 'hlcraft flash current highlight',
+        silent = true,
+        nowait = true,
+      },
+    },
+  },
 })
 ```
 
 ### Options
 
-#### `from_none`
+#### `transparent`
 
 Controls whether hlcraft applies a transparent baseline preset before your own draft and persisted overrides.
 
 ```lua
-from_none = {
+transparent = {
   enabled = false,
   scope = 'extended',
 }
@@ -94,59 +107,50 @@ Use this when you want hlcraft to maintain a transparent background setup for yo
 
 If you want the quickest path to a transparent Neovim look, this is probably the setting you want.
 
-#### `threshold`
+#### `search`
 
-Default distance threshold used by color search.
+Color search behavior and search input debounce.
 
 ```lua
-threshold = 100
+search = {
+  threshold = 100,
+  include_sp = false,
+  debounce_ms = 100,
+}
 ```
 
-Color search uses RGB Euclidean distance. Lower values are stricter. Higher values return broader matches.
+- `threshold`: default RGB Euclidean distance threshold. Lower values are stricter. Higher values return broader matches. Must be a finite number between `0` and `1000`.
+- `include_sp`: whether the `sp` field participates in color matching. This is mainly useful for underline- and undercurl-heavy colorschemes.
+- `debounce_ms`: delay for search input updates. Use `0` to update immediately. Must be a finite number greater than or equal to `0`.
 
-Must be a finite number between `0` and `1000`.
+#### `persistence`
 
-#### `include_sp_in_color_search`
-
-Controls whether the `sp` field participates in color matching.
-
-```lua
-include_sp_in_color_search = false
-```
-
-When enabled, highlight groups whose special color matches the query can also appear in the results. This is mainly useful for underline- and undercurl-heavy colorschemes.
-
-#### `persist_dir`
-
-Directory used to store persisted override files.
+Directory used to store persisted override files, plus events that trigger automatic replay of persisted overrides.
 
 ```lua
-persist_dir = vim.fn.stdpath('config') .. '/hlcraft'
-```
-
-By default, hlcraft stores persistence data in a visible `hlcraft` directory under your Neovim config directory. It may create multiple TOML files there. Set `persist_dir` explicitly if you want to keep using a different location.
-
-#### `reapply_events`
-
-Events that trigger automatic replay of persisted overrides.
-
-```lua
-reapply_events = {
-  enabled = true,
-  events = {
-    'ColorScheme',
+persistence = {
+  dir = vim.fn.stdpath('config') .. '/hlcraft',
+  reapply_events = {
+    enabled = true,
+    events = {
+      'ColorScheme',
+    },
   },
 }
 ```
 
-You can provide either plain event names or structured entries inside `events`:
+By default, hlcraft stores persistence data in a visible `hlcraft` directory under your Neovim config directory. It may create multiple TOML files there. Set `persistence.dir` explicitly if you want to keep using a different location.
+
+You can provide either plain event names or structured entries inside `persistence.reapply_events.events`:
 
 ```lua
-reapply_events = {
-  enabled = true,
-  events = {
-    'ColorScheme',
-    { event = 'SessionLoadPost', once = false },
+persistence = {
+  reapply_events = {
+    enabled = true,
+    events = {
+      'ColorScheme',
+      { event = 'SessionLoadPost', once = false },
+    },
   },
 }
 ```
@@ -159,20 +163,18 @@ Structured entries support:
 
 `events` must be a sequence. Event names must be non-empty strings.
 
-Set `enabled = false` to disable automatic replay entirely.
+Set `persistence.reapply_events.enabled = false` to disable automatic replay entirely.
 
 #### `dynamic`
 
-Controls whether saved dynamic color overrides are animated at runtime. Dynamic colors are an early experimental feature in hlcraft: they let a color channel keep changing after the override has been applied, instead of staying on one static `fg`, `bg`, or `sp` value.
+Controls the runtime cadence for saved dynamic color overrides. Dynamic colors are a stable hlcraft feature: they let a color channel keep changing after the override has been applied, instead of staying on one static `fg`, `bg`, or `sp` value.
 
 ```lua
 dynamic = {
-  enabled = false,
   interval_ms = 80,
 }
 ```
 
-- `enabled`: when `false`, dynamic configuration is loaded and saved but does not animate.
 - `interval_ms`: animation tick interval in milliseconds. Lower values feel smoother but write highlights more often.
 
 `interval_ms` must be a finite number between `16` and `1000`.
@@ -191,32 +193,29 @@ Each dynamic channel is stored as the same declarative model used by the raw JSO
 
 Timeline stops use `{ at, color }`, where `at` must be between `0` and `1`. `color` can be `base`, another channel reference (`fg`, `bg`, or `sp`), or a concrete color such as `#ff6699`. Transforms use `{ type, timeline, interpolation? }`, with `type` set to `brightness`, `hue_shift`, or `saturation`.
 
-#### `debounce_ms`
-
-Debounce delay for search input updates.
-
-```lua
-debounce_ms = 100
-```
-
-- `0`: disable debounce and update immediately
-- `> 0`: wait the given milliseconds before recomputing results during typing
-
-Must be a finite number greater than or equal to `0`.
-
-#### `preview_key`
+#### `keymaps.preview`
 
 Temporary flash key used to identify the currently selected highlight group.
 
 ```lua
-preview_key = 'z'
+keymaps = {
+  preview = {
+    lhs = 'z',
+    mode = 'n',
+    opts = {
+      desc = 'hlcraft flash current highlight',
+      silent = true,
+      nowait = true,
+    },
+  },
+}
 ```
 
 This key is installed as a temporary global normal-mode mapping while the hlcraft workspace is open, so it still works after switching to another window. Once the workspace closes, the mapping is removed.
 
-Set it to `false` to disable the feature entirely.
+Set `keymaps.preview = false` to disable the feature entirely.
 
-When enabled, it must be a non-empty string.
+When enabled, `lhs` must be a non-empty string. `mode` is currently limited to `'n'`, and `opts` accepts `desc`, `silent`, and `nowait`, matching the common `vim.keymap.set()` option shape used by Neovim configs.
 
 ## Usage
 
@@ -240,14 +239,14 @@ Color queries accept:
 - `#RRGGBB`
 - `NONE`
 
-`NONE` matches groups whose resolved color is unset. By default this checks `fg` and `bg`. If `include_sp_in_color_search` is enabled, it also checks `sp`.
+`NONE` matches groups whose resolved color is unset. By default this checks `fg` and `bg`. If `search.include_sp` is enabled, it also checks `sp`.
 
 ## Persistence
 
 Persisted overrides are written under:
 
 ```lua
-vim.fn.stdpath('config') .. '/hlcraft'
+persistence.dir
 ```
 
 Each file stores one top-level TOML section. Section names come from groups you explicitly select or create in the detail view. If an override has no group, hlcraft asks you to choose or create one before saving.
@@ -259,7 +258,7 @@ Dynamic color settings are stored directly in the `dynamic` table for each highl
 "Normal" = { fg = "#d7d7ff", dynamic = { fg = { version = 1, preset = "pulse", duration = 2000, loop = "pingpong", interpolation = "smooth", timeline = [{ at = 0, color = "base" }, { at = 1, color = "#ff6699" }] } } }
 ```
 
-Persisted overrides are loaded during `setup()` and replayed again on configured `reapply_events`.
+Persisted overrides are loaded during `setup()` and replayed again on configured `persistence.reapply_events`.
 
 ## Health Check
 
