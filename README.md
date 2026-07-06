@@ -2,23 +2,21 @@
 
 [中文文档](./README.zh.md)
 
-`hlcraft.nvim` is an interactive highlight explorer and override manager for Neovim.
+`hlcraft.nvim` is an interactive highlight workbench for Neovim.
 
-It gives you one place to inspect highlight groups, search by name or color, edit overrides, and persist the result as TOML files.
+It gives you one place to inspect highlight groups, search by name or color, edit overrides, preview the result, and persist your final decisions as TOML files.
 
-It also works well as a unified control surface for your Neovim highlights. And if you want, you can absolutely use it like a "theme" plugin: one whose final look is shaped entirely by you.
-
-A practical workflow is to ask AI to turn a colorscheme you already like into hlcraft persistence files, then keep refining it from there. Or skip that and build your own style from scratch. Either way, the end result stays in your hands.
+You can use it as a practical highlight debugger, a personal theme-building layer, or a control surface for refining an existing colorscheme into something that is entirely yours.
 
 ## Features
 
-- Search highlight groups by name
-- Search highlight groups by color similarity
-- Inspect resolved `fg`, `bg`, `sp`, links, source and attributes
-- Edit overrides in a detail editor
-- Persist overrides across sessions
-- Reapply persisted overrides after colorscheme changes
-- Zero external dependencies
+- Search highlight groups by name.
+- Search highlight groups by color similarity.
+- Inspect resolved `fg`, `bg`, `sp`, links, source, and attributes.
+- Edit color, style, blend, group, and dynamic color overrides.
+- Persist overrides as readable TOML files.
+- Reapply persisted overrides after colorscheme changes.
+- Run without external dependencies.
 
 ## Requirements
 
@@ -37,17 +35,28 @@ A practical workflow is to ask AI to turn a colorscheme you already like into hl
 }
 ```
 
-### Minimal setup
+### Minimal Setup
 
 ```lua
 require('hlcraft').setup()
 ```
 
-The plugin also registers the `:Hlcraft` command automatically.
+Open the workbench:
 
-## Configuration
+```vim
+:Hlcraft
+```
 
-Default configuration:
+## Documentation
+
+- [Documentation Home](./docs/en/index.md)
+- [Configuration](./docs/en/configuration.md)
+- [Workspace](./docs/en/workspace.md)
+- [Dynamic Colors](./docs/en/dynamic-colors.md)
+- [Persistence](./docs/en/persistence.md)
+- [Architecture](./docs/en/architecture.md)
+
+## Quick Configuration
 
 ```lua
 require('hlcraft').setup({
@@ -86,179 +95,13 @@ require('hlcraft').setup({
 })
 ```
 
-### Options
-
-#### `transparent`
-
-Controls whether hlcraft applies a transparent baseline preset before your own draft and persisted overrides.
-
-```lua
-transparent = {
-  enabled = false,
-  scope = 'extended',
-}
-```
-
-- `enabled`: whether the preset is active
-- `scope = 'core'`: only clears a smaller set of foundational groups such as `Normal`, `NormalFloat`, `SignColumn`
-- `scope = 'extended'`: also clears more UI groups such as popup menu and winbar related highlights
-
-Use this when you want hlcraft to maintain a transparent background setup for you.
-
-If you want the quickest path to a transparent Neovim look, this is probably the setting you want.
-
-#### `search`
-
-Color search behavior and search input debounce.
-
-```lua
-search = {
-  threshold = 100,
-  include_sp = false,
-  debounce_ms = 100,
-}
-```
-
-- `threshold`: default RGB Euclidean distance threshold. Lower values are stricter. Higher values return broader matches. Must be a finite number between `0` and `1000`.
-- `include_sp`: whether the `sp` field participates in color matching. This is mainly useful for underline- and undercurl-heavy colorschemes.
-- `debounce_ms`: delay for search input updates. Use `0` to update immediately. Must be a finite number greater than or equal to `0`.
-
-#### `persistence`
-
-Directory used to store persisted override files, plus events that trigger automatic replay of persisted overrides.
-
-```lua
-persistence = {
-  dir = vim.fn.stdpath('config') .. '/hlcraft',
-  reapply_events = {
-    enabled = true,
-    events = {
-      'ColorScheme',
-    },
-  },
-}
-```
-
-By default, hlcraft stores persistence data in a visible `hlcraft` directory under your Neovim config directory. It may create multiple TOML files there. Set `persistence.dir` explicitly if you want to keep using a different location.
-
-You can provide either plain event names or structured entries inside `persistence.reapply_events.events`:
-
-```lua
-persistence = {
-  reapply_events = {
-    enabled = true,
-    events = {
-      'ColorScheme',
-      { event = 'SessionLoadPost', once = false },
-    },
-  },
-}
-```
-
-Structured entries support:
-
-- `event`: autocmd event name
-- `pattern`: optional autocmd pattern
-- `once`: whether the autocmd should run only once
-
-`events` must be a sequence. Event names must be non-empty strings.
-
-Set `persistence.reapply_events.enabled = false` to disable automatic replay entirely.
-
-#### `dynamic`
-
-Controls the runtime cadence for saved dynamic color overrides. Dynamic colors are a stable hlcraft feature: they let a color channel keep changing after the override has been applied, instead of staying on one static `fg`, `bg`, or `sp` value.
-
-```lua
-dynamic = {
-  interval_ms = 80,
-}
-```
-
-- `interval_ms`: animation tick interval in milliseconds. Lower values feel smoother but write highlights more often.
-
-`interval_ms` must be a finite number between `16` and `1000`.
-
-Dynamic color configuration is edited from the existing `FG`, `BG`, and `SP` editors:
-
-- Press `d` in a color editor to toggle dynamic mode for the current `FG`, `BG`, or `SP` channel.
-- Press `m` to cycle presets: `pulse`, `breath`, `hue`, `gradient`, `blink`, and `duotone`.
-- Press `+` / `-` to adjust the dynamic duration, or the phase when the phase row is selected.
-- Press `e` to open the raw JSON editor for the current dynamic channel.
-- Press `s` in the detail view to persist the override, just like static color changes.
-
-Dynamic rows use animated color swatches as the primary preview. Compact text such as `pulse 2000ms` remains visible as metadata and as a fallback for environments where the preview cannot animate.
-
-Each dynamic channel is stored as the same declarative model used by the raw JSON editor. The required fields are `version = 1` and a non-empty `timeline`; `preset`, `duration`, `loop`, `phase`, `interpolation`, and `transforms` are optional and fall back to defaults when omitted. Presets provide common shapes, while the raw JSON editor can hold custom timelines and transforms. Runtime animation updates group-level `fg`, `bg`, and `sp` highlight values over time; it is not per-character or spatial terminal animation.
-
-Timeline stops use `{ at, color }`, where `at` must be between `0` and `1`. `color` can be `base`, another channel reference (`fg`, `bg`, or `sp`), or a concrete color such as `#ff6699`. Transforms use `{ type, timeline, interpolation? }`, with `type` set to `brightness`, `hue_shift`, or `saturation`.
-
-#### `keymaps.preview`
-
-Temporary flash key used to identify the currently selected highlight group.
-
-```lua
-keymaps = {
-  preview = {
-    lhs = 'z',
-    mode = 'n',
-    opts = {
-      desc = 'hlcraft flash current highlight',
-      silent = true,
-      nowait = true,
-    },
-  },
-}
-```
-
-This key is installed as a temporary global normal-mode mapping while the hlcraft workspace is open, so it still works after switching to another window. Once the workspace closes, the mapping is removed.
-
-Set `keymaps.preview = false` to disable the feature entirely.
-
-When enabled, `lhs` must be a non-empty string. `mode` is currently limited to `'n'`, and `opts` accepts `desc`, `silent`, and `nowait`, matching the common `vim.keymap.set()` option shape used by Neovim configs.
-
-## Usage
-
-Open the workspace:
-
-```vim
-:Hlcraft
-```
-
-### Search
-
-The top area contains two inputs:
-
-- `name`: filters by case-insensitive substring match on highlight group names
-- `color`: filters by color similarity
-
-The two filters can be combined.
-
-Color queries accept:
-
-- `#RRGGBB`
-- `NONE`
-
-`NONE` matches groups whose resolved color is unset. By default this checks `fg` and `bg`. If `search.include_sp` is enabled, it also checks `sp`.
+For option details and recipes, see [Configuration](./docs/en/configuration.md).
 
 ## Persistence
 
-Persisted overrides are written under:
+Saved overrides are written under `persistence.dir` as TOML files. Each file stores one top-level section, and each highlight entry stores only the override fields you choose to keep.
 
-```lua
-persistence.dir
-```
-
-Each file stores one top-level TOML section. Section names come from groups you explicitly select or create in the detail view. If an override has no group, hlcraft asks you to choose or create one before saving.
-
-Dynamic color settings are stored directly in the `dynamic` table for each highlight entry. Each channel (`fg`, `bg`, or `sp`) contains the same declarative model used by the raw JSON editor:
-
-```toml
-["demo.group"]
-"Normal" = { fg = "#d7d7ff", dynamic = { fg = { version = 1, preset = "pulse", duration = 2000, loop = "pingpong", interpolation = "smooth", timeline = [{ at = 0, color = "base" }, { at = 1, color = "#ff6699" }] } } }
-```
-
-Persisted overrides are loaded during `setup()` and replayed again on configured `persistence.reapply_events`.
+Dynamic color settings are stored directly in each highlight entry's `dynamic` table. See [Dynamic Colors](./docs/en/dynamic-colors.md) and [Persistence](./docs/en/persistence.md) for the full model.
 
 ## Health Check
 
@@ -268,9 +111,4 @@ Run:
 :checkhealth hlcraft
 ```
 
-This checks:
-
-- Neovim version compatibility
-- persistence directory availability
-- persistence directory writability
-- TOML parse integrity
+The health check verifies Neovim compatibility, persistence directory access, write support, and TOML parse integrity.

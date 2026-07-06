@@ -2,23 +2,21 @@
 
 [English](./README.md)
 
-`hlcraft.nvim` 是一个用于管理 Neovim 高亮组的交互式工具。
+`hlcraft.nvim` 是一个用于 Neovim 高亮系统的交互式工作台。
 
-它提供了一个统一入口，让你可以查看高亮组的最终解析结果，按名称或颜色搜索，编辑 override，并将结果持久化为 TOML 文件。
+它提供统一入口，让你可以查看高亮组、按名称或颜色搜索、编辑 override、预览结果，并将最终选择持久化为 TOML 文件。
 
-你可以把它当作自己的 Neovim 高亮系统控制台来使用。如果你愿意，也完全可以把它当成一个“主题”插件来使用，只不过这个“主题”不是别人预先定义好的，而是由你自己一步步塑形出来的。
-
-一个很实用的思路是：借助 AI，把你喜欢的主题插件风格提取成 hlcraft 的持久化配置，然后再继续微调。你也可以完全跳过这一步，直接从零开始自由发挥。总之，最终效果始终由你掌控。
+你可以把它当作高亮调试工具，也可以把它当作个人主题构建层，或者用它把已有 colorscheme 微调成完全属于自己的最终形态。
 
 ## 功能
 
-- 按名称搜索高亮组
-- 按颜色相似度搜索高亮组
-- 查看最终解析后的 `fg`、`bg`、`sp`、链接、来源和属性
-- 在详情编辑器中编辑 override
-- 跨会话持久化 override
-- 在 colorscheme 变化后自动重新应用持久化 override
-- 无外部依赖
+- 按名称搜索高亮组。
+- 按颜色相似度搜索高亮组。
+- 查看解析后的 `fg`、`bg`、`sp`、链接、来源和属性。
+- 编辑颜色、样式、blend、分组和动态颜色 override。
+- 将 override 持久化为可读 TOML 文件。
+- 在 colorscheme 变化后自动重新应用持久化 override。
+- 无外部依赖。
 
 ## 要求
 
@@ -43,11 +41,22 @@
 require('hlcraft').setup()
 ```
 
-插件会自动注册 `:Hlcraft` 命令。
+打开工作台：
 
-## 配置
+```vim
+:Hlcraft
+```
 
-默认配置：
+## 文档
+
+- [文档首页](./docs/zh/index.md)
+- [配置](./docs/zh/configuration.md)
+- [工作台](./docs/zh/workspace.md)
+- [动态颜色](./docs/zh/dynamic-colors.md)
+- [持久化](./docs/zh/persistence.md)
+- [架构](./docs/zh/architecture.md)
+
+## 快速配置
 
 ```lua
 require('hlcraft').setup({
@@ -86,179 +95,13 @@ require('hlcraft').setup({
 })
 ```
 
-### 选项
-
-#### `transparent`
-
-控制 hlcraft 是否会先应用一套透明背景的基础 preset，再叠加你自己的草稿 override 和持久化 override。
-
-```lua
-transparent = {
-  enabled = false,
-  scope = 'extended',
-}
-```
-
-- `enabled`：是否启用这个 preset
-- `scope = 'core'`：只清理较小范围的基础组，比如 `Normal`、`NormalFloat`、`SignColumn`
-- `scope = 'extended'`：额外清理更多 UI 相关组，比如 popup menu、winbar 等
-
-如果你想长期维护一套透明背景风格，可以启用它。
-
-如果你正在找一个一键快速打造透明风格 Neovim 主题的方法，不要犹豫，这就是你需要的。
-
-#### `search`
-
-颜色搜索行为和搜索输入 debounce。
-
-```lua
-search = {
-  threshold = 100,
-  include_sp = false,
-  debounce_ms = 100,
-}
-```
-
-- `threshold`：颜色搜索默认使用的 RGB 欧氏距离阈值。值越小，匹配越严格；值越大，返回结果越宽。必须是 `0` 到 `1000` 之间的有限数字。
-- `include_sp`：是否把 `sp` 字段也纳入颜色匹配。这在大量使用 underline 或 undercurl 的主题里会更有用。
-- `debounce_ms`：搜索输入更新的 debounce 延迟。设为 `0` 时立即更新。必须是大于等于 `0` 的有限数字。
-
-#### `persistence`
-
-持久化 override 所使用的目录，以及哪些事件会触发自动重新应用持久化 override。
-
-```lua
-persistence = {
-  dir = vim.fn.stdpath('config') .. '/hlcraft',
-  reapply_events = {
-    enabled = true,
-    events = {
-      'ColorScheme',
-    },
-  },
-}
-```
-
-默认是 Neovim 配置目录下的一个可见 `hlcraft` 目录。hlcraft 可能会在其中创建多个 TOML 文件。如果你想继续使用其他位置，可以显式设置 `persistence.dir`。
-
-你可以在 `persistence.reapply_events.events` 里同时使用普通事件名和结构化配置：
-
-```lua
-persistence = {
-  reapply_events = {
-    enabled = true,
-    events = {
-      'ColorScheme',
-      { event = 'SessionLoadPost', once = false },
-    },
-  },
-}
-```
-
-结构化条目支持：
-
-- `event`：autocmd 事件名
-- `pattern`：可选的 autocmd pattern
-- `once`：是否只执行一次
-
-`events` 必须是数组序列。事件名必须是非空字符串。
-
-将 `persistence.reapply_events.enabled = false` 可以完全关闭自动重放。
-
-#### `dynamic`
-
-控制已保存动态颜色 override 的运行时刷新节奏。动态颜色现在是 hlcraft 的稳定功能：它可以让某个颜色通道在 override 生效后持续变化，而不是固定为一个静态的 `fg`、`bg` 或 `sp` 值。
-
-```lua
-dynamic = {
-  interval_ms = 80,
-}
-```
-
-- `interval_ms`：动画 tick 间隔，单位为毫秒。数值越小越流畅，但也会更频繁地写入高亮。
-
-`interval_ms` 必须是 `16` 到 `1000` 之间的有限数字。
-
-动态颜色配置在现有 `FG`、`BG`、`SP` 编辑器里完成：
-
-- 在颜色编辑器中按 `d`，为当前 `FG`、`BG` 或 `SP` 通道切换动态模式。
-- 按 `m` 循环切换 preset：`pulse`、`breath`、`hue`、`gradient`、`blink`、`duotone`。
-- 按 `+` / `-` 调整动态动画时长；当选中 phase 行时调整 phase。
-- 按 `e` 打开当前动态通道的原始 JSON 编辑器。
-- 在详情页按 `s` 保存，保存流程和静态颜色 override 一致。
-
-动态颜色行会以动画色块作为主要预览。类似 `pulse 2000ms` 的紧凑文本仍会显示，作为元数据，也作为无法播放动画时的 fallback。
-
-每个动态通道都会保存为和原始 JSON 编辑器一致的声明式模型。必填字段是 `version = 1` 和非空 `timeline`；`preset`、`duration`、`loop`、`phase`、`interpolation`、`transforms` 都是可选字段，省略时会使用默认值。Preset 提供常见动画形状，原始 JSON 编辑器则可以保存自定义 timeline 和 transform。运行时动画只会随时间更新高亮组级别的 `fg`、`bg`、`sp` 值；它不是逐字符或空间位置相关的终端动画。
-
-Timeline stop 使用 `{ at, color }`，其中 `at` 必须在 `0` 到 `1` 之间。`color` 可以是 `base`、其他通道引用（`fg`、`bg`、`sp`），也可以是类似 `#ff6699` 的具体颜色。Transform 使用 `{ type, timeline, interpolation? }`，`type` 可选 `brightness`、`hue_shift` 或 `saturation`。
-
-#### `keymaps.preview`
-
-用于短暂高亮当前选中高亮组的预览按键。
-
-```lua
-keymaps = {
-  preview = {
-    lhs = 'z',
-    mode = 'n',
-    opts = {
-      desc = 'hlcraft flash current highlight',
-      silent = true,
-      nowait = true,
-    },
-  },
-}
-```
-
-只要 hlcraft workspace 处于打开状态，这个键就会作为一个临时的全局普通模式映射存在，所以即使切到别的窗口也仍然能触发。workspace 关闭后，这个映射会自动移除。
-
-将 `keymaps.preview = false` 可以完全关闭这个功能。
-
-启用时，`lhs` 必须是非空字符串。`mode` 目前限制为 `'n'`，`opts` 支持 `desc`、`silent` 和 `nowait`，和常见的 `vim.keymap.set()` 配置形态保持一致。
-
-## 使用
-
-打开 workspace：
-
-```vim
-:Hlcraft
-```
-
-### 搜索
-
-顶部区域有两个输入框：
-
-- `name`：按高亮组名称做大小写不敏感的子串匹配
-- `color`：按颜色相似度过滤
-
-这两个过滤条件可以组合使用。
-
-颜色查询支持：
-
-- `#RRGGBB`
-- `NONE`
-
-`NONE` 会匹配解析后颜色未设置的高亮组。默认检查 `fg` 和 `bg`；如果启用了 `search.include_sp`，也会检查 `sp`。
+配置细节和常见用法见 [配置](./docs/zh/configuration.md)。
 
 ## 持久化
 
-持久化 override 会写入：
+保存后的 override 会以 TOML 文件写入 `persistence.dir`。每个文件保存一个顶层 section，每个高亮条目只保存你选择保留的 override 字段。
 
-```lua
-persistence.dir
-```
-
-每个文件保存一个顶层 TOML section。section 名称来自你在详情页里明确选择或新建的 group。如果某个 override 没有 group，hlcraft 会要求你先选择或新建一个 group，再进行保存。
-
-动态颜色会直接保存在每个高亮条目的 `dynamic` 表中。每个通道（`fg`、`bg` 或 `sp`）都使用和原始 JSON 编辑器一致的声明式模型：
-
-```toml
-["demo.group"]
-"Normal" = { fg = "#d7d7ff", dynamic = { fg = { version = 1, preset = "pulse", duration = 2000, loop = "pingpong", interpolation = "smooth", timeline = [{ at = 0, color = "base" }, { at = 1, color = "#ff6699" }] } } }
-```
-
-持久化 override 会在 `setup()` 时加载，并在配置的 `persistence.reapply_events` 上再次应用。
+动态颜色设置会直接保存在每个高亮条目的 `dynamic` 表中。完整模型见 [动态颜色](./docs/zh/dynamic-colors.md) 和 [持久化](./docs/zh/persistence.md)。
 
 ## 健康检查
 
@@ -268,9 +111,4 @@ persistence.dir
 :checkhealth hlcraft
 ```
 
-会检查：
-
-- Neovim 版本是否兼容
-- 持久化目录是否可用
-- 持久化目录是否可写
-- TOML 解析完整性
+健康检查会验证 Neovim 兼容性、持久化目录访问、写入能力和 TOML 解析完整性。
