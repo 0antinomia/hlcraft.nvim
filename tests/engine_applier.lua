@@ -56,10 +56,12 @@ local ok, err = xpcall(function()
   h.assert_true(store.data.base_specs[name] ~= valid_spec, 'pending hook kept mutable base spec reference', scope)
 
   config.config = vim.tbl_deep_extend('force', vim.deepcopy(config.config), {
-    reapply_events = {
-      enabled = true,
-      events = {
-        [2] = 'ColorScheme',
+    persistence = {
+      reapply_events = {
+        enabled = true,
+        events = {
+          [2] = 'ColorScheme',
+        },
       },
     },
   })
@@ -67,10 +69,12 @@ local ok, err = xpcall(function()
   h.assert_true(not sparse_events_ok, 'applier accepted sparse reapply events', scope)
 
   config.config = vim.tbl_deep_extend('force', vim.deepcopy(config.config), {
-    reapply_events = {
-      enabled = true,
-      events = {
-        'ColorScheme',
+    persistence = {
+      reapply_events = {
+        enabled = true,
+        events = {
+          'ColorScheme',
+        },
       },
     },
   })

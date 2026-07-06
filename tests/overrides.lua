@@ -9,9 +9,15 @@ local storage = require('hlcraft.persistence.repository')
 
 local persist_dir = h.temp_dir('hlcraft-overrides')
 hlcraft.setup({
-  persist_dir = persist_dir,
-  debounce_ms = 0,
-  reapply_events = false,
+  persistence = {
+    dir = persist_dir,
+    reapply_events = {
+      enabled = false,
+    },
+  },
+  search = {
+    debounce_ms = 0,
+  },
 })
 
 vim.api.nvim_set_hl(0, 'HlcraftTestNormal', { fg = '#010203' })

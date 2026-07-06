@@ -127,19 +127,19 @@ for _, line in ipairs(hints.dynamic(24)) do
   h.assert_true(vim.fn.strdisplaywidth(line) <= 24, 'narrow dynamic hint exceeded target width', scope)
 end
 
-local help_lines = help_model.lines('z')
+local help_lines = help_model.lines({ lhs = 'z' })
 h.assert_equal(help_lines[1], 'hlcraft help', 'help title changed', scope)
 h.assert_true(vim.tbl_contains(help_lines, 'Navigation'), 'help navigation section missing', scope)
 h.assert_true(vim.tbl_contains(help_lines, 'Actions'), 'help actions section missing', scope)
 h.assert_true(vim.tbl_contains(help_lines, '  [z]  preview result'), 'preview key help line missing', scope)
 h.assert_true(
-  vim.tbl_contains(help_model.lines(' z '), '  [z]  preview result'),
-  'preview key help line did not trim',
+  vim.tbl_contains(help_model.lines({ lhs = ' z ' }), '  [z]  preview result'),
+  'preview keymap help line did not trim',
   scope
 )
 h.assert_true(
   not vim.tbl_contains(help_model.lines(false), '  [false]  preview result'),
-  'disabled preview key was rendered',
+  'disabled preview keymap was rendered',
   scope
 )
 h.assert_true(vim.tbl_contains(help_lines, '  [J/K]    next/prev result'), 'search jump help line missing', scope)
@@ -147,11 +147,11 @@ h.assert_true(help_model.is_item_line('  [q / Esc] back/close'), 'indented help 
 h.assert_true(help_model.is_item_line('[q / Esc] back/close'), 'help item line was not detected', scope)
 h.assert_true(not help_model.is_item_line('Navigation'), 'help section was treated as item line', scope)
 local numeric_preview_ok = pcall(help_model.lines, 1)
-h.assert_true(not numeric_preview_ok, 'help model accepted numeric preview key', scope)
-local empty_preview_ok = pcall(help_model.lines, '')
-h.assert_true(not empty_preview_ok, 'help model accepted empty preview key', scope)
-local blank_preview_ok = pcall(help_model.lines, '   ')
-h.assert_true(not blank_preview_ok, 'help model accepted blank preview key', scope)
+h.assert_true(not numeric_preview_ok, 'help model accepted numeric preview keymap', scope)
+local empty_preview_ok = pcall(help_model.lines, {})
+h.assert_true(not empty_preview_ok, 'help model accepted preview keymap without lhs', scope)
+local blank_preview_ok = pcall(help_model.lines, { lhs = '   ' })
+h.assert_true(not blank_preview_ok, 'help model accepted blank preview keymap lhs', scope)
 local numeric_line_ok = pcall(help_model.is_item_line, 1)
 h.assert_true(not numeric_line_ok, 'help item detector accepted a non-string line', scope)
 local original_sections = help_model.sections

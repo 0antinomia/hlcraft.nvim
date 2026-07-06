@@ -19,7 +19,11 @@ local function set_input_marks(instance, name, start_row, end_boundary_row)
 end
 
 h.with_temp_buf(function(buf)
-  config.setup({ debounce_ms = 0 })
+  config.setup({
+    search = {
+      debounce_ms = 0,
+    },
+  })
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, { 'name query', 'color query', '' })
 
   assert_fails(function()

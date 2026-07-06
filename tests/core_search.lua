@@ -41,7 +41,9 @@ local non_string_name_ok = pcall(search.by_name, 123)
 h.assert_true(not non_string_name_ok, 'name search accepted a non-string query', scope)
 
 config.setup({
-  include_sp_in_color_search = false,
+  search = {
+    include_sp = false,
+  },
 })
 local none_without_sp = search.by_color('NONE', 100)
 none_without_sp = local_results(none_without_sp)
@@ -49,7 +51,9 @@ h.assert_equal(#none_without_sp, 1, 'NONE search without sp included unexpected 
 h.assert_equal(none_without_sp[1].name, names[2], 'NONE search without sp returned wrong group', scope)
 
 config.setup({
-  include_sp_in_color_search = true,
+  search = {
+    include_sp = true,
+  },
 })
 local none_with_sp = search.by_color('NONE', 100)
 none_with_sp = local_results(none_with_sp)
