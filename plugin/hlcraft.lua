@@ -7,6 +7,6 @@ if vim.fn.exists(':Hlcraft') ~= 2 then
     hlcraft.open()
   end, {
     nargs = 0,
-    desc = 'Open the Hlcraft interactive highlight explorer',
+    desc = 'Open the Hlcraft highlight workbench',
   })
 end
