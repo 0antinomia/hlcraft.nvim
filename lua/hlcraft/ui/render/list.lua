@@ -1,6 +1,7 @@
 local render_util = require('hlcraft.render.util')
 local numbers = require('hlcraft.core.number')
 local tables = require('hlcraft.core.tables')
+local dynamic_display = require('hlcraft.ui.dynamic_display')
 local search_scene = require('hlcraft.ui.scene.search')
 
 local M = {}
@@ -52,13 +53,15 @@ function M.build(instance, width)
   local sp_width = math.max(8, remaining - fg_width - bg_width)
   local lines = {}
   local selectable = {}
+  local cells = {}
+  local gap_text = string.rep(' ', gap)
 
   local header = table.concat({
     render_util.pad('NAME', name_width),
     render_util.pad('FG', fg_width),
     render_util.pad('BG', bg_width),
     render_util.pad('SP', sp_width),
-  }, string.rep(' ', gap))
+  }, gap_text)
 
   lines[#lines + 1] = header
   lines[#lines + 1] = string.rep('─', vim.fn.strdisplaywidth(header))
@@ -68,17 +71,33 @@ function M.build(instance, width)
   else
     for index, result in ipairs(results) do
       result = highlight_result(result)
-      lines[#lines + 1] = table.concat({
-        render_util.pad(render_util.truncate(result.name, name_width), name_width),
-        render_util.pad(render_util.display_color(result.fg), fg_width),
-        render_util.pad(render_util.display_color(result.bg), bg_width),
-        render_util.pad(render_util.display_color(result.sp), sp_width),
-      }, string.rep(' ', gap))
+      local fg = dynamic_display.list_cell(result, 'fg')
+      local bg = dynamic_display.list_cell(result, 'bg')
+      local sp = dynamic_display.list_cell(result, 'sp')
+      local name_text = render_util.pad(render_util.truncate(result.name, name_width), name_width)
+      local fg_text = render_util.pad(fg.text, fg_width)
+      local bg_text = render_util.pad(bg.text, bg_width)
+      local sp_text = render_util.pad(sp.text, sp_width)
+      local line_nr = #lines + 1
+      local fg_start = #name_text + #gap_text
+      local bg_start = fg_start + #fg_text + #gap_text
+      local sp_start = bg_start + #bg_text + #gap_text
+      lines[line_nr] = table.concat({
+        name_text,
+        fg_text,
+        bg_text,
+        sp_text,
+      }, gap_text)
+      cells[line_nr] = {
+        fg = vim.tbl_extend('force', fg, { start_col = fg_start }),
+        bg = vim.tbl_extend('force', bg, { start_col = bg_start }),
+        sp = vim.tbl_extend('force', sp, { start_col = sp_start }),
+      }
       selectable[#lines] = index
     end
   end
 
-  return lines, selectable
+  return lines, selectable, cells
 end
 
 return M

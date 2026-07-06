@@ -3,6 +3,7 @@ local numbers = require('hlcraft.core.number')
 local tables = require('hlcraft.core.tables')
 local render_util = require('hlcraft.render.util')
 local highlights = require('hlcraft.core.highlights')
+local dynamic_display = require('hlcraft.ui.dynamic_display')
 local session = require('hlcraft.ui.session')
 local theme = require('hlcraft.ui.theme')
 
@@ -77,6 +78,13 @@ local function info_line(label, value, value_hl)
   }
 end
 
+local function color_token(result, key, value, get_color_hl)
+  if dynamic_display.dynamic_value(result, key) then
+    return { 'Dynamic', theme.groups.dynamic }
+  end
+  return { render_util.display_color(value), get_color_hl(value, key) }
+end
+
 --- Build virtual lines for the detail info panel (name, colors, attrs, source, links, file)
 --- @param result table Highlight group result with resolved colors and metadata
 --- @param get_color_hl function Callback(bg, suffix) -> string highlight name
@@ -95,9 +103,6 @@ function M.build_virt_lines(result, get_color_hl, width)
 
   local resolved_fg = result.resolved_fg ~= 'NONE' and result.resolved_fg or result.fg
   local resolved_bg = result.resolved_bg ~= 'NONE' and result.resolved_bg or result.bg
-  local fg_text = render_util.display_color(resolved_fg)
-  local bg_text = render_util.display_color(resolved_bg)
-  local sp_text = render_util.display_color(result.sp)
   local attrs_text = highlights.bool_attrs(result)
   local blend = optional_finite_number(result.blend, 'detail info blend')
   local distance = optional_finite_number(result.distance, 'detail info distance')
@@ -110,11 +115,11 @@ function M.build_virt_lines(result, get_color_hl, width)
     {
       label_token('Colors'),
       { 'FG ', theme.groups.muted },
-      { fg_text, get_color_hl(resolved_fg, 'fg') },
+      color_token(result, 'fg', resolved_fg, get_color_hl),
       { '  BG ', theme.groups.muted },
-      { bg_text, get_color_hl(resolved_bg, 'bg') },
+      color_token(result, 'bg', resolved_bg, get_color_hl),
       { '  SP ', theme.groups.muted },
-      { sp_text, get_color_hl(result.sp, 'sp') },
+      color_token(result, 'sp', result.sp, get_color_hl),
     },
     info_line('Style', attrs_text ~= '' and attrs_text or '-'),
     {

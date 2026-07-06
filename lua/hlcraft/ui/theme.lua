@@ -15,6 +15,7 @@ M.groups = {
   header = '@hlcraft.ui.header',
   title = '@hlcraft.ui.title',
   dirty = '@hlcraft.ui.dirty',
+  dynamic = '@hlcraft.ui.dynamic',
 }
 
 local palettes = {
@@ -29,6 +30,8 @@ local palettes = {
     header = '#b9c6d3',
     value = '#d8dee9',
     dirty = '#d49a57',
+    dynamic_fg = '#111827',
+    dynamic_bg = '#facc15',
   },
   light = {
     text = '#25272b',
@@ -41,6 +44,8 @@ local palettes = {
     header = '#39414d',
     value = '#1f2328',
     dirty = '#9a5d18',
+    dynamic_fg = '#ffffff',
+    dynamic_bg = '#2563eb',
   },
 }
 
@@ -77,6 +82,7 @@ function M.apply(ns)
   vim.api.nvim_set_hl(ns, groups.header, { fg = palette.header, bold = true })
   vim.api.nvim_set_hl(ns, groups.title, { fg = palette.header, bold = true })
   vim.api.nvim_set_hl(ns, groups.dirty, { fg = palette.dirty, bold = true })
+  vim.api.nvim_set_hl(ns, groups.dynamic, { fg = palette.dynamic_fg, bg = palette.dynamic_bg, bold = true })
 end
 
 return M

@@ -10,6 +10,7 @@ end
 function M.geometry()
   return {
     inputs = {},
+    result_cells = {},
     result_lines = {},
     detail_menu = {},
     editor_rows = {},

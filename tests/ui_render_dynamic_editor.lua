@@ -40,7 +40,7 @@ h.with_temp_buf(function(render_buf)
 
   local swatch_line = nil
   for index, line in ipairs(render_lines) do
-    if line:find('Swatch:', 1, true) then
+    if line:find('████████████', 1, true) then
       swatch_line = index
       break
     end

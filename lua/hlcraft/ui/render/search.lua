@@ -49,9 +49,25 @@ local function result_at(results, index)
   return result
 end
 
+local function result_cells_at(geometry, line_nr)
+  local cells = geometry.result_cells[line_nr]
+  if type(cells) ~= 'table' then
+    error('search result cell geometry is missing', 3)
+  end
+  return cells
+end
+
 local function add_line_highlight(buf, ns, lines, row1, hl)
   if lines[row1] then
     vim.api.nvim_buf_add_highlight(buf, ns, hl, row1 - 1, 0, -1)
+  end
+end
+
+local function apply_result_cell(instance, buf, line_nr, start_col, cell, suffix)
+  if cell.dynamic then
+    decorations.apply_dynamic_cell(instance, buf, line_nr - 1, start_col, cell.text)
+  else
+    decorations.apply_color_cell(instance, buf, line_nr - 1, start_col, cell.text, cell.color, suffix)
   end
 end
 
@@ -76,14 +92,16 @@ function M.render(instance)
   local geometry = buffer.new_geometry()
   local results_top = buffer.append_search_inputs(instance, lines, geometry, width)
 
-  local result_lines, selectable = list.build(instance, width)
+  local result_lines, selectable, result_cells = list.build(instance, width)
   for _, line in ipairs(result_lines) do
     lines[#lines + 1] = line
   end
   lines[#lines + 1] = ''
   local hint_start_line = append_hint_lines(lines, width)
   for index, result_index in pairs(selectable) do
-    geometry.result_lines[results_top + index - 1] = result_index
+    local line_nr = results_top + index - 1
+    geometry.result_lines[line_nr] = result_index
+    geometry.result_cells[line_nr] = result_cells[index]
   end
 
   buffer.set_lines(instance, lines)
@@ -98,17 +116,12 @@ function M.render(instance)
     decorations.apply_hint_line(instance, line_nr - 1, lines[line_nr])
   end
   for line_nr, result_index in pairs(geometry.result_lines) do
-    local result = result_at(results, result_index)
-    local line = render_util.line_at(lines, line_nr, 'search result geometry')
-    local fg_text = render_util.display_color(result.fg)
-    local bg_text = render_util.display_color(result.bg)
-    local sp_text = render_util.display_color(result.sp)
-    local fg_start = decorations.require_text_start(line, fg_text, 0, 'search result fg')
-    local bg_start = decorations.require_text_start(line, bg_text, fg_start + #fg_text, 'search result bg')
-    local sp_start = decorations.require_text_start(line, sp_text, bg_start + #bg_text, 'search result sp')
-    decorations.apply_color_cell(instance, state.buf, line_nr - 1, fg_start, fg_text, result.fg, 'fg')
-    decorations.apply_color_cell(instance, state.buf, line_nr - 1, bg_start, bg_text, result.bg, 'bg')
-    decorations.apply_color_cell(instance, state.buf, line_nr - 1, sp_start, sp_text, result.sp, 'sp')
+    result_at(results, result_index)
+    render_util.line_at(lines, line_nr, 'search result geometry')
+    local cells = result_cells_at(geometry, line_nr)
+    apply_result_cell(instance, state.buf, line_nr, cells.fg.start_col, cells.fg, 'fg')
+    apply_result_cell(instance, state.buf, line_nr, cells.bg.start_col, cells.bg, 'bg')
+    apply_result_cell(instance, state.buf, line_nr, cells.sp.start_col, cells.sp, 'sp')
   end
 
   decorations.refresh_input_placeholders(instance)

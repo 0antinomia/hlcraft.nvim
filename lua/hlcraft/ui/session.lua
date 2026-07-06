@@ -98,15 +98,6 @@ function M.dynamic_value(name, key)
   return dynamic and dynamic[key] or nil
 end
 
-function M.display_color_value(name, key, fallback)
-  key = assert_key(key)
-  local dynamic = M.dynamic_value(name, key)
-  if dynamic then
-    return ('dynamic:%s %dms'):format(dynamic.preset or 'custom', dynamic.duration)
-  end
-  return M.display_value(name, key, fallback)
-end
-
 function M.is_dirty(name)
   return not same_entry(M.draft_entry(name), M.persisted_entry(name)) or M.draft_group(name) ~= M.persisted_group(name)
 end
