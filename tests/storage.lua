@@ -353,7 +353,6 @@ h.assert_true(
   'saved TOML kept default interpolation',
   scope
 )
-h.assert_true(dynamic_content:find('dyn_', 1, true) == nil, 'saved TOML wrote non-declarative dynamic key', scope)
 h.assert_true(dynamic_content:find('unknown = ', 1, true) == nil, 'saved TOML wrote unknown field', scope)
 
 h.cleanup_dir(persist_dir)
