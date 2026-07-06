@@ -45,11 +45,6 @@ local function close_timer()
 end
 
 function M.tick(now_ms)
-  if not config.config.dynamic.enabled then
-    M.stop()
-    return
-  end
-
   for name, task in pairs(state.tasks) do
     local spec = vim.deepcopy(task.base_spec)
 
@@ -68,7 +63,7 @@ function M.tick(now_ms)
 end
 
 function M.start()
-  if state.timer or not config.config.dynamic.enabled or next(state.tasks) == nil then
+  if state.timer or next(state.tasks) == nil then
     return
   end
 
@@ -110,7 +105,7 @@ function M.sync_group(name, base_spec, entry)
   if entry.dynamic ~= nil and not dynamic then
     error('dynamic runtime entry has invalid dynamic override', 2)
   end
-  if not config.config.dynamic.enabled or not dynamic then
+  if not dynamic then
     M.clear_group(name, base_spec)
     return
   end

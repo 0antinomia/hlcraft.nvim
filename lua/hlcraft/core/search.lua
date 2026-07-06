@@ -12,7 +12,7 @@ local function is_none_query(value)
 end
 
 local function include_sp()
-  return config.config.include_sp_in_color_search == true
+  return config.config.search.include_sp == true
 end
 
 local function sort_by_name(results)
@@ -126,7 +126,7 @@ end
 
 local function color_threshold(value)
   if value == nil then
-    return config.config.threshold
+    return config.config.search.threshold
   end
   if type(value) ~= 'number' or not numbers.is_finite(value) then
     error('Color search threshold must be a finite number', 3)

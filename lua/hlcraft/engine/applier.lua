@@ -31,11 +31,11 @@ local function assert_replay(replay)
 end
 
 function M.build_preset_overrides()
-  if not config.from_none_enabled() then
+  if not config.transparent_enabled() then
     return {}
   end
 
-  return presets.transparent(config.from_none_scope())
+  return presets.transparent(config.transparent_scope())
 end
 
 function M.refresh_base_specs()
@@ -128,12 +128,13 @@ function M.apply_all()
 end
 
 function M.register_reapply_events(replay)
-  if not config.config.reapply_events.enabled then
+  local reapply_events = config.config.persistence.reapply_events
+  if not reapply_events.enabled then
     return
   end
   replay = assert_replay(replay)
 
-  for index, hook in ipairs(tables.assert_sequence(config.config.reapply_events.events, 'reapply events', 3)) do
+  for index, hook in ipairs(tables.assert_sequence(reapply_events.events, 'reapply events', 3)) do
     local event = hook
     local opts = {}
 

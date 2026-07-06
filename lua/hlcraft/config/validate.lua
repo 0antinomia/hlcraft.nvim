@@ -1,5 +1,5 @@
-local defaults = require('hlcraft.config.defaults')
 local numbers = require('hlcraft.core.number')
+local spec = require('hlcraft.config.spec')
 local tables = require('hlcraft.core.tables')
 
 local M = {}
@@ -50,7 +50,7 @@ end
 
 local function validate_known_keys(errors, user_config)
   for key, _ in pairs(user_config) do
-    if not defaults.known_keys[key] then
+    if not spec.known_keys[key] then
       add(errors, ('unknown config key: %q'):format(tostring(key)))
     end
   end
@@ -64,80 +64,62 @@ local function validate_table_keys(errors, path, value, known_keys)
   end
 end
 
-local from_none_keys = {
-  enabled = true,
-  scope = true,
-}
-
-local function validate_from_none(errors, value)
+local function validate_transparent(errors, value)
   local value_type = type(value)
-  if value_type ~= 'boolean' and value_type ~= 'table' then
-    add(errors, 'from_none: must be boolean or table, got ' .. value_type)
-    return
-  end
-
   if value_type ~= 'table' then
+    add(errors, 'transparent: must be a table, got ' .. value_type)
     return
   end
 
-  validate_table_keys(errors, 'from_none', value, from_none_keys)
-  validate_boolean(errors, 'from_none.enabled', value.enabled)
+  validate_table_keys(errors, 'transparent', value, spec.field('transparent').keys)
+  validate_boolean(errors, 'transparent.enabled', value.enabled)
   if value.scope == nil then
     return
   end
   if type(value.scope) ~= 'string' then
-    add(errors, 'from_none.scope: must be a string, got ' .. type(value.scope))
+    add(errors, 'transparent.scope: must be a string, got ' .. type(value.scope))
   elseif value.scope ~= 'core' and value.scope ~= 'extended' then
-    add(errors, ('from_none.scope: must be "core" or "extended", got %q'):format(value.scope))
+    add(errors, ('transparent.scope: must be "core" or "extended", got %q'):format(value.scope))
   end
 end
 
-local reapply_event_keys = {
-  event = true,
-  once = true,
-  pattern = true,
-}
-
-local function validate_reapply_event(errors, index, entry)
+local function validate_reapply_event(errors, path, index, entry)
   local entry_type = type(entry)
   if entry_type == 'string' then
-    validate_event_name(errors, ('reapply_events.events[%d]'):format(index), entry)
+    validate_event_name(errors, ('%s.events[%d]'):format(path, index), entry)
     return
   end
 
   if entry_type ~= 'table' then
-    add(errors, ('reapply_events.events[%d]: must be a string or table, got %s'):format(index, entry_type))
+    add(errors, ('%s.events[%d]: must be a string or table, got %s'):format(path, index, entry_type))
     return
   end
 
-  validate_table_keys(errors, ('reapply_events.events[%d]'):format(index), entry, reapply_event_keys)
-  validate_event_name(errors, ('reapply_events.events[%d].event'):format(index), entry.event)
+  validate_table_keys(
+    errors,
+    ('%s.events[%d]'):format(path, index),
+    entry,
+    spec.field('persistence').reapply_event_keys
+  )
+  validate_event_name(errors, ('%s.events[%d].event'):format(path, index), entry.event)
   if entry.pattern ~= nil then
-    validate_non_empty_string(errors, ('reapply_events.events[%d].pattern'):format(index), entry.pattern)
+    validate_non_empty_string(errors, ('%s.events[%d].pattern'):format(path, index), entry.pattern)
   end
-  validate_boolean(errors, ('reapply_events.events[%d].once'):format(index), entry.once)
+  validate_boolean(errors, ('%s.events[%d].once'):format(path, index), entry.once)
 end
 
-local reapply_events_keys = {
-  enabled = true,
-  events = true,
-}
-
 local function validate_reapply_events(errors, value)
+  local path = 'persistence.reapply_events'
   local value_type = type(value)
-  if value_type ~= 'boolean' and value_type ~= 'table' then
-    add(errors, 'reapply_events: must be boolean or table, got ' .. value_type)
-    return
-  end
-
   if value_type ~= 'table' then
+    add(errors, path .. ': must be a table, got ' .. value_type)
     return
   end
 
-  validate_table_keys(errors, 'reapply_events', value, reapply_events_keys)
-  validate_boolean(errors, 'reapply_events.enabled', value.enabled)
+  validate_table_keys(errors, path, value, spec.field('persistence').reapply_events_keys)
+  validate_boolean(errors, path .. '.enabled', value.enabled)
   if value.events ~= nil and type(value.events) ~= 'table' then
-    add(errors, 'reapply_events.events: must be a table, got ' .. type(value.events))
+    add(errors, path .. '.events: must be a table, got ' .. type(value.events))
     return
   end
 
@@ -145,18 +127,48 @@ local function validate_reapply_events(errors, value)
     return
   end
   if not tables.is_sequence(value.events) then
-    add(errors, 'reapply_events.events: must be a sequence')
+    add(errors, path .. '.events: must be a sequence')
     return
   end
   for index, entry in ipairs(value.events) do
-    validate_reapply_event(errors, index, entry)
+    validate_reapply_event(errors, path, index, entry)
   end
 end
 
-local dynamic_keys = {
-  enabled = true,
-  interval_ms = true,
-}
+local function validate_search(errors, value)
+  if type(value) ~= 'table' then
+    add(errors, 'search: must be a table, got ' .. type(value))
+    return
+  end
+
+  local search = spec.field('search')
+  validate_table_keys(errors, 'search', value, search.keys)
+  validate_number(errors, 'search.threshold', value.threshold, {
+    min = search.fields.threshold.range.min,
+    max = search.fields.threshold.range.max,
+    range_message = 'search.threshold: must be between 0 and 1000',
+  })
+  validate_boolean(errors, 'search.include_sp', value.include_sp)
+  validate_number(errors, 'search.debounce_ms', value.debounce_ms, {
+    min = search.fields.debounce_ms.range.min,
+    range_message = 'search.debounce_ms: must be >= 0',
+  })
+end
+
+local function validate_persistence(errors, value)
+  if type(value) ~= 'table' then
+    add(errors, 'persistence: must be a table, got ' .. type(value))
+    return
+  end
+
+  validate_table_keys(errors, 'persistence', value, spec.field('persistence').keys)
+  if value.dir ~= nil then
+    validate_non_empty_string(errors, 'persistence.dir', value.dir)
+  end
+  if value.reapply_events ~= nil then
+    validate_reapply_events(errors, value.reapply_events)
+  end
+end
 
 local function validate_dynamic(errors, value)
   if type(value) ~= 'table' then
@@ -164,9 +176,8 @@ local function validate_dynamic(errors, value)
     return
   end
 
-  validate_table_keys(errors, 'dynamic', value, dynamic_keys)
-  local interval = defaults.dynamic_interval_ms
-  validate_boolean(errors, 'dynamic.enabled', value.enabled)
+  validate_table_keys(errors, 'dynamic', value, spec.field('dynamic').keys)
+  local interval = spec.field('dynamic').fields.interval_ms.range
   validate_number(errors, 'dynamic.interval_ms', value.interval_ms, {
     min = interval.min,
     max = interval.max,
@@ -174,14 +185,52 @@ local function validate_dynamic(errors, value)
   })
 end
 
-local function validate_preview_key(errors, value)
-  local key_type = type(value)
-  if key_type ~= 'string' and key_type ~= 'boolean' then
-    add(errors, 'preview_key: must be a string or boolean, got ' .. key_type)
-  elseif key_type == 'string' and vim.trim(value) == '' then
-    add(errors, 'preview_key: must be a non-empty string when provided')
-  elseif key_type == 'boolean' and value ~= false then
-    add(errors, 'preview_key: boolean value must be false when used')
+local function validate_preview_keymap_opts(errors, value)
+  if value == nil then
+    return
+  end
+  if type(value) ~= 'table' then
+    add(errors, 'keymaps.preview.opts: must be a table, got ' .. type(value))
+    return
+  end
+
+  validate_table_keys(errors, 'keymaps.preview.opts', value, spec.field('keymaps').preview_opts_keys)
+  if value.desc ~= nil then
+    validate_non_empty_string(errors, 'keymaps.preview.opts.desc', value.desc)
+  end
+  validate_boolean(errors, 'keymaps.preview.opts.silent', value.silent)
+  validate_boolean(errors, 'keymaps.preview.opts.nowait', value.nowait)
+end
+
+local function validate_preview_keymap(errors, value)
+  local value_type = type(value)
+  if value == false then
+    return
+  end
+  if value_type ~= 'table' then
+    add(errors, 'keymaps.preview: must be false or table, got ' .. value_type)
+    return
+  end
+
+  validate_table_keys(errors, 'keymaps.preview', value, spec.field('keymaps').preview_keys)
+  if type(value.lhs) ~= 'string' or vim.trim(value.lhs) == '' then
+    add(errors, 'keymaps.preview.lhs: must be a non-empty string')
+  end
+  if value.mode ~= nil and (type(value.mode) ~= 'string' or vim.trim(value.mode) ~= 'n') then
+    add(errors, 'keymaps.preview.mode: must be "n"')
+  end
+  validate_preview_keymap_opts(errors, value.opts)
+end
+
+local function validate_keymaps(errors, value)
+  if type(value) ~= 'table' then
+    add(errors, 'keymaps: must be a table, got ' .. type(value))
+    return
+  end
+
+  validate_table_keys(errors, 'keymaps', value, spec.field('keymaps').keys)
+  if value.preview ~= nil then
+    validate_preview_keymap(errors, value.preview)
   end
 end
 
@@ -197,33 +246,20 @@ function M.config(user_config)
   local errors = {}
   validate_known_keys(errors, user_config)
 
-  local threshold = defaults.threshold_range
-  validate_number(errors, 'threshold', user_config.threshold, {
-    min = threshold.min,
-    max = threshold.max,
-    range_message = ('threshold: must be between %d and %d'):format(threshold.min, threshold.max),
-  })
-  validate_boolean(errors, 'include_sp_in_color_search', user_config.include_sp_in_color_search)
-
-  if user_config.persist_dir ~= nil then
-    validate_non_empty_string(errors, 'persist_dir', user_config.persist_dir)
+  if user_config.transparent ~= nil then
+    validate_transparent(errors, user_config.transparent)
   end
-  if user_config.from_none ~= nil then
-    validate_from_none(errors, user_config.from_none)
+  if user_config.search ~= nil then
+    validate_search(errors, user_config.search)
   end
-  if user_config.reapply_events ~= nil then
-    validate_reapply_events(errors, user_config.reapply_events)
+  if user_config.persistence ~= nil then
+    validate_persistence(errors, user_config.persistence)
   end
   if user_config.dynamic ~= nil then
     validate_dynamic(errors, user_config.dynamic)
   end
-  local debounce_ms = defaults.debounce_ms_range
-  validate_number(errors, 'debounce_ms', user_config.debounce_ms, {
-    min = debounce_ms.min,
-    range_message = 'debounce_ms: must be >= 0',
-  })
-  if user_config.preview_key ~= nil then
-    validate_preview_key(errors, user_config.preview_key)
+  if user_config.keymaps ~= nil then
+    validate_keymaps(errors, user_config.keymaps)
   end
 
   if #errors > 0 then

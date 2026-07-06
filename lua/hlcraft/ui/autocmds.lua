@@ -58,7 +58,7 @@ function M.setup(instance)
         navigation.clamp_cursor(instance)
         return
       end
-      local debounce_ms = config.config.debounce_ms
+      local debounce_ms = config.config.search.debounce_ms
       if debounce_ms <= 0 then
         buffer_fields.sync_queries(instance)
         instance:rerender()

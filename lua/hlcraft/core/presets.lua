@@ -34,7 +34,7 @@ local function assert_scope(scope)
   return scope
 end
 
---- Build the broad transparent baseline used when from_none is enabled.
+--- Build the broad transparent baseline used when transparent mode is enabled.
 --- @param scope '"core"'|'"extended"'|nil
 --- @return table
 function M.transparent(scope)

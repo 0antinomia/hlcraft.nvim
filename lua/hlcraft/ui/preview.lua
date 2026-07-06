@@ -35,23 +35,63 @@ local function positive_integer(value, label)
   return value
 end
 
-local function preview_key()
-  local lhs = config.config.preview_key
-  if lhs == false or lhs == nil then
+local function preview_keymap()
+  local keymaps = config.config.keymaps
+  if type(keymaps) ~= 'table' then
+    error('preview keymap config must be a table', 3)
+  end
+
+  local spec = keymaps.preview
+  if spec == false or spec == nil then
     return nil
   end
+  if type(spec) ~= 'table' then
+    error('preview keymap must be false or table', 3)
+  end
+
+  local lhs = spec.lhs
   if type(lhs) ~= 'string' then
-    error('preview key must be a non-empty string or false', 3)
+    error('preview keymap lhs must be a non-empty string', 3)
   end
   lhs = vim.trim(lhs)
   if lhs == '' then
-    error('preview key must be a non-empty string or false', 3)
+    error('preview keymap lhs must be a non-empty string', 3)
   end
-  return lhs
+
+  local mode = spec.mode
+  if mode == nil then
+    mode = 'n'
+  elseif type(mode) == 'string' then
+    mode = vim.trim(mode)
+  end
+  if mode ~= 'n' then
+    error('preview keymap mode must be "n"', 3)
+  end
+
+  local opts = spec.opts or {}
+  if type(opts) ~= 'table' then
+    error('preview keymap opts must be a table', 3)
+  end
+  opts = vim.deepcopy(opts)
+  if opts.desc ~= nil then
+    if type(opts.desc) ~= 'string' then
+      error('preview keymap opts.desc must be a non-empty string', 3)
+    end
+    opts.desc = vim.trim(opts.desc)
+    if opts.desc == '' then
+      error('preview keymap opts.desc must be a non-empty string', 3)
+    end
+  end
+
+  return {
+    lhs = lhs,
+    mode = mode,
+    opts = opts,
+  }
 end
 
-local function snapshot_existing_keymap(lhs)
-  local info = vim.fn.maparg(lhs, 'n', false, true)
+local function snapshot_existing_keymap(lhs, mode)
+  local info = vim.fn.maparg(lhs, mode, false, true)
   if type(info) ~= 'table' or vim.tbl_isempty(info) then
     return nil
   end
@@ -59,7 +99,7 @@ local function snapshot_existing_keymap(lhs)
   return info
 end
 
-local function restore_keymap(map)
+local function restore_keymap(map, mode)
   if not map or not map.lhs then
     return
   end
@@ -78,14 +118,14 @@ local function restore_keymap(map)
   end
 
   if map.callback then
-    vim.keymap.set('n', map.lhs, map.callback, opts)
+    vim.keymap.set(mode, map.lhs, map.callback, opts)
     return
   end
 
   if type(map.rhs) ~= 'string' then
     error('preview keymap restore requires a string rhs', 2)
   end
-  vim.api.nvim_set_keymap('n', map.lhs, map.rhs, opts)
+  vim.api.nvim_set_keymap(mode, map.lhs, map.rhs, opts)
 end
 
 local function restore(instance)
@@ -183,25 +223,22 @@ end
 --- @return nil
 function M.install_keymap(instance)
   local _, preview = preview_state(instance)
-  local lhs = preview_key()
-  if lhs == nil then
+  local keymap = preview_keymap()
+  if keymap == nil then
     return
   end
 
   M.uninstall_keymap(instance)
 
   preview.keymap = {
-    lhs = lhs,
-    previous = snapshot_existing_keymap(lhs),
+    lhs = keymap.lhs,
+    mode = keymap.mode,
+    previous = snapshot_existing_keymap(keymap.lhs, keymap.mode),
   }
 
-  vim.keymap.set('n', lhs, function()
+  vim.keymap.set(keymap.mode, keymap.lhs, function()
     M.flash_current(instance)
-  end, {
-    silent = true,
-    nowait = true,
-    desc = 'hlcraft flash current highlight',
-  })
+  end, keymap.opts)
 end
 
 --- Remove the temporary global preview keymap and restore any previous mapping.
@@ -219,9 +256,12 @@ function M.uninstall_keymap(instance)
   if type(map.lhs) ~= 'string' or map.lhs == '' then
     error('preview keymap lhs must be a non-empty string', 2)
   end
+  if type(map.mode) ~= 'string' or map.mode == '' then
+    error('preview keymap mode must be a non-empty string', 2)
+  end
 
-  pcall(vim.keymap.del, 'n', map.lhs)
-  restore_keymap(map.previous)
+  pcall(vim.keymap.del, map.mode, map.lhs)
+  restore_keymap(map.previous, map.mode)
   preview.keymap = nil
 end
 
