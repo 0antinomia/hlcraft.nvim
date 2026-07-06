@@ -1,5 +1,6 @@
 local ui_fields = require('hlcraft.ui.fields')
 local field_values = require('hlcraft.ui.field_values')
+local dynamic_display = require('hlcraft.ui.dynamic_display')
 local render_util = require('hlcraft.render.util')
 local session = require('hlcraft.ui.session')
 local dynamic_model = require('hlcraft.dynamic.model')
@@ -32,19 +33,13 @@ local function highlight_result(result)
   return result
 end
 
-local function dynamic_metadata(dynamic)
-  local preset = dynamic.preset or 'custom'
-  return ('%s %dms %s'):format(preset, dynamic.duration, dynamic.loop)
-end
-
 local function swatch_end_col(col_start, swatch)
   return col_start + vim.fn.strdisplaywidth(swatch)
 end
 
 local function color_display_value(result, key)
-  local dynamic = session.dynamic_value(result.name, key)
-  if dynamic_model.channel_set[key] and dynamic then
-    return ('████████ %s'):format(dynamic_metadata(dynamic))
+  if dynamic_model.channel_set[key] then
+    return dynamic_display.detail_text(result, key, '████████')
   end
   local fallback = field_values.fallback_value(result, key)
   return session.display_value(result.name, key, fallback)
@@ -74,7 +69,7 @@ function M.build(instance, geometry, result, width, line_offset)
   end
 
   local dirty_mark = session.is_dirty(result.name) and '*' or ' '
-  local color_context = field_values.color_context(result)
+  local color_context = dynamic_display.color_context(result)
   for _, key in ipairs(ui_fields.detail_order) do
     local fallback = field_values.fallback_value(result, key)
     local dynamic = dynamic_model.channel_set[key] and session.dynamic_value(result.name, key) or nil
@@ -100,7 +95,7 @@ function M.build(instance, geometry, result, width, line_offset)
         col_end = swatch_end_col(value_col, swatch),
         text = swatch,
         field = key,
-        base = fallback,
+        base = dynamic_display.base_value(result, key),
         context = color_context,
         dynamic = dynamic,
       })

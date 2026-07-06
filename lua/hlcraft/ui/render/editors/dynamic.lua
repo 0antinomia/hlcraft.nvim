@@ -1,5 +1,5 @@
 local ui_fields = require('hlcraft.ui.fields')
-local field_values = require('hlcraft.ui.field_values')
+local dynamic_display = require('hlcraft.ui.dynamic_display')
 local dynamic_preview = require('hlcraft.ui.dynamic_preview')
 local render_util = require('hlcraft.render.util')
 local editor_layout = require('hlcraft.ui.render.editor_layout')
@@ -31,13 +31,15 @@ function M.build(instance, geometry, result, field, width, line_offset, dynamic)
   dynamic = validate.dynamic(dynamic, 'dynamic editor')
   line_offset = render_util.line_offset(line_offset, 'dynamic editor')
   local label = ui_fields.detail_labels[field] or field:upper()
-  local fallback = field_values.fallback_value(result, field)
-  local color_context = field_values.color_context(result)
+  local base = dynamic_display.base_value(result, field)
+  local color_context = dynamic_display.color_context(result)
   local swatch = ui_fields.dynamic_preview_swatch
+  local live_prefix = 'Live: '
   local lines = {
     ('Color editor: %s'):format(label),
     string.rep('─', math.max(20, math.min(width, 36))),
     'Mode: dynamic',
+    ('Base: %s'):format(dynamic_display.base_text(result, field)),
     ('Preset: %s'):format(dynamic.preset or 'custom'),
     ('Duration: %dms'):format(dynamic.duration),
   }
@@ -45,15 +47,15 @@ function M.build(instance, geometry, result, field, width, line_offset, dynamic)
   editor_rows.append(lines, geometry, 'dynamic_loop', ('Loop: %s'):format(dynamic.loop))
   editor_rows.append(lines, geometry, 'dynamic_phase', ('Phase: %.2f'):format(dynamic.phase))
 
-  local swatch_line = append_line(lines, ('Swatch: %s'):format(swatch))
+  local swatch_line = append_line(lines, ('%s%s'):format(live_prefix, swatch))
 
   dynamic_preview.register(instance, {
     line = swatch_line + line_offset,
-    col_start = 8,
-    col_end = swatch_end_col(8, swatch),
+    col_start = vim.fn.strdisplaywidth(live_prefix),
+    col_end = swatch_end_col(vim.fn.strdisplaywidth(live_prefix), swatch),
     text = swatch,
     field = field,
-    base = fallback,
+    base = base,
     context = color_context,
     dynamic = dynamic,
   })
@@ -74,7 +76,7 @@ function M.build(instance, geometry, result, field, width, line_offset, dynamic)
       col_end = swatch_end_col(col_start, ui_fields.dynamic_timeline_swatch),
       text = ui_fields.dynamic_timeline_swatch,
       field = field,
-      base = fallback,
+      base = base,
       context = color_context,
       dynamic = sample_dynamic,
       now_ms = phase * math.max(1, sample_dynamic.duration),

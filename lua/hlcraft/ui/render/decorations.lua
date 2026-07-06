@@ -291,6 +291,19 @@ function M.apply_color_cell(instance, buf, line_idx, start_col, text, bg, suffix
   vim.api.nvim_buf_add_highlight(buf, ns, hl_name, line_idx, start_col, start_col + #text)
 end
 
+function M.apply_dynamic_cell(instance, buf, line_idx, start_col, text)
+  instance_state(instance)
+  local ns = instance_namespace(instance)
+  if not valid_buffer(buf) then
+    error('dynamic cell target buffer must be valid', 3)
+  end
+  line_idx = non_negative_integer(line_idx, 'dynamic cell line')
+  start_col = non_negative_integer(start_col, 'dynamic cell start column')
+  text = non_empty_string(text, 'dynamic cell text')
+
+  vim.api.nvim_buf_add_highlight(buf, ns, theme.groups.dynamic, line_idx, start_col, start_col + #text)
+end
+
 --- Create or retrieve a highlight group for a detail view color swatch
 --- @param instance table The Instance object holding UI state
 --- @param bg string Background color value (#RRGGBB or 'NONE')

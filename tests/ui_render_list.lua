@@ -13,6 +13,24 @@ local result = {
 local list_lines, list_selectable = list_renderer.build({ state = { results = { result } } }, 80)
 h.assert_true(#list_lines >= 3, 'result list renderer did not produce rows', scope)
 h.assert_equal(list_selectable[3], 1, 'result list renderer did not register selectable row', scope)
+local collision_lines, _, collision_cells = list_renderer.build({
+  state = {
+    results = {
+      {
+        name = 'HlcraftUiRenderListNONEDynamicName',
+        fg = 'NONE',
+        bg = '#222222',
+        sp = '#333333',
+      },
+    },
+  },
+}, 80)
+h.assert_true(collision_cells[3].fg.start_col > 0, 'result list renderer did not expose fg cell geometry', scope)
+h.assert_true(
+  collision_cells[3].fg.start_col > collision_lines[3]:find('NONE', 1, true),
+  'result list renderer fg cell geometry pointed at the result name',
+  scope
+)
 local empty_list_lines = list_renderer.build({ state = { results = {}, name_query = '', color_query = '' } }, 80)
 h.assert_equal(
   empty_list_lines[3],
