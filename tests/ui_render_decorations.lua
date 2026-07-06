@@ -30,7 +30,6 @@ h.with_temp_buf(function(buf)
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, { 'Name', 'Result' })
   decorations.set_input_header(instance, { line = 1 }, 'Name', {
     extra = 'query',
-    top_virt_lines = { decorations.help_virt_line() },
   })
   decorations.set_results_header(instance, 2, 80)
   decorations.apply_color_cell(instance, buf, 0, 0, 'Name', '#ffffff', 'fg')
@@ -60,64 +59,6 @@ h.with_temp_buf(function(buf)
     extra = false,
   })
   h.assert_true(not invalid_header_extra_ok, 'input header accepted non-string extra text', scope)
-  local invalid_header_virt_ok = pcall(decorations.set_input_header, instance, { line = 1 }, 'Name', {
-    top_virt_lines = { false },
-  })
-  h.assert_true(not invalid_header_virt_ok, 'input header accepted invalid virtual lines', scope)
-  local sparse_header_virt_lines_ok = pcall(decorations.set_input_header, instance, { line = 1 }, 'Name', {
-    top_virt_lines = {
-      [2] = decorations.help_virt_line(),
-    },
-  })
-  h.assert_true(not sparse_header_virt_lines_ok, 'input header accepted sparse virtual lines', scope)
-  local sparse_header_virt_line_ok = pcall(decorations.set_input_header, instance, { line = 1 }, 'Name', {
-    top_virt_lines = {
-      {
-        [2] = { '?', theme.groups.key },
-      },
-    },
-  })
-  h.assert_true(not sparse_header_virt_line_ok, 'input header accepted sparse virtual line chunks', scope)
-  local keyed_header_virt_chunk_ok = pcall(decorations.set_input_header, instance, { line = 1 }, 'Name', {
-    top_virt_lines = {
-      {
-        { text = '?', hl = theme.groups.key },
-      },
-    },
-  })
-  h.assert_true(not keyed_header_virt_chunk_ok, 'input header accepted keyed virtual line chunk', scope)
-  local invalid_header_virt_chunk_text_ok = pcall(decorations.set_input_header, instance, { line = 1 }, 'Name', {
-    top_virt_lines = {
-      {
-        { false, theme.groups.key },
-      },
-    },
-  })
-  h.assert_true(
-    not invalid_header_virt_chunk_text_ok,
-    'input header accepted non-string virtual line chunk text',
-    scope
-  )
-  local invalid_header_virt_chunk_hl_ok = pcall(decorations.set_input_header, instance, { line = 1 }, 'Name', {
-    top_virt_lines = {
-      {
-        { '?', false },
-      },
-    },
-  })
-  h.assert_true(
-    not invalid_header_virt_chunk_hl_ok,
-    'input header accepted non-string virtual line chunk highlight',
-    scope
-  )
-  local extra_header_virt_chunk_ok = pcall(decorations.set_input_header, instance, { line = 1 }, 'Name', {
-    top_virt_lines = {
-      {
-        { '?', theme.groups.key, 'extra' },
-      },
-    },
-  })
-  h.assert_true(not extra_header_virt_chunk_ok, 'input header accepted oversized virtual line chunk', scope)
   local invalid_results_width_ok = pcall(decorations.set_results_header, instance, 1, 0)
   h.assert_true(not invalid_results_width_ok, 'results header accepted invalid width', scope)
   local invalid_color_buf_ok = pcall(decorations.apply_color_cell, instance, -1, 0, 0, 'x', '#ffffff', 'fg')
@@ -173,13 +114,5 @@ h.with_temp_buf(function(buf)
   }, false)
   h.assert_true(not invalid_detail_row_ok, 'detail menu highlighter accepted invalid row geometry', scope)
 end)
-
-local top_help = ''
-for _, chunk in ipairs(decorations.help_virt_line()) do
-  top_help = top_help .. chunk[1]
-end
-h.assert_true(top_help:find('? help', 1, true) ~= nil, 'top help line should keep help discovery', scope)
-h.assert_true(top_help:find('Enter', 1, true) == nil, 'top help line should not repeat scene actions', scope)
-h.assert_true(top_help:find('Tab', 1, true) == nil, 'top help line should not repeat input navigation', scope)
 
 print('hlcraft ui render decorations: OK')

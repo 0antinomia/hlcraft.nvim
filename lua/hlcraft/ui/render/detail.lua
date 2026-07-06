@@ -139,12 +139,7 @@ function M.render(instance)
   buffer.finish(instance, geometry)
   decorations.apply_workbench_line_highlights(instance, lines, results_top)
 
-  decorations.set_input_header(
-    instance,
-    geometry.name,
-    ui_fields.search_prefixes.name,
-    { top_virt_lines = { decorations.help_virt_line() } }
-  )
+  decorations.set_input_header(instance, geometry.name, ui_fields.search_prefixes.name)
   decorations.set_input_header(instance, geometry.color, ui_fields.search_prefixes.color)
 
   if detail_result then
