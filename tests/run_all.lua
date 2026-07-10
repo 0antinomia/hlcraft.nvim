@@ -69,6 +69,8 @@ local tests = {
   'tests/ui_render.lua',
   'tests/persistence_codec.lua',
   'tests/persistence_schema.lua',
+  'tests/persistence_lock.lua',
+  'tests/persistence_transaction.lua',
   'tests/storage.lua',
   'tests/override_entries.lua',
   'tests/override_values.lua',
