@@ -94,22 +94,22 @@ local spaced_highlight_ok = pcall(codec.encode_section, 'group', {
   ['Bad Name'] = {},
 })
 h.assert_true(not spaced_highlight_ok, 'codec section accepted whitespace in highlight name', scope)
-local numeric_field_ok = pcall(codec.encode_inline_table, {
-  [1] = '#101010',
+local numeric_field_ok = pcall(codec.encode_section, 'group', {
+  Normal = { [1] = '#101010' },
 })
-h.assert_true(not numeric_field_ok, 'codec inline table accepted a non-string field name', scope)
-local invalid_field_key_ok = pcall(codec.encode_inline_table, {
-  ['bad-key'] = '#101010',
+h.assert_true(not numeric_field_ok, 'codec section accepted a non-string field name', scope)
+local invalid_field_key_ok = pcall(codec.encode_section, 'group', {
+  Normal = { ['bad-key'] = '#101010' },
 })
-h.assert_true(not invalid_field_key_ok, 'codec inline table accepted an unsupported field key', scope)
-local unsupported_value_ok = pcall(codec.encode_inline_table, {
-  fg = function() end,
+h.assert_true(not invalid_field_key_ok, 'codec section accepted an unsupported field key', scope)
+local unsupported_value_ok = pcall(codec.encode_section, 'group', {
+  Normal = { fg = function() end },
 })
-h.assert_true(not unsupported_value_ok, 'codec inline table silently dropped unsupported values', scope)
-local non_finite_value_ok = pcall(codec.encode_inline_table, {
-  blend = 0 / 0,
+h.assert_true(not unsupported_value_ok, 'codec section silently dropped unsupported values', scope)
+local non_finite_value_ok = pcall(codec.encode_section, 'group', {
+  Normal = { blend = 0 / 0 },
 })
-h.assert_true(not non_finite_value_ok, 'codec inline table accepted non-finite numbers', scope)
+h.assert_true(not non_finite_value_ok, 'codec section accepted non-finite numbers', scope)
 
 local escaped_name, escaped_entry = parser.entry_line([["Escaped" = { label = "quote \" and slash \\" }]])
 h.assert_equal(escaped_name, 'Escaped', 'escaped string entry name did not parse', scope)

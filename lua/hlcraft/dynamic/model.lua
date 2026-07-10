@@ -242,14 +242,6 @@ function M.normalize_transforms(transforms)
   return normalized
 end
 
-function M.default_spec(preset)
-  local presets = require('hlcraft.dynamic.presets')
-  if preset == nil then
-    return presets.default()
-  end
-  return presets.get(preset)
-end
-
 function M.normalize_channel(spec)
   if type(spec) ~= 'table' or not tables.has_only_keys(spec, channel_keys) or spec.version ~= M.version then
     return nil

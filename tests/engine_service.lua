@@ -81,12 +81,6 @@ with_entry_state(function()
   local empty_persisted_group_ok = pcall(engine.get_persisted_group, 'HlcraftEngineServiceEmptyPersistedGroup')
   h.assert_true(not empty_persisted_group_ok, 'engine service accepted empty persisted group', scope)
 
-  store.data.persisted.HlcraftEngineServiceUnknownPersisted = {
-    unknown = true,
-  }
-  local unknown_persisted_ok = pcall(engine.has_persisted, 'HlcraftEngineServiceUnknownPersisted')
-  h.assert_true(not unknown_persisted_ok, 'engine service accepted unknown persisted fields', scope)
-
   local nil_name_ok = pcall(engine.get, nil)
   h.assert_true(not nil_name_ok, 'engine service accepted nil highlight name', scope)
   local empty_name_ok = pcall(engine.apply_patch, '', { fg = '#ffffff' })

@@ -6,7 +6,6 @@ local util = require('hlcraft.persistence.codec.util')
 local M = {}
 
 M.normalize_group_name = util.normalize_group_name
-M.encode_inline_table = encoder.inline_table
 
 local function assert_string(value, label)
   if type(value) ~= 'string' then

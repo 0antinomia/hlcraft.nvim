@@ -8,13 +8,11 @@ local default_preset = presets.default()
 h.assert_equal(presets.default_name, 'pulse', 'default preset name changed', scope)
 h.assert_equal(default_preset.preset, 'pulse', 'default preset did not resolve', scope)
 
-local default_spec = model.default_spec('pulse')
-h.assert_equal(default_spec.version, 1, 'default dynamic version changed', scope)
-h.assert_equal(default_spec.preset, 'pulse', 'default dynamic preset changed', scope)
-h.assert_equal(default_spec.duration, 2000, 'default dynamic duration changed', scope)
-h.assert_equal(default_spec.loop, 'pingpong', 'default dynamic loop changed', scope)
-h.assert_equal(default_spec.timeline[1].color, 'base', 'default dynamic first color changed', scope)
-h.assert_equal(default_spec.timeline[2].color, '#ff6699', 'default dynamic second color changed', scope)
+h.assert_equal(default_preset.version, 1, 'default dynamic version changed', scope)
+h.assert_equal(default_preset.duration, 2000, 'default dynamic duration changed', scope)
+h.assert_equal(default_preset.loop, 'pingpong', 'default dynamic loop changed', scope)
+h.assert_equal(default_preset.timeline[1].color, 'base', 'default dynamic first color changed', scope)
+h.assert_equal(default_preset.timeline[2].color, '#ff6699', 'default dynamic second color changed', scope)
 
 local expected_names = { 'pulse', 'breath', 'hue', 'gradient', 'blink', 'duotone' }
 h.assert_true(vim.deep_equal(presets.names(), expected_names), 'preset order changed', scope)
@@ -28,12 +26,9 @@ end
 
 local fallback_preset = presets.get('unknown')
 h.assert_true(fallback_preset == nil, 'unknown preset should not fall back', scope)
-h.assert_true(model.default_spec('unknown') == nil, 'unknown default spec should not fall back', scope)
 local missing_preset_ok = pcall(presets.get, nil)
 h.assert_true(not missing_preset_ok, 'preset lookup accepted nil name', scope)
 local empty_preset_ok = pcall(presets.get, '')
 h.assert_true(not empty_preset_ok, 'preset lookup accepted empty name', scope)
-local false_default_ok = pcall(model.default_spec, false)
-h.assert_true(not false_default_ok, 'default spec treated false as default preset', scope)
 
 print('hlcraft dynamic presets: OK')
