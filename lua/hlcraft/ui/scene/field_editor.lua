@@ -88,10 +88,44 @@ local function dynamic_value(result, field)
   return session.dynamic_value(result.name, field)
 end
 
-local function prompt_dynamic_value(instance, action, prompt_text, default)
-  return prompt.input({ prompt = prompt_text, default = default }, function(value)
+local function current_prompt_target(instance)
+  local state = instance_state(instance)
+  local result = M.current_result(instance)
+  local field = M.current_field(instance)
+  if not result or not field then
+    return nil
+  end
+  return {
+    field = field,
+    name = result.name,
+    scene = state.scene,
+  }
+end
+
+local function prompt_target_is_current(instance, target)
+  local state = instance_state(instance)
+  local result = M.current_result(instance)
+  return state.scene == target.scene
+    and result ~= nil
+    and result.name == target.name
+    and M.current_field(instance) == target.field
+end
+
+local function prompt_action_value(instance, action, input_opts)
+  local target = current_prompt_target(instance)
+  if not target then
+    return false, 'No field editor is active'
+  end
+  return prompt.input(input_opts, function(value)
+    if not prompt_target_is_current(instance, target) then
+      return false, 'Field editor context changed before input was submitted'
+    end
     return M.handle(instance, action, value)
   end)
+end
+
+local function prompt_dynamic_value(instance, action, prompt_text, default)
+  return prompt_action_value(instance, action, { prompt = prompt_text, default = default })
 end
 
 local function optional_table(opts, label)
@@ -126,15 +160,68 @@ local function selected_editor_row_key(instance)
   return row and row.key or nil
 end
 
+local function snapshot_editor_state(state, field_editor)
+  return {
+    detail_index = state.detail_index,
+    field = field_editor.field,
+    geometry = vim.deepcopy(state.geometry),
+    list_cursor = state.list_cursor,
+    results = vim.deepcopy(state.results),
+    scene = vim.deepcopy(state.scene),
+  }
+end
+
+local function restore_editor_state(state, field_editor, snapshot)
+  state.detail_index = snapshot.detail_index
+  field_editor.field = snapshot.field
+  state.geometry = snapshot.geometry
+  state.list_cursor = snapshot.list_cursor
+  state.results = snapshot.results
+  state.scene = snapshot.scene
+end
+
+local function append_rollback_error(err, rollback_err)
+  if rollback_err == nil then
+    return err
+  end
+  return ('%s; rollback errors: %s'):format(err, tostring(rollback_err))
+end
+
+local function rerender_restored_editor_state(instance, state, field_editor, snapshot)
+  local ok, err = xpcall(function()
+    instance:rerender()
+  end, debug.traceback)
+  if not ok then
+    restore_editor_state(state, field_editor, snapshot)
+    return false, err
+  end
+  return true, nil
+end
+
 function M.open(instance, key)
   local state = instance_state(instance)
   local field_editor = field_editor_state(state)
   local current_scene = scene_state(state)
   key = assert_field(key)
   assert_rerender(instance)
-  field_editor.field = key
-  current_scene.field = key
-  instance:rerender()
+  local snapshot = snapshot_editor_state(state, field_editor)
+  local rendered = false
+  local ok, err = xpcall(function()
+    field_editor.field = key
+    current_scene.field = key
+    rendered = true
+    instance:rerender()
+  end, debug.traceback)
+  if not ok then
+    restore_editor_state(state, field_editor, snapshot)
+    if rendered then
+      local restored, restore_err = rerender_restored_editor_state(instance, state, field_editor, snapshot)
+      if not restored then
+        err = append_rollback_error(err, restore_err)
+      end
+    end
+    error(err, 0)
+  end
 end
 
 function M.close(instance)
@@ -142,9 +229,24 @@ function M.close(instance)
   local field_editor = field_editor_state(state)
   local current_scene = scene_state(state)
   assert_rerender(instance)
-  field_editor.field = nil
-  current_scene.field = nil
-  instance:rerender()
+  local snapshot = snapshot_editor_state(state, field_editor)
+  local rendered = false
+  local ok, err = xpcall(function()
+    field_editor.field = nil
+    current_scene.field = nil
+    rendered = true
+    instance:rerender()
+  end, debug.traceback)
+  if not ok then
+    restore_editor_state(state, field_editor, snapshot)
+    if rendered then
+      local restored, restore_err = rerender_restored_editor_state(instance, state, field_editor, snapshot)
+      if not restored then
+        err = append_rollback_error(err, restore_err)
+      end
+    end
+    error(err, 0)
+  end
 end
 
 function M.selected_dynamic_row_key(instance)
@@ -210,9 +312,27 @@ function M.back(instance)
   local field_editor = field_editor_state(state)
   local index = detail_index(state)
   assert_rerender(instance)
-  field_editor.field = nil
-  require('hlcraft.ui.scene').set(instance, 'detail', { index = index })
-  instance:rerender()
+  local snapshot = snapshot_editor_state(state, field_editor)
+  local rendered = false
+  local ok, err = xpcall(function()
+    field_editor.field = nil
+    local scene_ok, scene_err = require('hlcraft.ui.scene').set(instance, 'detail', { index = index })
+    if not scene_ok then
+      error(scene_err or 'failed to return to detail scene', 0)
+    end
+    rendered = true
+    instance:rerender()
+  end, debug.traceback)
+  if not ok then
+    restore_editor_state(state, field_editor, snapshot)
+    if rendered then
+      local restored, restore_err = rerender_restored_editor_state(instance, state, field_editor, snapshot)
+      if not restored then
+        err = append_rollback_error(err, restore_err)
+      end
+    end
+    error(err, 0)
+  end
   return true, nil
 end
 
@@ -234,9 +354,7 @@ function M.activate(instance)
       return M.handle(instance, 'set_group', row_key:sub(7))
     end
     if row_key == 'new_group' then
-      return prompt.input({ prompt = 'Group: ' }, function(value)
-        return M.handle(instance, 'set_group', value)
-      end)
+      return prompt_action_value(instance, 'set_group', { prompt = 'Group: ' })
     end
   end
 

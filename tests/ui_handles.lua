@@ -27,6 +27,23 @@ local unknown_open_opts_ok = pcall(ui.open, { name = 'main' })
 h.assert_true(not unknown_open_opts_ok, 'UI open accepted unknown options', scope)
 local default_instance = UiInstance.new()
 h.assert_equal(default_instance.id, 'default', 'UI instance default id changed', scope)
+h.with_temp_buf(function(instance_buf)
+  default_instance.state.buf = instance_buf
+  local original_buf_delete = vim.api.nvim_buf_delete
+  vim.api.nvim_buf_delete = function(buf_to_delete, ...)
+    if buf_to_delete == instance_buf then
+      error('workspace delete failed')
+    end
+    return original_buf_delete(buf_to_delete, ...)
+  end
+  local quit_result = h.with_notify_stub(function()
+    return default_instance:quit_or_back()
+  end)
+  vim.api.nvim_buf_delete = original_buf_delete
+  h.assert_equal(quit_result, false, 'UI instance quit_or_back ignored failed scene back', scope)
+  h.assert_equal(default_instance.state.buf, instance_buf, 'failed UI instance back dropped workspace buffer', scope)
+end)
+default_instance.state.buf = nil
 local invalid_instance_id_ok = pcall(UiInstance.new, false)
 h.assert_true(not invalid_instance_id_ok, 'UI instance accepted non-string id', scope)
 local empty_instance_id_ok = pcall(UiInstance.new, '')

@@ -8,6 +8,7 @@ scene.register('field_editor', require('hlcraft.ui.scene.field_editor'))
 scene.register('search', require('hlcraft.ui.scene.search'))
 
 local ns = vim.api.nvim_create_namespace('hlcraft-ui')
+local input_ns = vim.api.nvim_create_namespace('hlcraft-ui-input')
 
 local input_label_hl = theme.groups.label
 
@@ -30,8 +31,10 @@ function Instance.new(id)
   self.id = id or 'default'
   self.group_name = 'HlcraftUi-' .. self.id
   self.group = nil
+  self.autocmd_buf = nil
   self.state = state.initial()
   self.ns = ns
+  self.input_ns = input_ns
   self.input_label_hl = input_label_hl
   return self
 end
@@ -43,9 +46,9 @@ function Instance:rerender()
 end
 
 --- Close detail view if open, otherwise close the entire workspace
---- @return nil
+--- @return boolean|nil ok False when close/back fails, nil when no scene handler exists
 function Instance:quit_or_back()
-  scene.back(self)
+  return scene.back(self)
 end
 
 --- Open the workspace in the current window

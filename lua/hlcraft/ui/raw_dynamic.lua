@@ -62,6 +62,43 @@ local function clear_state(instance, buf, win)
   end
 end
 
+local function clear_closed_state(instance, buf, win)
+  local state = instance_state(instance)
+  local raw_state = raw_dynamic_state(state)
+  if raw_state and raw_state.buf == buf and raw_state.win == win then
+    if not window.is_valid_win(win) and not window.is_valid_buf(buf) then
+      state.raw_dynamic = nil
+    end
+  end
+end
+
+local function append_rollback_errors(err, rollback_errors)
+  if #rollback_errors == 0 then
+    return err
+  end
+  return ('%s; rollback errors: %s'):format(err, table.concat(rollback_errors, '; '))
+end
+
+local function cleanup_created(instance, buf, win)
+  local errors = {}
+  if window.is_valid_win(win) then
+    local closed, close_err = pcall(vim.api.nvim_win_close, win, true)
+    if not closed then
+      errors[#errors + 1] = ('raw dynamic window: %s'):format(tostring(close_err))
+    end
+  end
+  if window.is_valid_buf(buf) then
+    local deleted, delete_err = pcall(vim.api.nvim_buf_delete, buf, { force = true })
+    if not deleted then
+      errors[#errors + 1] = ('raw dynamic buffer: %s'):format(tostring(delete_err))
+    end
+  end
+  if buf ~= nil or win ~= nil then
+    clear_closed_state(instance, buf, win)
+  end
+  return errors
+end
+
 local function register_cleanup(instance, buf, win)
   vim.api.nvim_create_autocmd('BufWipeout', {
     buffer = buf,
@@ -79,18 +116,51 @@ local function register_cleanup(instance, buf, win)
   })
 end
 
+local function run_keymap_action(action)
+  local ok, err = xpcall(action, debug.traceback)
+  if not ok then
+    notify.error(err)
+  end
+end
+
+local function close_or_notify(instance)
+  local closed, err = M.close(instance)
+  if not closed then
+    notify.error(('failed to close raw dynamic editor: %s'):format(tostring(err or 'resources remain open')))
+    return false
+  end
+  return true
+end
+
 function M.close(instance)
   local state = instance_state(instance)
   local raw_state = raw_dynamic_state(state)
   if raw_state then
+    local buf = raw_state.buf
+    local win = raw_state.win
+    local errors = {}
     if window.is_valid_win(raw_state.win) then
-      pcall(vim.api.nvim_win_close, raw_state.win, true)
+      local closed, close_err = pcall(vim.api.nvim_win_close, raw_state.win, true)
+      if not closed then
+        errors[#errors + 1] = ('window: %s'):format(tostring(close_err))
+      end
     end
     if window.is_valid_buf(raw_state.buf) then
-      pcall(vim.api.nvim_buf_delete, raw_state.buf, { force = true })
+      local deleted, delete_err = pcall(vim.api.nvim_buf_delete, raw_state.buf, { force = true })
+      if not deleted then
+        errors[#errors + 1] = ('buffer: %s'):format(tostring(delete_err))
+      end
     end
+    clear_closed_state(instance, buf, win)
+    if not window.is_valid_win(win) and not window.is_valid_buf(buf) then
+      return true
+    end
+    if #errors == 0 then
+      errors[#errors + 1] = 'resources remain open'
+    end
+    return false, table.concat(errors, '; ')
   end
-  state.raw_dynamic = nil
+  return true
 end
 
 function M.open(instance, result, field)
@@ -100,56 +170,72 @@ function M.open(instance, result, field)
     return false, 'No dynamic color field is active'
   end
 
-  M.close(instance)
+  local closed, close_err = M.close(instance)
+  if not closed then
+    error(('failed to close existing raw dynamic editor: %s'):format(tostring(close_err)), 2)
+  end
 
   local text = json.format(dynamic)
   local lines = vim.split(text, '\n', { plain = true })
   local width, height, row, col = popup_geometry(#lines)
-  local buf = vim.api.nvim_create_buf(false, true)
+  local buf, win
+  local ok, err = xpcall(function()
+    buf = vim.api.nvim_create_buf(false, true)
+    state.raw_dynamic = { buf = buf, win = nil }
 
-  vim.bo[buf].filetype = 'json'
-  vim.bo[buf].buftype = 'nofile'
-  vim.bo[buf].bufhidden = 'wipe'
-  vim.bo[buf].swapfile = false
-  vim.bo[buf].modifiable = true
-  vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+    vim.bo[buf].filetype = 'json'
+    vim.bo[buf].buftype = 'nofile'
+    vim.bo[buf].bufhidden = 'wipe'
+    vim.bo[buf].swapfile = false
+    vim.bo[buf].modifiable = true
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 
-  local win = vim.api.nvim_open_win(buf, true, {
-    relative = 'editor',
-    style = 'minimal',
-    border = 'single',
-    title = ' Dynamic JSON ',
-    width = width,
-    height = height,
-    row = row,
-    col = col,
-  })
+    win = vim.api.nvim_open_win(buf, true, {
+      relative = 'editor',
+      style = 'minimal',
+      border = 'single',
+      title = ' Dynamic JSON ',
+      width = width,
+      height = height,
+      row = row,
+      col = col,
+    })
 
-  vim.wo[win].wrap = false
-  state.raw_dynamic = { buf = buf, win = win }
-  register_cleanup(instance, buf, win)
+    vim.wo[win].wrap = false
+    state.raw_dynamic = { buf = buf, win = win }
+    register_cleanup(instance, buf, win)
 
-  vim.keymap.set('n', 'q', function()
-    M.close(instance)
-  end, { buffer = buf, silent = true, nowait = true })
+    vim.keymap.set('n', 'q', function()
+      run_keymap_action(function()
+        close_or_notify(instance)
+      end)
+    end, { buffer = buf, silent = true, nowait = true })
 
-  vim.keymap.set('n', 'w', function()
-    local ok, err = dynamic_editor.set_raw_json(instance, result, field, buffer_text(buf))
-    if not ok then
-      notify.error(err or 'Invalid dynamic JSON')
-      return
-    end
-    M.close(instance)
-  end, { buffer = buf, silent = true, nowait = true })
+    vim.keymap.set('n', 'w', function()
+      run_keymap_action(function()
+        local ok, err = dynamic_editor.set_raw_json(instance, result, field, buffer_text(buf))
+        if not ok then
+          notify.error(err or 'Invalid dynamic JSON')
+          return
+        end
+        close_or_notify(instance)
+      end)
+    end, { buffer = buf, silent = true, nowait = true })
 
-  vim.keymap.set('n', '=', function()
-    local decoded = json.decode_object(buffer_text(buf))
-    if not decoded then
-      notify.error('Invalid dynamic JSON')
-      return
-    end
-    vim.api.nvim_buf_set_lines(buf, 0, -1, false, vim.split(json.format(decoded), '\n', { plain = true }))
-  end, { buffer = buf, silent = true, nowait = true })
+    vim.keymap.set('n', '=', function()
+      run_keymap_action(function()
+        local decoded = json.decode_object(buffer_text(buf))
+        if not decoded then
+          notify.error('Invalid dynamic JSON')
+          return
+        end
+        vim.api.nvim_buf_set_lines(buf, 0, -1, false, vim.split(json.format(decoded), '\n', { plain = true }))
+      end)
+    end, { buffer = buf, silent = true, nowait = true })
+  end, debug.traceback)
+  if not ok then
+    error(append_rollback_errors(err, cleanup_created(instance, buf, win)), 0)
+  end
 
   return true, nil
 end

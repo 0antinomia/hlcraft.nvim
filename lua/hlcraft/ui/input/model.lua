@@ -5,6 +5,7 @@ local window = require('hlcraft.ui.workspace.window')
 local buffer_lines = require('hlcraft.ui.buffer_lines')
 
 local M = {}
+local input_ns = vim.api.nvim_create_namespace('hlcraft-ui-input')
 
 local function field_name(field)
   return input_sequence.name(field)
@@ -28,6 +29,19 @@ local function assert_clear_old(clear_old)
     error('input clear_old flag must be boolean', 3)
   end
   return clear_old
+end
+
+local function optional_extmark_opts(opts)
+  if opts == nil then
+    return {}
+  end
+  if type(opts) ~= 'table' then
+    error('input extmark options must be a table', 3)
+  end
+  if opts.defer_delete ~= nil and type(opts.defer_delete) ~= 'boolean' then
+    error('input extmark defer_delete option must be boolean', 3)
+  end
+  return opts
 end
 
 local function instance_state(instance)
@@ -84,6 +98,14 @@ local function assert_namespace(ns)
   return ns
 end
 
+local function input_namespace(instance)
+  if instance.input_ns ~= nil then
+    return assert_namespace(instance.input_ns)
+  end
+  assert_namespace(instance.ns)
+  return input_ns
+end
+
 local function extmark_id(value, label)
   if value == nil then
     return nil
@@ -136,6 +158,55 @@ local function find_input_field(instance, name)
   return nil
 end
 
+local function delete_extmark_ids(buf, ns, ids)
+  for _, mark_id in pairs(ids) do
+    if type(mark_id) == 'number' then
+      pcall(vim.api.nvim_buf_del_extmark, buf, ns, mark_id)
+    end
+  end
+end
+
+local function snapshot_tracked_extmarks(buf, ns, ids)
+  local tracked = {}
+  if type(ids) ~= 'table' then
+    return tracked
+  end
+  for _, mark_id in pairs(ids) do
+    if type(mark_id) == 'number' then
+      local ok, mark = pcall(vim.api.nvim_buf_get_extmark_by_id, buf, ns, mark_id, {})
+      if ok and mark[1] ~= nil and mark[2] ~= nil then
+        tracked[#tracked + 1] = {
+          id = mark_id,
+          row = mark[1],
+          col = mark[2],
+        }
+      end
+    end
+  end
+  return tracked
+end
+
+local function restore_tracked_extmarks(buf, ns, tracked)
+  local errors = {}
+  for _, mark in ipairs(tracked) do
+    local ok, err = pcall(vim.api.nvim_buf_set_extmark, buf, ns, mark.row, mark.col, {
+      id = mark.id,
+      right_gravity = false,
+    })
+    if not ok then
+      errors[#errors + 1] = tostring(err)
+    end
+  end
+  return errors
+end
+
+local function append_rollback_errors(err, rollback_errors)
+  if #rollback_errors == 0 then
+    return err
+  end
+  return ('%s; rollback errors: %s'):format(err, table.concat(rollback_errors, '; '))
+end
+
 --- Determine which UI area (name, color, detail, results) the cursor is in
 --- @param instance table The Instance object holding UI state
 --- @param row1 number 1-based row number
@@ -162,30 +233,86 @@ end
 --- @return string Single-line string
 function M.normalize_single_line(value)
   assert_input_value(value)
-  return value:gsub('[\r\n]+', ' ')
+  return (value:gsub('[\r\n]+', ' '))
 end
 
 --- Set extmarks for all input fields to track their boundaries across re-renders
 --- @param instance table The Instance object holding UI state
---- @return nil
-function M.set_input_extmarks(instance)
+--- @param opts table|nil Options: defer_delete keeps old extmarks until commit()
+--- @return table|nil transaction Deferred commit/rollback hooks when defer_delete is true
+function M.set_input_extmarks(instance, opts)
   local state = instance_state(instance)
+  opts = optional_extmark_opts(opts)
   if not window.is_valid_buf(state.buf) then
     return
   end
-  local ns = assert_namespace(instance.ns)
+  local ns = input_namespace(instance)
+  local previous_extmark_ids = state.extmark_ids
+  local previous_extmark_values = previous_extmark_ids
+  if previous_extmark_values == nil then
+    previous_extmark_values = {}
+  elseif type(previous_extmark_values) ~= 'table' then
+    error('input extmark ids must be a table', 3)
+  end
+  local line_count = vim.api.nvim_buf_line_count(state.buf)
+  local inputs = {}
 
-  state.extmark_ids = {}
   for _, field in ipairs(geometry_inputs(instance)) do
     local name = field_name(field)
     local row1 = assert_row1(field.line)
-    state.extmark_ids[name .. ':start'] = vim.api.nvim_buf_set_extmark(state.buf, ns, row1 - 1, 0, {
-      right_gravity = false,
-    })
-    state.extmark_ids[name .. ':end'] = vim.api.nvim_buf_set_extmark(state.buf, ns, row1, 0, {
-      right_gravity = false,
-    })
+    if row1 > line_count then
+      error('input extmark line is outside the buffer', 3)
+    end
+    inputs[#inputs + 1] = {
+      name = name,
+      row1 = row1,
+    }
   end
+
+  local next_extmark_ids = {}
+  local created_extmark_ids = {}
+  local ok, err = xpcall(function()
+    for _, input in ipairs(inputs) do
+      local start_id = vim.api.nvim_buf_set_extmark(state.buf, ns, input.row1 - 1, 0, {
+        right_gravity = false,
+      })
+      next_extmark_ids[input.name .. ':start'] = start_id
+      created_extmark_ids[#created_extmark_ids + 1] = start_id
+      local end_id = vim.api.nvim_buf_set_extmark(state.buf, ns, input.row1, 0, {
+        right_gravity = false,
+      })
+      next_extmark_ids[input.name .. ':end'] = end_id
+      created_extmark_ids[#created_extmark_ids + 1] = end_id
+    end
+  end, debug.traceback)
+  if not ok then
+    delete_extmark_ids(state.buf, ns, created_extmark_ids)
+    state.extmark_ids = previous_extmark_ids
+    error(err, 0)
+  end
+
+  state.extmark_ids = next_extmark_ids
+  if opts.defer_delete then
+    local closed = false
+    return {
+      commit = function()
+        if closed then
+          return
+        end
+        closed = true
+        delete_extmark_ids(state.buf, ns, previous_extmark_values)
+      end,
+      rollback = function()
+        if closed then
+          return
+        end
+        closed = true
+        delete_extmark_ids(state.buf, ns, next_extmark_ids)
+        state.extmark_ids = previous_extmark_ids
+      end,
+    }
+  end
+  delete_extmark_ids(state.buf, ns, previous_extmark_values)
 end
 
 --- Get the start and end row positions of a named input field via extmarks
@@ -211,7 +338,7 @@ function M.get_input_pos(instance, name)
   if not window.is_valid_buf(state.buf) then
     error('input model requires a valid buffer', 3)
   end
-  local ns = assert_namespace(instance.ns)
+  local ns = input_namespace(instance)
   local start_mark = vim.api.nvim_buf_get_extmark_by_id(state.buf, ns, start_id, {})
   local end_mark = vim.api.nvim_buf_get_extmark_by_id(state.buf, ns, end_id, {})
   local start_row = start_mark[1]
@@ -287,8 +414,23 @@ function M.fill_input(instance, name, value, clear_old)
     next_value = ''
   end
   local new_lines = vim.split(next_value, '\n')
-  vim.api.nvim_buf_set_lines(instance.state.buf, start_row, start_row + old_num_lines - 1, true, new_lines)
-  vim.api.nvim_buf_set_lines(instance.state.buf, start_row + #new_lines, start_row + #new_lines + 1, true, {})
+  local previous_lines = vim.api.nvim_buf_get_lines(instance.state.buf, 0, -1, false)
+  local ns = input_namespace(instance)
+  local previous_extmarks = snapshot_tracked_extmarks(instance.state.buf, ns, instance.state.extmark_ids)
+  local ok, err = xpcall(function()
+    vim.api.nvim_buf_set_lines(instance.state.buf, start_row, start_row + old_num_lines - 1, true, new_lines)
+    vim.api.nvim_buf_set_lines(instance.state.buf, start_row + #new_lines, start_row + #new_lines + 1, true, {})
+  end, debug.traceback)
+  if not ok then
+    local rollback_errors = {}
+    local restored_lines, restore_lines_err =
+      pcall(vim.api.nvim_buf_set_lines, instance.state.buf, 0, -1, false, previous_lines)
+    if not restored_lines then
+      rollback_errors[#rollback_errors + 1] = tostring(restore_lines_err)
+    end
+    vim.list_extend(rollback_errors, restore_tracked_extmarks(instance.state.buf, ns, previous_extmarks))
+    error(append_rollback_errors(err, rollback_errors), 0)
+  end
   return true
 end
 
@@ -334,8 +476,10 @@ function M.sync_queries_from_buffer(instance)
   if state.rendering or not window.is_valid_buf(state.buf) or state.detail_index then
     return
   end
-  state.name_query = M.get_input_value(instance, 'name')
-  state.color_query = M.get_input_value(instance, 'color')
+  local name_query = M.get_input_value(instance, 'name')
+  local color_query = M.get_input_value(instance, 'color')
+  state.name_query = name_query
+  state.color_query = color_query
 end
 
 return M

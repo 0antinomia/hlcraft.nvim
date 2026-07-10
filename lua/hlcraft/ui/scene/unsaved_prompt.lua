@@ -55,26 +55,81 @@ local function assert_on_done(on_done)
   return on_done
 end
 
+local function append_rollback_errors(err, rollback_errors)
+  if #rollback_errors == 0 then
+    return err
+  end
+  return ('%s; rollback errors: %s'):format(err, table.concat(rollback_errors, '; '))
+end
+
 function M.close(instance)
   local state = instance_state(instance)
   local prompt = prompt_state(state)
+  local buf = prompt.buf
+  local win = prompt.win
+  local errors = {}
   if window.is_valid_win(prompt.win) then
-    pcall(vim.api.nvim_win_close, prompt.win, true)
+    local closed, close_err = pcall(vim.api.nvim_win_close, prompt.win, true)
+    if not closed then
+      errors[#errors + 1] = ('window: %s'):format(tostring(close_err))
+    end
   end
   if window.is_valid_buf(prompt.buf) then
-    pcall(vim.api.nvim_buf_delete, prompt.buf, { force = true })
+    local deleted, delete_err = pcall(vim.api.nvim_buf_delete, prompt.buf, { force = true })
+    if not deleted then
+      errors[#errors + 1] = ('buffer: %s'):format(tostring(delete_err))
+    end
   end
-  state.unsaved_prompt = { win = nil, buf = nil }
+  if not window.is_valid_win(win) and not window.is_valid_buf(buf) then
+    state.unsaved_prompt = { win = nil, buf = nil }
+    return true
+  end
+  if #errors == 0 then
+    errors[#errors + 1] = 'resources remain open'
+  end
+  return false, table.concat(errors, '; ')
 end
 
-local function create_buffer()
-  local buf = vim.api.nvim_create_buf(false, true)
-  vim.bo[buf].bufhidden = 'wipe'
-  vim.bo[buf].buftype = 'nofile'
-  vim.bo[buf].swapfile = false
-  vim.bo[buf].modifiable = true
-  vim.api.nvim_buf_set_lines(buf, 0, -1, false, M.lines)
-  vim.bo[buf].modifiable = false
+local function cleanup_created(instance, buf, win)
+  local state = instance_state(instance)
+  local prompt = prompt_state(state)
+  local errors = {}
+  if window.is_valid_win(win) then
+    local closed, close_err = pcall(vim.api.nvim_win_close, win, true)
+    if not closed then
+      errors[#errors + 1] = ('unsaved prompt window: %s'):format(tostring(close_err))
+    end
+  end
+  if window.is_valid_buf(buf) then
+    local deleted, delete_err = pcall(vim.api.nvim_buf_delete, buf, { force = true })
+    if not deleted then
+      errors[#errors + 1] = ('unsaved prompt buffer: %s'):format(tostring(delete_err))
+    end
+  end
+  if prompt.buf == buf and prompt.win == win then
+    if not window.is_valid_win(win) and not window.is_valid_buf(buf) then
+      state.unsaved_prompt = { win = nil, buf = nil }
+    end
+  end
+  return errors
+end
+
+local function create_buffer(instance)
+  local state = instance_state(instance)
+  local buf
+  local ok, err = xpcall(function()
+    buf = vim.api.nvim_create_buf(false, true)
+    state.unsaved_prompt = { win = nil, buf = buf }
+    vim.bo[buf].bufhidden = 'wipe'
+    vim.bo[buf].buftype = 'nofile'
+    vim.bo[buf].swapfile = false
+    vim.bo[buf].modifiable = true
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, M.lines)
+    vim.bo[buf].modifiable = false
+  end, debug.traceback)
+  if not ok then
+    error(append_rollback_errors(err, cleanup_created(instance, buf, nil)), 0)
+  end
   return buf
 end
 
@@ -126,23 +181,46 @@ local function apply_highlights(instance, buf, win)
   end
 end
 
+local function run_keymap_action(action)
+  local ok, err = xpcall(action, debug.traceback)
+  if not ok then
+    notify.error(err)
+  end
+end
+
 local function install_keymaps(instance, buf, name, on_done)
   local opts = { buffer = buf, silent = true, nowait = true }
   vim.keymap.set('n', 's', function()
-    local ok, err = session.save(instance, name)
-    if ok then
+    run_keymap_action(function()
+      local ok, err = session.save(instance, name)
+      if not ok then
+        notify.error(err)
+        if not session.is_dirty(name) then
+          on_done()
+        end
+        return
+      end
       on_done()
-    else
-      notify.error(err)
-    end
+    end)
   end, opts)
   vim.keymap.set('n', 'd', function()
-    session.discard(instance, name)
-    on_done()
+    run_keymap_action(function()
+      local ok, err = session.discard(instance, name)
+      if ok == false then
+        notify.error(err)
+        return
+      end
+      on_done()
+    end)
   end, opts)
   for _, key in ipairs({ 'c', 'q', '<Esc>' }) do
     vim.keymap.set('n', key, function()
-      M.close(instance)
+      run_keymap_action(function()
+        local closed, close_err = M.close(instance)
+        if not closed then
+          notify.error(('failed to close unsaved prompt: %s'):format(tostring(close_err)))
+        end
+      end)
     end, opts)
   end
 end
@@ -153,17 +231,27 @@ function M.open(instance, name, on_done)
   local ns = prompt_namespace(instance)
   name = assert_name(name)
   on_done = assert_on_done(on_done)
-  M.close(instance)
-
-  local buf = create_buffer()
-  local win = open_window(buf)
-
-  state.unsaved_prompt = { win = win, buf = buf }
-  apply_window_options(win)
-  if ns ~= nil then
-    apply_highlights(instance, buf, win)
+  local closed, close_err = M.close(instance)
+  if not closed then
+    error(('failed to close existing unsaved prompt: %s'):format(tostring(close_err)), 2)
   end
-  install_keymaps(instance, buf, name, on_done)
+
+  local buf, win
+  local ok, err = xpcall(function()
+    buf = create_buffer(instance)
+    win = open_window(buf)
+
+    state.unsaved_prompt = { win = win, buf = buf }
+    apply_window_options(win)
+    if ns ~= nil then
+      apply_highlights(instance, buf, win)
+    end
+    install_keymaps(instance, buf, name, on_done)
+  end, debug.traceback)
+  if not ok then
+    error(append_rollback_errors(err, cleanup_created(instance, buf, win)), 0)
+  end
+  return true, nil
 end
 
 return M

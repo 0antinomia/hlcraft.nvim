@@ -87,6 +87,44 @@ local function assert_rerender(instance)
   end
 end
 
+local function snapshot_detail_state(state, field_editor)
+  return {
+    detail_index = state.detail_index,
+    field = field_editor.field,
+    geometry = vim.deepcopy(state.geometry),
+    list_cursor = state.list_cursor,
+    results = vim.deepcopy(state.results),
+    scene = vim.deepcopy(state.scene),
+  }
+end
+
+local function restore_detail_state(state, field_editor, snapshot)
+  state.detail_index = snapshot.detail_index
+  field_editor.field = snapshot.field
+  state.geometry = snapshot.geometry
+  state.list_cursor = snapshot.list_cursor
+  state.results = snapshot.results
+  state.scene = snapshot.scene
+end
+
+local function append_rollback_error(err, rollback_err)
+  if rollback_err == nil then
+    return err
+  end
+  return ('%s; rollback errors: %s'):format(err, tostring(rollback_err))
+end
+
+local function rerender_restored_state(instance, state, field_editor, snapshot)
+  local ok, err = xpcall(function()
+    instance:rerender()
+  end, debug.traceback)
+  if not ok then
+    restore_detail_state(state, field_editor, snapshot)
+    return false, err
+  end
+  return true, nil
+end
+
 function M.enter(instance, opts)
   local state = instance_state(instance)
   opts = optional_table(opts, 'detail entry')
@@ -138,28 +176,43 @@ function M.refresh(instance, name, reopen_detail)
   reopen_detail = optional_boolean(reopen_detail, 'detail reopen flag')
   assert_rerender(instance)
 
-  local active_field = field_editor.field
-  instance:rerender()
-  local results = result_list(state)
-  for index, result in ipairs(results) do
-    if result.name == name then
-      state.list_cursor = index
-      if reopen_detail then
-        state.detail_index = index
-        field_editor.field = active_field
-        instance:rerender()
-      end
-      return
-    end
-  end
-
-  if reopen_detail then
-    local cursor = positive_integer(state.list_cursor, 'detail list cursor')
-    state.detail_index = nil
-    field_editor.field = nil
-    state.list_cursor = math.min(math.max(cursor, 1), math.max(#results, 1))
-    restore_search_scene(instance)
+  local snapshot = snapshot_detail_state(state, field_editor)
+  local rendered = false
+  local ok, err = xpcall(function()
+    local active_field = field_editor.field
+    rendered = true
     instance:rerender()
+    local results = result_list(state)
+    for index, result in ipairs(results) do
+      if result.name == name then
+        state.list_cursor = index
+        if reopen_detail then
+          state.detail_index = index
+          field_editor.field = active_field
+          instance:rerender()
+        end
+        return
+      end
+    end
+
+    if reopen_detail then
+      local cursor = positive_integer(state.list_cursor, 'detail list cursor')
+      state.detail_index = nil
+      field_editor.field = nil
+      state.list_cursor = math.min(math.max(cursor, 1), math.max(#results, 1))
+      restore_search_scene(instance)
+      instance:rerender()
+    end
+  end, debug.traceback)
+  if not ok then
+    restore_detail_state(state, field_editor, snapshot)
+    if rendered then
+      local restored, restore_err = rerender_restored_state(instance, state, field_editor, snapshot)
+      if not restored then
+        err = append_rollback_error(err, restore_err)
+      end
+    end
+    error(err, 0)
   end
 end
 
@@ -168,7 +221,10 @@ end
 --- @return nil
 function M.close_unsaved_prompt(instance)
   instance_state(instance)
-  unsaved_prompt.close(instance)
+  local closed, err = unsaved_prompt.close(instance)
+  if not closed then
+    error(('failed to close unsaved prompt: %s'):format(tostring(err)), 2)
+  end
 end
 
 --- Close the detail view without checking for unsaved changes
@@ -178,20 +234,36 @@ function M.force_close(instance)
   local state = instance_state(instance)
   local field_editor = field_editor_state(state)
   assert_rerender(instance)
-  M.close_unsaved_prompt(instance)
-  state.detail_index = nil
-  field_editor.field = nil
-  restore_search_scene(instance)
-  instance:rerender()
-  local win = window.get_win(instance)
-  if not window.is_valid_win(win) then
-    return
-  end
-  for line, index in pairs(result_lines(state)) do
-    if index == state.list_cursor then
-      vim.api.nvim_win_set_cursor(win, { line, 0 })
-      break
+  local snapshot = snapshot_detail_state(state, field_editor)
+  local rendered = false
+  local ok, err = xpcall(function()
+    state.detail_index = nil
+    field_editor.field = nil
+    restore_search_scene(instance)
+    rendered = true
+    instance:rerender()
+    local win = window.get_win(instance)
+    if not window.is_valid_win(win) then
+      M.close_unsaved_prompt(instance)
+      return
     end
+    for line, index in pairs(result_lines(state)) do
+      if index == state.list_cursor then
+        vim.api.nvim_win_set_cursor(win, { line, 0 })
+        break
+      end
+    end
+    M.close_unsaved_prompt(instance)
+  end, debug.traceback)
+  if not ok then
+    restore_detail_state(state, field_editor, snapshot)
+    if rendered then
+      local restored, restore_err = rerender_restored_state(instance, state, field_editor, snapshot)
+      if not restored then
+        err = append_rollback_error(err, restore_err)
+      end
+    end
+    error(err, 0)
   end
 end
 
@@ -230,6 +302,8 @@ end
 
 function M.activate(instance)
   assert_rerender(instance)
+  local state = instance_state(instance)
+  local field_editor = field_editor_state(state)
   local row = M.row_at_cursor(instance)
   local result = M.current_result(instance)
   if not row or not result then
@@ -239,10 +313,28 @@ function M.activate(instance)
     return style_editor.toggle(instance, result, row.key)
   end
   if row.kind == 'group' or row.kind == 'color' or row.kind == 'blend' then
-    require('hlcraft.ui.scene').set(instance, 'field_editor', {
-      field = row.key,
-    })
-    instance:rerender()
+    local snapshot = snapshot_detail_state(state, field_editor)
+    local rendered = false
+    local ok, err = xpcall(function()
+      local scene_ok, scene_err = require('hlcraft.ui.scene').set(instance, 'field_editor', {
+        field = row.key,
+      })
+      if not scene_ok then
+        error(scene_err or 'failed to open field editor scene', 0)
+      end
+      rendered = true
+      instance:rerender()
+    end, debug.traceback)
+    if not ok then
+      restore_detail_state(state, field_editor, snapshot)
+      if rendered then
+        local restored, restore_err = rerender_restored_state(instance, state, field_editor, snapshot)
+        if not restored then
+          err = append_rollback_error(err, restore_err)
+        end
+      end
+      error(err, 0)
+    end
     return true, nil
   end
   return false, nil

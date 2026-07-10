@@ -56,6 +56,7 @@ local tests = {
   'tests/ui_navigation.lua',
   'tests/ui_unsaved_prompt.lua',
   'tests/ui_workspace_window.lua',
+  'tests/ui_workspace_multiwindow.lua',
   'tests/ui_workspace_buffer.lua',
   'tests/ui_workspace_lifecycle.lua',
   'tests/ui_keymaps.lua',

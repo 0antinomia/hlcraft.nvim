@@ -5,13 +5,17 @@ local actions = require('hlcraft.ui.input.actions')
 local input_model = require('hlcraft.ui.input.model')
 local ui_state = require('hlcraft.ui.state')
 
+local function input_namespace(instance)
+  return instance.input_ns or instance.ns
+end
+
 local function set_input_marks(instance, name, start_row, end_boundary_row)
-  instance.state.extmark_ids[name .. ':start'] =
-    vim.api.nvim_buf_set_extmark(instance.state.buf, instance.ns, start_row, 0, {
-      right_gravity = false,
-    })
+  local ns = input_namespace(instance)
+  instance.state.extmark_ids[name .. ':start'] = vim.api.nvim_buf_set_extmark(instance.state.buf, ns, start_row, 0, {
+    right_gravity = false,
+  })
   instance.state.extmark_ids[name .. ':end'] =
-    vim.api.nvim_buf_set_extmark(instance.state.buf, instance.ns, end_boundary_row, 0, {
+    vim.api.nvim_buf_set_extmark(instance.state.buf, ns, end_boundary_row, 0, {
       right_gravity = false,
     })
 end
@@ -19,6 +23,7 @@ end
 h.with_temp_buf(function(buf)
   local instance = {
     ns = vim.api.nvim_create_namespace('hlcraft-ui-input-actions-test'),
+    input_ns = vim.api.nvim_create_namespace('hlcraft-ui-input-actions-input-test'),
     state = {
       buf = buf,
       extmark_ids = {},
@@ -80,6 +85,51 @@ h.with_temp_buf(function(buf)
     scope
   )
 
+  local fill_failure_lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+  local original_buf_set_lines = vim.api.nvim_buf_set_lines
+  local fill_set_lines_calls = 0
+  vim.api.nvim_buf_set_lines = function(target_buf, ...)
+    fill_set_lines_calls = fill_set_lines_calls + 1
+    if target_buf == buf and fill_set_lines_calls == 2 then
+      error('fill boundary delete failed')
+    end
+    return original_buf_set_lines(target_buf, ...)
+  end
+  local fill_failure_ok = pcall(input_model.fill_input, instance, 'name', 'next', true)
+  vim.api.nvim_buf_set_lines = original_buf_set_lines
+  h.assert_true(not fill_failure_ok, 'fill_input accepted partial buffer write failure', scope)
+  h.assert_true(
+    vim.deep_equal(vim.api.nvim_buf_get_lines(buf, 0, -1, false), fill_failure_lines),
+    'failed fill_input changed buffer lines',
+    scope
+  )
+  h.assert_equal(input_model.get_input_value(instance, 'name'), 'alpha', 'failed fill_input changed input value', scope)
+
+  local rollback_failure_original_set_lines = vim.api.nvim_buf_set_lines
+  local rollback_failure_calls = 0
+  vim.api.nvim_buf_set_lines = function(target_buf, ...)
+    rollback_failure_calls = rollback_failure_calls + 1
+    if target_buf == buf and rollback_failure_calls == 2 then
+      error('fill boundary delete failed')
+    end
+    if target_buf == buf and rollback_failure_calls == 3 then
+      error('fill rollback failed')
+    end
+    return rollback_failure_original_set_lines(target_buf, ...)
+  end
+  local rollback_failure_ok, rollback_failure_err = pcall(input_model.fill_input, instance, 'name', 'next', true)
+  vim.api.nvim_buf_set_lines = rollback_failure_original_set_lines
+  h.assert_true(not rollback_failure_ok, 'fill_input accepted failed rollback after partial write', scope)
+  h.assert_true(
+    tostring(rollback_failure_err):find('fill rollback failed', 1, true) ~= nil,
+    'fill_input rollback failure did not report the line restore error',
+    scope
+  )
+  rollback_failure_original_set_lines(buf, 0, -1, false, fill_failure_lines)
+  set_input_marks(instance, 'name', 0, 1)
+  set_input_marks(instance, 'color', 2, 3)
+  set_input_marks(instance, 'fg', 3, 4)
+
   local normalize_ok, normalize_err = pcall(input_model.normalize_single_line, 123)
   h.assert_true(not normalize_ok, 'single-line normalization accepted a non-string value', scope)
   h.assert_true(
@@ -97,6 +147,25 @@ h.with_temp_buf(function(buf)
   )
   local invalid_clear_old_ok = pcall(input_model.fill_input, instance, 'name', nil, 'yes')
   h.assert_true(not invalid_clear_old_ok, 'fill_input accepted non-boolean clear flag', scope)
+
+  local sync_failure_instance = {
+    ns = instance.ns,
+    input_ns = instance.input_ns,
+    state = {
+      buf = buf,
+      color_query = 'old color',
+      detail_index = nil,
+      extmark_ids = vim.deepcopy(instance.state.extmark_ids),
+      geometry = vim.deepcopy(instance.state.geometry),
+      name_query = 'old name',
+      rendering = false,
+    },
+  }
+  sync_failure_instance.state.extmark_ids['color:start'] = false
+  local sync_failure_ok = pcall(input_model.sync_queries_from_buffer, sync_failure_instance)
+  h.assert_true(not sync_failure_ok, 'sync_queries_from_buffer accepted invalid color extmark', scope)
+  h.assert_equal(sync_failure_instance.state.name_query, 'old name', 'failed query sync changed name query', scope)
+  h.assert_equal(sync_failure_instance.state.color_query, 'old color', 'failed query sync changed color query', scope)
 
   h.assert_true(not input_model.fill_input(instance, 'name', nil, false), 'nil fill without clear changed input', scope)
   h.assert_true(input_model.fill_input(instance, 'name', nil, true), 'nil fill with clear did not report change', scope)
@@ -153,6 +222,46 @@ h.with_temp_buf(function(buf)
     },
   })
   h.assert_true(not invalid_extmark_line_ok, 'input model accepted invalid extmark row', scope)
+  local previous_extmark_ids = instance.state.extmark_ids
+  local expected_extmark_ids = vim.deepcopy(previous_extmark_ids)
+  local input_ns = input_namespace(instance)
+  local previous_extmark_count = #vim.api.nvim_buf_get_extmarks(buf, input_ns, 0, -1, {})
+  local previous_name_mark = vim.api.nvim_buf_get_extmark_by_id(buf, input_ns, previous_extmark_ids['name:start'], {})
+  local original_set_extmark = vim.api.nvim_buf_set_extmark
+  local set_extmark_calls = 0
+  vim.api.nvim_buf_set_extmark = function(...)
+    set_extmark_calls = set_extmark_calls + 1
+    if set_extmark_calls == 2 then
+      error('extmark failed')
+    end
+    return original_set_extmark(...)
+  end
+  local failed_extmark_refresh_ok = pcall(input_model.set_input_extmarks, instance)
+  vim.api.nvim_buf_set_extmark = original_set_extmark
+  h.assert_true(not failed_extmark_refresh_ok, 'input extmark refresh accepted failed extmark creation', scope)
+  h.assert_equal(
+    instance.state.extmark_ids,
+    previous_extmark_ids,
+    'failed input extmark refresh replaced extmark state',
+    scope
+  )
+  h.assert_true(
+    vim.deep_equal(instance.state.extmark_ids, expected_extmark_ids),
+    'failed input extmark refresh changed extmark values',
+    scope
+  )
+  h.assert_equal(
+    #vim.api.nvim_buf_get_extmarks(buf, input_ns, 0, -1, {}),
+    previous_extmark_count,
+    'failed input extmark refresh leaked new extmarks',
+    scope
+  )
+  local preserved_name_mark = vim.api.nvim_buf_get_extmark_by_id(buf, input_ns, previous_extmark_ids['name:start'], {})
+  h.assert_true(
+    vim.deep_equal(preserved_name_mark, previous_name_mark),
+    'failed input extmark refresh moved old extmarks',
+    scope
+  )
   local invalid_pos_namespace_ok = pcall(input_model.get_input_pos, {
     ns = false,
     state = instance.state,
@@ -207,6 +316,78 @@ h.with_temp_buf(function(buf)
     }),
   }, 'name')
   h.assert_true(not invalid_extmark_id_ok, 'input model accepted invalid extmark id', scope)
+end, { current = true })
+
+h.with_temp_buf(function(buf)
+  local scheduled_cleanup
+  local original_schedule = vim.schedule
+  vim.schedule = function(callback)
+    scheduled_cleanup = callback
+  end
+
+  local instance = {
+    ns = vim.api.nvim_create_namespace('hlcraft-ui-input-actions-paste-cleanup-test'),
+    input_ns = vim.api.nvim_create_namespace('hlcraft-ui-input-actions-paste-cleanup-input-test'),
+    state = {
+      buf = buf,
+      extmark_ids = {},
+      geometry = ui_state.geometry(),
+    },
+  }
+  instance.state.geometry.inputs = {
+    { name = 'name', kind = 'name', line = 1 },
+  }
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, { '', '' })
+  set_input_marks(instance, 'name', 0, 1)
+  vim.api.nvim_win_set_cursor(0, { 1, 0 })
+
+  actions.paste_below(instance, false)
+  vim.schedule = original_schedule
+  h.assert_true(type(scheduled_cleanup) == 'function', 'paste below did not schedule trailing cleanup', scope)
+  vim.api.nvim_buf_delete(buf, { force = true })
+  local cleanup_ok = pcall(scheduled_cleanup)
+  h.assert_true(cleanup_ok, 'scheduled paste cleanup failed after buffer deletion', scope)
+end, { current = true })
+
+h.with_temp_buf(function(buf)
+  local scheduled_cleanup
+  local original_schedule = vim.schedule
+  vim.schedule = function(callback)
+    scheduled_cleanup = callback
+  end
+
+  local instance = {
+    ns = vim.api.nvim_create_namespace('hlcraft-ui-input-actions-stale-cleanup-test'),
+    input_ns = vim.api.nvim_create_namespace('hlcraft-ui-input-actions-stale-cleanup-input-test'),
+    state = {
+      buf = buf,
+      extmark_ids = {},
+      geometry = ui_state.geometry(),
+    },
+  }
+  instance.state.geometry.inputs = {
+    { name = 'name', kind = 'name', line = 1 },
+  }
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, { '', '' })
+  set_input_marks(instance, 'name', 0, 1)
+  vim.api.nvim_win_set_cursor(0, { 1, 0 })
+
+  actions.paste_below(instance, false)
+  vim.schedule = original_schedule
+  h.assert_true(type(scheduled_cleanup) == 'function', 'paste below did not schedule stale cleanup', scope)
+  instance.state.extmark_ids = {}
+  instance.state.geometry.inputs = {
+    { name = 'color', kind = 'color', line = 1 },
+  }
+  set_input_marks(instance, 'color', 0, 2)
+  local cleanup_ok = pcall(scheduled_cleanup)
+  h.assert_true(cleanup_ok, 'stale scheduled paste cleanup failed', scope)
+  h.assert_equal(
+    vim.api.nvim_buf_line_count(buf),
+    2,
+    'stale scheduled paste cleanup deleted a different input line',
+    scope
+  )
 end, { current = true })
 
 local invalid_geometry_ok = pcall(input_model.get_input_at_row, {

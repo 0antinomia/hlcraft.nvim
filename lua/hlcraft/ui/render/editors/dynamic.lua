@@ -10,7 +10,7 @@ local validate = require('hlcraft.ui.render.editors.validate')
 local M = {}
 
 local function swatch_end_col(col_start, swatch)
-  return col_start + vim.fn.strdisplaywidth(swatch)
+  return col_start + #swatch
 end
 
 local function phase_label(phase)
@@ -39,7 +39,7 @@ function M.build(instance, geometry, result, field, width, line_offset, dynamic)
     ('Color editor: %s'):format(label),
     string.rep('─', math.max(20, math.min(width, 36))),
     'Mode: dynamic',
-    ('Base: %s'):format(dynamic_display.base_text(result, field)),
+    'Value: Dynamic',
     ('Preset: %s'):format(dynamic.preset or 'custom'),
     ('Duration: %dms'):format(dynamic.duration),
   }
@@ -51,8 +51,8 @@ function M.build(instance, geometry, result, field, width, line_offset, dynamic)
 
   dynamic_preview.register(instance, {
     line = swatch_line + line_offset,
-    col_start = vim.fn.strdisplaywidth(live_prefix),
-    col_end = swatch_end_col(vim.fn.strdisplaywidth(live_prefix), swatch),
+    col_start = #live_prefix,
+    col_end = swatch_end_col(#live_prefix, swatch),
     text = swatch,
     field = field,
     base = base,
@@ -69,7 +69,7 @@ function M.build(instance, geometry, result, field, width, line_offset, dynamic)
     local sample_dynamic = vim.deepcopy(dynamic)
     sample_dynamic.phase = 0
     sample_dynamic.loop = 'once'
-    local col_start = vim.fn.strdisplaywidth(prefix)
+    local col_start = #prefix
     dynamic_preview.register(instance, {
       line = sample_line + line_offset,
       col_start = col_start,

@@ -5,6 +5,14 @@ local dynamic_model = require('hlcraft.dynamic.model')
 local dynamic_renderer = require('hlcraft.ui.render.editors.dynamic')
 local ui_state = require('hlcraft.ui.state')
 
+local function assert_preview_range(lines, item, message)
+  local line = lines[item.line]
+  local start_byte, end_byte = line:find(item.text, 1, true)
+  h.assert_true(start_byte ~= nil, message .. ' swatch was not rendered', scope)
+  h.assert_equal(item.col_start, start_byte - 1, message .. ' start column changed', scope)
+  h.assert_equal(item.col_end, end_byte, message .. ' end column changed', scope)
+end
+
 local dynamic = dynamic_model.normalize_channel({
   version = 1,
   preset = 'manual',
@@ -52,6 +60,8 @@ h.with_temp_buf(function(render_buf)
     'dynamic swatch preview did not track its rendered row',
     scope
   )
+  assert_preview_range(render_lines, render_instance.state.dynamic_preview.items[1], 'dynamic swatch preview')
+  assert_preview_range(render_lines, render_instance.state.dynamic_preview.items[2], 'dynamic sample preview')
   h.assert_true(
     render_instance.state.dynamic_preview.items[1].field == nil,
     'dynamic swatch preview kept renderer-only field state',

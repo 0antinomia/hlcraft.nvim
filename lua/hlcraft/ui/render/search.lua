@@ -88,45 +88,60 @@ function M.render(instance)
   end
   local ns = instance_namespace(instance)
 
-  local lines = {}
-  local geometry = buffer.new_geometry()
-  local results_top = buffer.append_search_inputs(instance, lines, geometry, width)
+  local lines
+  local geometry
+  local results_top
+  local result_cells
+  local hint_start_line
+  local dynamic_preview_snapshot = dynamic_preview.begin_render(instance)
+  local render_ok, render_err = xpcall(function()
+    lines = {}
+    geometry = buffer.new_geometry()
+    results_top = buffer.append_search_inputs(instance, lines, geometry, width)
 
-  local result_lines, selectable, result_cells = list.build(instance, width)
-  for _, line in ipairs(result_lines) do
-    lines[#lines + 1] = line
-  end
-  lines[#lines + 1] = ''
-  local hint_start_line = append_hint_lines(lines, width)
-  for index, result_index in pairs(selectable) do
-    local line_nr = results_top + index - 1
-    geometry.result_lines[line_nr] = result_index
-    geometry.result_cells[line_nr] = result_cells[index]
-  end
+    local result_lines, selectable
+    result_lines, selectable, result_cells = list.build(instance, width)
+    for _, line in ipairs(result_lines) do
+      lines[#lines + 1] = line
+    end
+    lines[#lines + 1] = ''
+    hint_start_line = append_hint_lines(lines, width)
+    for index, result_index in pairs(selectable) do
+      local line_nr = results_top + index - 1
+      geometry.result_lines[line_nr] = result_index
+      geometry.result_cells[line_nr] = result_cells[index]
+    end
 
-  buffer.set_lines(instance, lines)
-  buffer.finish(instance, geometry)
+    buffer.replace(instance, lines, geometry, function()
+      decorations.set_input_header(instance, geometry.name, ui_fields.search_prefixes.name)
+      decorations.set_input_header(instance, geometry.color, ui_fields.search_prefixes.color)
+      decorations.set_results_header(instance, results_top, width)
+      add_line_highlight(state.buf, ns, lines, results_top, theme.groups.header)
+      add_line_highlight(state.buf, ns, lines, results_top + 1, theme.groups.rule)
+      for line_nr = hint_start_line, #lines do
+        decorations.apply_hint_line(instance, line_nr - 1, lines[line_nr])
+      end
+      for line_nr, result_index in pairs(geometry.result_lines) do
+        result_at(results, result_index)
+        render_util.line_at(lines, line_nr, 'search result geometry')
+        local cells = result_cells_at(geometry, line_nr)
+        apply_result_cell(instance, state.buf, line_nr, cells.fg.start_col, cells.fg, 'fg')
+        apply_result_cell(instance, state.buf, line_nr, cells.bg.start_col, cells.bg, 'bg')
+        apply_result_cell(instance, state.buf, line_nr, cells.sp.start_col, cells.sp, 'sp')
+      end
 
-  decorations.set_input_header(instance, geometry.name, ui_fields.search_prefixes.name)
-  decorations.set_input_header(instance, geometry.color, ui_fields.search_prefixes.color)
-  decorations.set_results_header(instance, results_top, width)
-  add_line_highlight(state.buf, ns, lines, results_top, theme.groups.header)
-  add_line_highlight(state.buf, ns, lines, results_top + 1, theme.groups.rule)
-  for line_nr = hint_start_line, #lines do
-    decorations.apply_hint_line(instance, line_nr - 1, lines[line_nr])
+      decorations.refresh_input_placeholders(instance)
+      dynamic_preview.tick(instance, vim.uv.hrtime() / 1000000)
+      dynamic_preview.sync(instance)
+    end)
+  end, debug.traceback)
+  if not render_ok then
+    local restored, restore_err = dynamic_preview.restore_render(instance, dynamic_preview_snapshot)
+    if not restored then
+      render_err = ('%s; rollback errors: %s'):format(render_err, tostring(restore_err))
+    end
+    error(render_err, 0)
   end
-  for line_nr, result_index in pairs(geometry.result_lines) do
-    result_at(results, result_index)
-    render_util.line_at(lines, line_nr, 'search result geometry')
-    local cells = result_cells_at(geometry, line_nr)
-    apply_result_cell(instance, state.buf, line_nr, cells.fg.start_col, cells.fg, 'fg')
-    apply_result_cell(instance, state.buf, line_nr, cells.bg.start_col, cells.bg, 'bg')
-    apply_result_cell(instance, state.buf, line_nr, cells.sp.start_col, cells.sp, 'sp')
-  end
-
-  decorations.refresh_input_placeholders(instance)
-  dynamic_preview.tick(instance, vim.uv.hrtime() / 1000000)
-  dynamic_preview.sync(instance)
 end
 
 return M

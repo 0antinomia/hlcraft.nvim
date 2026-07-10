@@ -32,6 +32,8 @@ end
 
 function M.preview()
   return {
+    flash_spec = nil,
+    flash_spec_partial = false,
     name = nil,
     spec = nil,
     timer = nil,

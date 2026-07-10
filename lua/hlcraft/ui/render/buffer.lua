@@ -1,6 +1,6 @@
-local notify = require('hlcraft.notify')
 local render_util = require('hlcraft.render.util')
 local buffer_fields = require('hlcraft.ui.input.buffer_fields')
+local input_sequence = require('hlcraft.ui.input.sequence')
 local numbers = require('hlcraft.core.number')
 local tables = require('hlcraft.core.tables')
 local ui_state = require('hlcraft.ui.state')
@@ -54,6 +54,13 @@ local function string_list(lines, label)
   return render_util.string_list(lines, label, 3)
 end
 
+local function append_rollback_errors(err, rollback_errors)
+  if #rollback_errors == 0 then
+    return err
+  end
+  return ('%s; rollback errors: %s'):format(err, table.concat(rollback_errors, '; '))
+end
+
 local function geometry_table(geometry)
   if type(geometry) ~= 'table' then
     error('render geometry must be a table', 3)
@@ -61,9 +68,53 @@ local function geometry_table(geometry)
   return geometry
 end
 
+local function optional_callback(callback, label)
+  if callback ~= nil and type(callback) ~= 'function' then
+    error(('%s must be a function or nil'):format(label), 3)
+  end
+  return callback
+end
+
 local function geometry_inputs(geometry)
   geometry = geometry_table(geometry)
   return tables.assert_sequence(geometry.inputs, 'render geometry inputs', 3)
+end
+
+local function validate_input_extmark_rows(state, geometry)
+  local line_count = vim.api.nvim_buf_line_count(state.buf)
+  for _, field in ipairs(geometry_inputs(geometry)) do
+    local line = positive_integer(field.line, 'render geometry input line')
+    if line > line_count then
+      error('render geometry input line is outside the buffer', 3)
+    end
+    input_sequence.name(field)
+  end
+end
+
+local function snapshot_namespace_extmarks(buf, ns)
+  local marks = {}
+  for _, mark in ipairs(vim.api.nvim_buf_get_extmarks(buf, ns, 0, -1, { details = true })) do
+    local details = vim.deepcopy(mark[4] or {})
+    details.ns_id = nil
+    details.id = mark[1]
+    marks[#marks + 1] = {
+      row = mark[2],
+      col = mark[3],
+      opts = details,
+    }
+  end
+  return marks
+end
+
+local function restore_namespace_extmarks(buf, ns, marks)
+  local errors = {}
+  for _, mark in ipairs(marks) do
+    local ok, err = pcall(vim.api.nvim_buf_set_extmark, buf, ns, mark.row, mark.col, mark.opts)
+    if not ok then
+      errors[#errors + 1] = tostring(err)
+    end
+  end
+  return errors
 end
 
 local function geometry_rows(geometry, key)
@@ -92,14 +143,15 @@ end
 function M.set_lines(instance, lines)
   local state = instance_state(instance)
   lines = string_list(lines, 'render lines')
+  local previous_rendering = state.rendering
   state.rendering = true
-  local ok, err = pcall(function()
+  local ok, err = xpcall(function()
     vim.bo[state.buf].modifiable = true
     vim.api.nvim_buf_set_lines(state.buf, 0, -1, false, lines)
-  end)
-  state.rendering = false
+  end, debug.traceback)
+  state.rendering = previous_rendering
   if not ok then
-    notify.warn(('buffer render failed: %s'):format(tostring(err)))
+    error(err, 0)
   end
 end
 
@@ -112,7 +164,6 @@ function M.prepare(instance)
   if not window.is_valid_win(win) then
     return nil
   end
-  require('hlcraft.ui.dynamic_preview').reset_items(instance)
   return math.max(50, vim.api.nvim_win_get_width(win) - 1)
 end
 
@@ -121,13 +172,81 @@ function M.finish(instance, geometry)
   local ns = instance_namespace(instance)
   geometry = geometry_table(geometry)
   geometry_inputs(geometry)
-  vim.api.nvim_buf_clear_namespace(state.buf, ns, 0, -1)
-  require('hlcraft.ui.dynamic_preview').reset_marks(instance)
-  state.input_marks = {}
-  state.placeholder_marks = {}
-  theme.apply(ns)
-  state.geometry = geometry
-  buffer_fields.set_extmarks(instance)
+  validate_input_extmark_rows(state, geometry)
+
+  local snapshot = {
+    extmark_ids = state.extmark_ids,
+    geometry = state.geometry,
+    input_marks = state.input_marks,
+    placeholder_marks = state.placeholder_marks,
+  }
+  local input_extmark_transaction
+  local ok, err = xpcall(function()
+    theme.apply(ns)
+    state.geometry = geometry
+    input_extmark_transaction = buffer_fields.set_extmarks(instance, { defer_delete = true })
+    vim.api.nvim_buf_clear_namespace(state.buf, ns, 0, -1)
+    require('hlcraft.ui.dynamic_preview').reset_marks(instance)
+    state.input_marks = {}
+    state.placeholder_marks = {}
+    if input_extmark_transaction then
+      input_extmark_transaction.commit()
+    end
+  end, debug.traceback)
+  if not ok then
+    local rollback_errors = {}
+    if input_extmark_transaction then
+      local rolled_back, rollback_err = xpcall(input_extmark_transaction.rollback, debug.traceback)
+      if not rolled_back then
+        rollback_errors[#rollback_errors + 1] = tostring(rollback_err)
+      end
+    end
+    state.extmark_ids = snapshot.extmark_ids
+    state.geometry = snapshot.geometry
+    state.input_marks = snapshot.input_marks
+    state.placeholder_marks = snapshot.placeholder_marks
+    error(append_rollback_errors(err, rollback_errors), 0)
+  end
+end
+
+function M.replace(instance, lines, geometry, after)
+  local state = instance_state(instance)
+  local ns = instance_namespace(instance)
+  after = optional_callback(after, 'render replace callback')
+  local previous_lines = vim.api.nvim_buf_get_lines(state.buf, 0, -1, false)
+  local previous_geometry = vim.deepcopy(state.geometry)
+  local previous_input_marks = state.input_marks
+  local previous_placeholder_marks = state.placeholder_marks
+  local previous_namespace_extmarks = snapshot_namespace_extmarks(state.buf, ns)
+  local ok, err = xpcall(function()
+    M.set_lines(instance, lines)
+    M.finish(instance, geometry)
+    if after then
+      after()
+    end
+  end, debug.traceback)
+  if not ok then
+    local rollback_errors = {}
+    local restored_lines, restore_lines_err = xpcall(function()
+      M.set_lines(instance, previous_lines)
+    end, debug.traceback)
+    if not restored_lines then
+      rollback_errors[#rollback_errors + 1] = tostring(restore_lines_err)
+    end
+    if restored_lines and type(previous_geometry) == 'table' then
+      local restored_geometry, restore_geometry_err = xpcall(function()
+        M.finish(instance, previous_geometry)
+      end, debug.traceback)
+      if not restored_geometry then
+        rollback_errors[#rollback_errors + 1] = tostring(restore_geometry_err)
+      else
+        state.input_marks = previous_input_marks
+        state.placeholder_marks = previous_placeholder_marks
+        vim.list_extend(rollback_errors, restore_namespace_extmarks(state.buf, ns, previous_namespace_extmarks))
+      end
+    end
+    error(append_rollback_errors(err, rollback_errors), 0)
+  end
 end
 
 --- Create a new input field descriptor table.

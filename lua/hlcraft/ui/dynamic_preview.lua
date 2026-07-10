@@ -1,6 +1,7 @@
 local config = require('hlcraft.config')
 local effects = require('hlcraft.dynamic.effects')
 local model = require('hlcraft.dynamic.model')
+local notify = require('hlcraft.notify')
 local numbers = require('hlcraft.core.number')
 local tables = require('hlcraft.core.tables')
 local timers = require('hlcraft.core.timers')
@@ -96,14 +97,60 @@ local function is_tracked_preview_mark(state, ns, preview, item_id, mark_id)
 end
 
 local function clear_preview_marks(state, ns, preview)
+  local remaining = {}
   for item_id, mark_id in pairs(preview.marks) do
     item_id = numbers.assert_positive_integer(item_id, 'dynamic preview item id', 3)
     mark_id = numbers.assert_positive_integer(mark_id, 'dynamic preview mark id', 3)
     if is_tracked_preview_mark(state, ns, preview, item_id, mark_id) then
-      pcall(vim.api.nvim_buf_del_extmark, state.buf, ns, mark_id)
+      local ok, deleted = pcall(vim.api.nvim_buf_del_extmark, state.buf, ns, mark_id)
+      if (not ok or deleted == false) and is_tracked_preview_mark(state, ns, preview, item_id, mark_id) then
+        remaining[item_id] = mark_id
+      end
     end
   end
+  for item_id in pairs(preview.marks) do
+    preview.marks[item_id] = nil
+  end
+  for item_id, mark_id in pairs(remaining) do
+    preview.marks[item_id] = mark_id
+  end
+  return next(remaining) == nil
+end
+
+local function clear_inactive_preview_marks(state, ns, preview, active_items)
+  local remaining = {}
+  for item_id, mark_id in pairs(preview.marks) do
+    item_id = numbers.assert_positive_integer(item_id, 'dynamic preview item id', 3)
+    mark_id = numbers.assert_positive_integer(mark_id, 'dynamic preview mark id', 3)
+    if active_items[item_id] then
+      remaining[item_id] = mark_id
+    elseif is_tracked_preview_mark(state, ns, preview, item_id, mark_id) then
+      local ok, deleted = pcall(vim.api.nvim_buf_del_extmark, state.buf, ns, mark_id)
+      if (not ok or deleted == false) and is_tracked_preview_mark(state, ns, preview, item_id, mark_id) then
+        remaining[item_id] = mark_id
+      end
+    end
+  end
+  for item_id in pairs(preview.marks) do
+    preview.marks[item_id] = nil
+  end
+  for item_id, mark_id in pairs(remaining) do
+    preview.marks[item_id] = mark_id
+  end
+  for item_id in pairs(remaining) do
+    if not active_items[item_id] then
+      return false
+    end
+  end
+  return true
+end
+
+local function reset_preview_marks(instance, state, preview)
+  if valid_buffer(state) then
+    return clear_preview_marks(state, preview_namespace(instance), preview)
+  end
   preview.marks = {}
+  return true
 end
 
 local function set_preview_hl(ns, preview, item, now_ms)
@@ -116,17 +163,43 @@ local function set_preview_hl(ns, preview, item, now_ms)
   return hl_name
 end
 
-local function set_preview_mark(state, ns, item, hl_name)
-  local ok, mark_id = pcall(vim.api.nvim_buf_set_extmark, state.buf, ns, item.line - 1, item.col_start, {
+local function set_preview_mark(state, ns, item, hl_name, previous_mark_id)
+  local opts = {
     end_col = item.col_end,
     virt_text = { { item.text, hl_name } },
     virt_text_pos = 'overlay',
     hl_mode = 'replace',
-  })
+  }
+  if previous_mark_id ~= nil then
+    opts.id = numbers.assert_positive_integer(previous_mark_id, 'dynamic preview mark id', 3)
+  end
+  local ok, mark_id = pcall(vim.api.nvim_buf_set_extmark, state.buf, ns, item.line - 1, item.col_start, opts)
   if not ok then
     return nil
   end
   return mark_id
+end
+
+local function run_timer_tick(instance, state, preview)
+  local ok, err = xpcall(function()
+    if state.dynamic_preview ~= preview then
+      close_timer(preview)
+      return
+    end
+    if not valid_buffer(state) or next(preview.items) == nil then
+      close_timer(preview)
+      return
+    end
+    M.tick(instance, vim.uv.hrtime() / 1000000)
+  end, debug.traceback)
+  if not ok then
+    local message = ('dynamic preview timer failed: %s'):format(tostring(err))
+    local closed, close_err = pcall(close_timer, preview)
+    if not closed then
+      message = ('%s; timer cleanup failed: %s'):format(message, tostring(close_err))
+    end
+    notify.warn(message)
+  end
 end
 
 local function normalize_context(context)
@@ -198,6 +271,43 @@ function M.register(instance, item)
   return id
 end
 
+function M.begin_render(instance)
+  local state = instance_state(instance)
+  local preview = preview_state(state)
+  preview_namespace(instance)
+  local snapshot = {
+    items = preview.items,
+    marks = preview.marks,
+  }
+  preview.items = {}
+  preview.marks = {}
+  return snapshot
+end
+
+function M.rollback_render(instance, snapshot)
+  if type(snapshot) ~= 'table' then
+    error('dynamic preview render snapshot must be a table', 2)
+  end
+  if type(snapshot.items) ~= 'table' or type(snapshot.marks) ~= 'table' then
+    error('dynamic preview render snapshot is invalid', 2)
+  end
+  local state = instance_state(instance)
+  local preview = preview_state(state)
+  preview.items = snapshot.items
+  preview.marks = snapshot.marks
+end
+
+function M.restore_render(instance, snapshot)
+  local ok, err = xpcall(function()
+    M.rollback_render(instance, snapshot)
+    M.tick(instance, vim.uv.hrtime() / 1000000)
+  end, debug.traceback)
+  if not ok then
+    return false, err
+  end
+  return true, nil
+end
+
 function M.tick(instance, now_ms)
   local state = instance_state(instance)
   local preview = preview_state(state)
@@ -206,21 +316,31 @@ function M.tick(instance, now_ms)
     return
   end
   local ns = preview_namespace(instance)
-  clear_preview_marks(state, ns, preview)
+  local active_items = {}
+  for _, item in ipairs(preview.items) do
+    active_items[item.id] = true
+  end
+  if not clear_inactive_preview_marks(state, ns, preview, active_items) then
+    return
+  end
   for _, item in ipairs(preview.items) do
     local hl_name = set_preview_hl(ns, preview, item, now_ms)
+    local previous_mark_id = preview.marks[item.id]
     if hl_name then
-      preview.marks[item.id] = set_preview_mark(state, ns, item, hl_name)
+      local mark_id = set_preview_mark(state, ns, item, hl_name, previous_mark_id)
+      if mark_id then
+        preview.marks[item.id] = mark_id
+      elseif previous_mark_id == nil or not is_tracked_preview_mark(state, ns, preview, item.id, previous_mark_id) then
+        preview.marks[item.id] = nil
+      end
     end
   end
 end
 
-function M.reset_items(instance)
-  preview_state(instance_state(instance)).items = {}
-end
-
 function M.reset_marks(instance)
-  preview_state(instance_state(instance)).marks = {}
+  local state = instance_state(instance)
+  local preview = preview_state(state)
+  reset_preview_marks(instance, state, preview)
 end
 
 function M.sync(instance)
@@ -228,37 +348,36 @@ function M.sync(instance)
   local preview = preview_state(state)
   if not valid_buffer(state) then
     close_timer(preview)
-    return
+    return true
   end
   if next(preview.items) == nil then
     close_timer(preview)
-    return
+    return true
   end
   preview_namespace(instance)
   if preview.timer then
-    return
+    return true
   end
   local interval = config.config.dynamic.interval_ms
-  preview.timer = timers.repeating(interval, function()
+  local timer = timers.repeating(interval, function()
     vim.schedule(function()
-      if not valid_buffer(state) or next(preview.items) == nil then
-        close_timer(preview)
-        return
-      end
-      M.tick(instance, vim.uv.hrtime() / 1000000)
+      run_timer_tick(instance, state, preview)
     end)
   end)
+  if not timer then
+    notify.warn('dynamic preview timer failed to start')
+    return false
+  end
+  preview.timer = timer
+  return true
 end
 
 function M.clear(instance)
   local state = instance_state(instance)
   local preview = preview_state(state)
-  if valid_buffer(state) then
-    clear_preview_marks(state, preview_namespace(instance), preview)
-  else
-    preview.marks = {}
+  if reset_preview_marks(instance, state, preview) then
+    preview.items = {}
   end
-  preview.items = {}
   close_timer(preview)
 end
 

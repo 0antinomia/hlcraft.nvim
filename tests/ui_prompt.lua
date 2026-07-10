@@ -43,6 +43,21 @@ end, function(message)
 end)
 h.assert_equal(#notifications, 1, 'quiet prompt failure still notified', scope)
 
+local thrown_notifications = {}
+local thrown_submit_ok = h.with_notify_stub(function()
+  return pcall(prompt.input, { value = 'explode' }, function()
+    error('submit exploded')
+  end, { notify_errors = false })
+end, function(message)
+  thrown_notifications[#thrown_notifications + 1] = message
+end)
+h.assert_true(thrown_submit_ok, 'prompt submit callback error escaped the input callback', scope)
+h.assert_true(
+  thrown_notifications[1] and thrown_notifications[1]:find('submit exploded', 1, true) ~= nil,
+  'prompt submit callback error was not notified',
+  scope
+)
+
 local invalid_input_opts_ok = pcall(prompt.input, nil, function() end)
 h.assert_true(not invalid_input_opts_ok, 'prompt accepted missing vim input options', scope)
 local invalid_submit_ok = pcall(prompt.input, {}, nil)

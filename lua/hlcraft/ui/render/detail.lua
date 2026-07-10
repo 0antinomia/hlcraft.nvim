@@ -34,7 +34,7 @@ local function highlight_result(result)
 end
 
 local function swatch_end_col(col_start, swatch)
-  return col_start + vim.fn.strdisplaywidth(swatch)
+  return col_start + #swatch
 end
 
 local function color_display_value(result, key)
@@ -117,34 +117,48 @@ function M.render(instance)
     return
   end
 
-  local lines = {}
-  local geometry = buffer.new_geometry()
-  local results_top = buffer.append_search_inputs(instance, lines, geometry, width)
-  local detail_result = detail_scene.current_result(instance)
+  local lines
+  local geometry
+  local results_top
+  local detail_result
+  local dynamic_preview_snapshot = dynamic_preview.begin_render(instance)
+  local render_ok, render_err = xpcall(function()
+    lines = {}
+    geometry = buffer.new_geometry()
+    results_top = buffer.append_search_inputs(instance, lines, geometry, width)
+    detail_result = detail_scene.current_result(instance)
 
-  if detail_result then
-    local detail_lines = M.build(instance, geometry, detail_result, width, results_top - 1)
-    for _, line in ipairs(detail_lines) do
-      lines[#lines + 1] = line
+    if detail_result then
+      local detail_lines = M.build(instance, geometry, detail_result, width, results_top - 1)
+      for _, line in ipairs(detail_lines) do
+        lines[#lines + 1] = line
+      end
+      buffer.absolutize_detail_menu_geometry(geometry, results_top)
     end
-    buffer.absolutize_detail_menu_geometry(geometry, results_top)
+
+    buffer.replace(instance, lines, geometry, function()
+      decorations.apply_workbench_line_highlights(instance, lines, results_top)
+
+      decorations.set_input_header(instance, geometry.name, ui_fields.search_prefixes.name)
+      decorations.set_input_header(instance, geometry.color, ui_fields.search_prefixes.color)
+
+      if detail_result then
+        decorations.set_detail_menu_header(instance, results_top, detail_result)
+        decorations.apply_detail_menu_highlights(instance, geometry.detail_menu, session.is_dirty(detail_result.name))
+      end
+
+      decorations.refresh_input_placeholders(instance)
+      dynamic_preview.tick(instance, vim.uv.hrtime() / 1000000)
+      dynamic_preview.sync(instance)
+    end)
+  end, debug.traceback)
+  if not render_ok then
+    local restored, restore_err = dynamic_preview.restore_render(instance, dynamic_preview_snapshot)
+    if not restored then
+      render_err = ('%s; rollback errors: %s'):format(render_err, tostring(restore_err))
+    end
+    error(render_err, 0)
   end
-
-  buffer.set_lines(instance, lines)
-  buffer.finish(instance, geometry)
-  decorations.apply_workbench_line_highlights(instance, lines, results_top)
-
-  decorations.set_input_header(instance, geometry.name, ui_fields.search_prefixes.name)
-  decorations.set_input_header(instance, geometry.color, ui_fields.search_prefixes.color)
-
-  if detail_result then
-    decorations.set_detail_menu_header(instance, results_top, detail_result)
-    decorations.apply_detail_menu_highlights(instance, geometry.detail_menu, session.is_dirty(detail_result.name))
-  end
-
-  decorations.refresh_input_placeholders(instance)
-  dynamic_preview.tick(instance, vim.uv.hrtime() / 1000000)
-  dynamic_preview.sync(instance)
 end
 
 return M

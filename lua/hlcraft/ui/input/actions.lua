@@ -3,6 +3,7 @@ local paste_plan = require('hlcraft.ui.input.paste_plan')
 local input_sequence = require('hlcraft.ui.input.sequence')
 local buffer_lines = require('hlcraft.ui.buffer_lines')
 local navigation = require('hlcraft.ui.navigation')
+local notify = require('hlcraft.notify')
 local numbers = require('hlcraft.core.number')
 local tables = require('hlcraft.core.tables')
 local window = require('hlcraft.ui.workspace.window')
@@ -52,6 +53,22 @@ local function feed_key(key)
   vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(key, true, false, true), 'n', false)
 end
 
+local function cleanup_trailing_empty_line(instance, cursor_row, input_name)
+  local ok, err = xpcall(function()
+    local state = instance_state(instance)
+    if not window.is_valid_buf(state.buf) then
+      return
+    end
+    local updated = input_model.get_input_at_row(instance, cursor_row - 1)
+    if updated and updated.name == input_name then
+      input_model.remove_trailing_empty_line(instance, input_name)
+    end
+  end, debug.traceback)
+  if not ok then
+    notify.warn(('paste cleanup failed: %s'):format(tostring(err)))
+  end
+end
+
 local function cursor_context(instance)
   local state = instance_state(instance)
   local win = window.get_win(instance)
@@ -78,11 +95,9 @@ local function apply_paste_plan(instance, win, cursor_row, cursor_col, input, pl
   end
 
   if input and plan.cleanup_trailing_newline then
+    local input_name = input.name
     vim.schedule(function()
-      local updated = input_model.get_input_at_row(instance, cursor_row - 1)
-      if updated then
-        input_model.remove_trailing_empty_line(instance, updated.name)
-      end
+      cleanup_trailing_empty_line(instance, cursor_row, input_name)
     end)
   end
 

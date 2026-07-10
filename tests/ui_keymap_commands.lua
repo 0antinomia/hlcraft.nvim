@@ -1,10 +1,13 @@
 local h = require('tests.helpers')
 local scope = 'hlcraft ui keymap commands'
 
+local actions = require('hlcraft.ui.actions')
 local commands = require('hlcraft.ui.keymap_commands')
 local config = require('hlcraft.config')
+local dynamic_runtime = require('hlcraft.dynamic.runtime')
 local engine = require('hlcraft.engine.service')
 local hlcraft = require('hlcraft')
+local scene = require('hlcraft.ui.scene')
 local ui_state = require('hlcraft.ui.state')
 
 local persist_dir = h.temp_dir('hlcraft-ui-keymap-commands')
@@ -82,6 +85,46 @@ h.assert_true(
 )
 commands.run_action = original_run_action
 
+scene.register('throwing_keymap_action', {
+  handle = function()
+    error('action exploded')
+  end,
+  back = function()
+    error('back exploded')
+  end,
+})
+local throwing_action_instance = {
+  state = {
+    scene = { name = 'throwing_keymap_action' },
+  },
+}
+local action_notifications = {}
+local action_pcall_ok, action_result = h.with_notify_stub(function()
+  return pcall(commands.run_action, throwing_action_instance, 'activate')
+end, function(message)
+  action_notifications[#action_notifications + 1] = message
+end)
+h.assert_true(action_pcall_ok, 'keymap action error escaped dispatch', scope)
+h.assert_true(not action_result, 'failed keymap action reported success', scope)
+h.assert_true(
+  action_notifications[1] and action_notifications[1]:find('action exploded', 1, true) ~= nil,
+  'keymap action error was not notified',
+  scope
+)
+local back_notifications = {}
+local back_pcall_ok, back_result = h.with_notify_stub(function()
+  return pcall(actions.back, throwing_action_instance)
+end, function(message)
+  back_notifications[#back_notifications + 1] = message
+end)
+h.assert_true(back_pcall_ok, 'keymap back error escaped dispatch', scope)
+h.assert_true(not back_result, 'failed keymap back reported success', scope)
+h.assert_true(
+  back_notifications[1] and back_notifications[1]:find('back exploded', 1, true) ~= nil,
+  'keymap back error was not notified',
+  scope
+)
+
 h.with_temp_buf(function(phase_buf)
   instance.state.buf = phase_buf
   instance.state.geometry.editor_rows.dynamic_phase = { line = 1, key = 'dynamic_phase' }
@@ -134,8 +177,10 @@ h.with_temp_buf(function(buf)
   local previous_geometry = instance.state.geometry
   local previous_last_win = instance.state.last_workspace_win
   local previous_ns = instance.ns
+  local previous_input_ns = instance.input_ns
 
   instance.ns = vim.api.nvim_create_namespace('hlcraft-ui-keymap-commands-input-test')
+  instance.input_ns = vim.api.nvim_create_namespace('hlcraft-ui-keymap-commands-input-extmarks-test')
   instance.state.buf = buf
   instance.state.extmark_ids = {}
   instance.state.geometry = ui_state.geometry()
@@ -145,10 +190,11 @@ h.with_temp_buf(function(buf)
   }
 
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, { 'alpha', 'beta', 'gamma', 'after' })
-  instance.state.extmark_ids['name:start'] = vim.api.nvim_buf_set_extmark(buf, instance.ns, 0, 0, {
+  local input_ns = instance.input_ns
+  instance.state.extmark_ids['name:start'] = vim.api.nvim_buf_set_extmark(buf, input_ns, 0, 0, {
     right_gravity = false,
   })
-  instance.state.extmark_ids['name:end'] = vim.api.nvim_buf_set_extmark(buf, instance.ns, 3, 0, {
+  instance.state.extmark_ids['name:end'] = vim.api.nvim_buf_set_extmark(buf, input_ns, 3, 0, {
     right_gravity = false,
   })
 
@@ -170,8 +216,11 @@ h.with_temp_buf(function(buf)
   instance.state.geometry = previous_geometry
   instance.state.last_workspace_win = previous_last_win
   instance.ns = previous_ns
+  instance.input_ns = previous_input_ns
 end, { current = true })
 
+engine.clear('HlcraftUiKeymapCommandsNormal')
+dynamic_runtime.reset()
 h.cleanup_dir(persist_dir)
 config.setup({})
 

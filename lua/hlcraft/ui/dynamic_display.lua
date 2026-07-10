@@ -56,10 +56,6 @@ function M.base_value(result, key)
   return field_values.fallback_value(result, key)
 end
 
-function M.base_text(result, key)
-  return color_text(M.base_value(result, key))
-end
-
 function M.color_context(result)
   result = assert_result(result)
   local context = {}
