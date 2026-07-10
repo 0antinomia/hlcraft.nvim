@@ -8,6 +8,42 @@ local original_session = package.loaded[session_module]
 
 local saved = false
 local restored_name
+local refresh_fail_draft = {
+  fg = '#101010',
+  dynamic = {
+    fg = {
+      version = 1,
+      duration = 1000,
+      loop = 'repeat',
+      timeline = {
+        { at = 0, color = 'base' },
+      },
+    },
+  },
+}
+local refresh_fail_group = 'old-group'
+local rollback_fail_draft = {
+  fg = '#101010',
+}
+local discard_fail_draft = {
+  fg = '#303030',
+  bold = true,
+  dynamic = {
+    fg = {
+      version = 1,
+      duration = 1400,
+      loop = 'repeat',
+      timeline = {
+        { at = 0, color = 'base' },
+      },
+    },
+  },
+}
+local discard_fail_group = 'discard-draft'
+local discard_fail_persisted = {
+  bg = '#404040',
+}
+local discard_fail_persisted_group = 'discard-persisted'
 local clean_draft = {
   fg = '#101010',
   dynamic = {
@@ -43,30 +79,66 @@ local fake_engine = {
         },
       }
     end
+    if name == 'refresh-fail' then
+      return refresh_fail_draft
+    end
+    if name == 'discard-refresh-fail' then
+      return discard_fail_draft
+    end
     return clean_draft
   end,
   get_persisted = function(name)
     if name == 'invalid-persisted' then
       return nil
     end
+    if name == 'discard-refresh-fail' then
+      return discard_fail_persisted
+    end
     return clean_persisted
   end,
   get_draft_group = function(name)
+    if name == 'refresh-fail' then
+      return refresh_fail_group
+    end
+    if name == 'discard-refresh-fail' then
+      return discard_fail_group
+    end
     return name == 'dirty' and 'draft' or 'main'
   end,
   get_persisted_group = function(name)
+    if name == 'discard-refresh-fail' then
+      return discard_fail_persisted_group
+    end
     return name == 'dirty' and 'persisted' or 'main'
   end,
-  set_color = function()
+  set_color = function(name, _, value)
+    if name == 'refresh-fail' then
+      refresh_fail_draft.fg = value
+    end
+    if name == 'rollback-fail' then
+      if value == '#101010' then
+        return false, 'rollback set_color failed'
+      end
+      rollback_fail_draft.fg = value
+    end
     return true, nil
   end,
-  set_dynamic = function()
+  set_dynamic = function(name, key, dynamic)
+    if name == 'refresh-fail' then
+      if refresh_fail_draft.dynamic == nil then
+        refresh_fail_draft.dynamic = {}
+      end
+      refresh_fail_draft.dynamic[key] = dynamic
+    end
     return true, nil
   end,
   set_style = function()
     return true, nil
   end,
-  set_group = function()
+  set_group = function(name, group)
+    if name == 'refresh-fail' then
+      refresh_fail_group = group
+    end
     return true, nil
   end,
   set_blend = function()
@@ -78,6 +150,31 @@ local fake_engine = {
   end,
   restore_persisted = function(name)
     restored_name = name
+    if name == 'discard-refresh-fail' then
+      discard_fail_draft = vim.deepcopy(discard_fail_persisted)
+      discard_fail_group = discard_fail_persisted_group
+    end
+  end,
+  apply_patch = function(name, patch)
+    if name == 'discard-refresh-fail' then
+      local restored = {}
+      for key, value in pairs(patch) do
+        if key ~= 'group' and key ~= 'dynamic' and value ~= vim.NIL then
+          restored[key] = value
+        end
+      end
+      if type(patch.dynamic) == 'table' then
+        for key, value in pairs(patch.dynamic) do
+          if value ~= vim.NIL then
+            restored.dynamic = restored.dynamic or {}
+            restored.dynamic[key] = value
+          end
+        end
+      end
+      discard_fail_draft = restored
+      discard_fail_group = patch.group == vim.NIL and nil or patch.group
+    end
+    return true, nil
   end,
   known_groups = function()
     return { 'main' }
@@ -112,6 +209,84 @@ h.assert_true(save_ok, save_err or 'session save failed', scope)
 h.assert_true(saved, 'session save did not call engine save', scope)
 session.discard({ rerender = function() end }, 'clean')
 h.assert_equal(restored_name, 'clean', 'session discard did not restore persisted state', scope)
+local refresh_failure_instance = {
+  rerender = function()
+    error('render failed')
+  end,
+}
+saved = false
+local save_refresh_ok, save_refresh_err = session.save(refresh_failure_instance, 'clean')
+h.assert_true(not save_refresh_ok, 'session save accepted failed refresh', scope)
+h.assert_true(saved, 'session save refresh failure skipped engine save', scope)
+h.assert_true(
+  tostring(save_refresh_err):find('render failed', 1, true) ~= nil,
+  'session save refresh failure dropped refresh error',
+  scope
+)
+local refresh_color_ok = pcall(session.set_color, refresh_failure_instance, 'refresh-fail', 'fg', '#202020')
+h.assert_true(not refresh_color_ok, 'session set_color accepted failed refresh', scope)
+h.assert_equal(refresh_fail_draft.fg, '#101010', 'failed session set_color changed draft', scope)
+local rollback_failure_ok, rollback_failure_err =
+  pcall(session.set_color, refresh_failure_instance, 'rollback-fail', 'fg', '#202020')
+h.assert_true(not rollback_failure_ok, 'session set_color accepted failed refresh rollback', scope)
+h.assert_true(
+  tostring(rollback_failure_err):find('render failed', 1, true) ~= nil,
+  'session refresh rollback failure dropped original refresh error',
+  scope
+)
+h.assert_true(
+  tostring(rollback_failure_err):find('rollback set_color failed', 1, true) ~= nil,
+  'session refresh rollback failure dropped rollback error',
+  scope
+)
+h.assert_equal(rollback_fail_draft.fg, '#202020', 'failed session rollback changed draft unexpectedly', scope)
+
+local restore_refresh_buf = vim.api.nvim_create_buf(false, true)
+local restore_refresh_instance = {
+  state = {
+    buf = restore_refresh_buf,
+  },
+  rerender = function()
+    vim.api.nvim_buf_set_lines(restore_refresh_buf, 0, -1, false, { refresh_fail_draft.fg })
+    if refresh_fail_draft.fg == '#202020' then
+      error('render failed')
+    end
+  end,
+}
+local restore_refresh_ok = pcall(session.set_color, restore_refresh_instance, 'refresh-fail', 'fg', '#202020')
+h.assert_true(not restore_refresh_ok, 'session set_color accepted failed refresh with partial UI write', scope)
+h.assert_equal(refresh_fail_draft.fg, '#101010', 'failed session restore refresh changed draft', scope)
+h.assert_equal(
+  table.concat(vim.api.nvim_buf_get_lines(restore_refresh_buf, 0, -1, false), '\n'),
+  '#101010',
+  'failed session restore refresh left partially rendered draft value',
+  scope
+)
+vim.api.nvim_buf_delete(restore_refresh_buf, { force = true })
+
+local refresh_dynamic_ok = pcall(session.set_dynamic, refresh_failure_instance, 'refresh-fail', 'fg', {
+  version = 1,
+  duration = 2500,
+  loop = 'pingpong',
+  timeline = {
+    { at = 0, color = '#ffffff' },
+  },
+})
+h.assert_true(not refresh_dynamic_ok, 'session set_dynamic accepted failed refresh', scope)
+h.assert_equal(refresh_fail_draft.dynamic.fg.duration, 1000, 'failed session set_dynamic changed draft', scope)
+local refresh_group_ok = pcall(session.set_group, refresh_failure_instance, 'refresh-fail', 'new-group')
+h.assert_true(not refresh_group_ok, 'session set_group accepted failed refresh', scope)
+h.assert_equal(refresh_fail_group, 'old-group', 'failed session set_group changed draft group', scope)
+local before_discard_fail_draft = vim.deepcopy(discard_fail_draft)
+local before_discard_fail_group = discard_fail_group
+local refresh_discard_ok = pcall(session.discard, refresh_failure_instance, 'discard-refresh-fail')
+h.assert_true(not refresh_discard_ok, 'session discard accepted failed refresh', scope)
+h.assert_true(
+  vim.deep_equal(discard_fail_draft, before_discard_fail_draft),
+  'failed session discard changed draft',
+  scope
+)
+h.assert_equal(discard_fail_group, before_discard_fail_group, 'failed session discard changed draft group', scope)
 
 local bad_name_ok = pcall(session.draft_entry, nil)
 h.assert_true(not bad_name_ok, 'session accepted nil highlight name', scope)

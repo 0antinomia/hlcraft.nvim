@@ -3,6 +3,8 @@ local scope = 'hlcraft ui detail info'
 
 local config = require('hlcraft.config')
 local detail_info = require('hlcraft.ui.detail')
+local dynamic_model = require('hlcraft.dynamic.model')
+local engine = require('hlcraft.engine.service')
 local hlcraft = require('hlcraft')
 local theme = require('hlcraft.ui.theme')
 
@@ -120,6 +122,33 @@ local metrics_line = virt_line_with_label(detail_info_lines, 'Metrics')
 h.assert_true(metrics_line ~= nil, 'detail metrics line missing', scope)
 h.assert_equal(metrics_line[2][2], theme.groups.muted, 'detail metrics label lacks muted contrast', scope)
 
+local dynamic_ok, dynamic_err = engine.set_dynamic(
+  'HlcraftUiDetailInfoNormal',
+  'fg',
+  dynamic_model.normalize_channel({
+    version = 1,
+    duration = 1000,
+    loop = 'repeat',
+    timeline = {
+      { at = 0, color = 'base' },
+    },
+  })
+)
+h.assert_true(dynamic_ok, dynamic_err or 'detail info dynamic fixture did not set', scope)
+local dynamic_detail_info_lines = detail_info.build_virt_lines(result, function()
+  return theme.groups.value
+end, 80)
+local dynamic_colors_line = virt_line_with_label(dynamic_detail_info_lines, 'Colors')
+local dynamic_token
+for _, chunk in ipairs(dynamic_colors_line) do
+  if chunk[1] == 'Dynamic' then
+    dynamic_token = chunk
+    break
+  end
+end
+h.assert_true(dynamic_token ~= nil, 'detail info did not show dynamic color placeholder', scope)
+h.assert_equal(dynamic_token[2], theme.groups.dynamic, 'detail info dynamic placeholder lacks contrast', scope)
+
 local narrow_detail_info_lines = detail_info.build_virt_lines({
   name = 'HlcraftUiDetailInfoNarrow',
   fg = 'NONE',
@@ -140,6 +169,7 @@ h.assert_true(
   scope
 )
 
+engine.clear('HlcraftUiDetailInfoNormal')
 h.cleanup_dir(persist_dir)
 config.setup({})
 

@@ -15,6 +15,13 @@ for _, option in ipairs(M.managed) do
   managed_set[option] = true
 end
 
+local function append_rollback_errors(err, rollback_errors)
+  if #rollback_errors == 0 then
+    return err
+  end
+  return ('%s; rollback errors: %s'):format(err, table.concat(rollback_errors, '; '))
+end
+
 M.workspace_values = {
   number = false,
   relativenumber = false,
@@ -95,9 +102,24 @@ function M.restore(snapshot)
   end
 
   local values = assert_values(snapshot.values, 'window option snapshot', 2)
+  local current = M.read(snapshot.win)
 
-  for _, option in ipairs(M.managed) do
-    vim.wo[snapshot.win][option] = values[option]
+  local ok, err = xpcall(function()
+    for _, option in ipairs(M.managed) do
+      vim.wo[snapshot.win][option] = values[option]
+    end
+  end, debug.traceback)
+  if not ok then
+    local rollback_errors = {}
+    for _, option in ipairs(M.managed) do
+      local restored, restore_err = xpcall(function()
+        vim.wo[snapshot.win][option] = current[option]
+      end, debug.traceback)
+      if not restored then
+        rollback_errors[#rollback_errors + 1] = ('%s: %s'):format(option, tostring(restore_err))
+      end
+    end
+    error(append_rollback_errors(err, rollback_errors), 0)
   end
 
   return true

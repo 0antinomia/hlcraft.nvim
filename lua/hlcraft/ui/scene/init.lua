@@ -2,6 +2,21 @@ local M = {}
 
 local registry = {}
 local scene_methods = { 'enter', 'render', 'handle', 'back' }
+local state_snapshot_keys = {
+  'clamping_cursor',
+  'color_query',
+  'detail_index',
+  'extmark_ids',
+  'field_editor',
+  'geometry',
+  'input_marks',
+  'list_cursor',
+  'name_query',
+  'placeholder_marks',
+  'rendering',
+  'results',
+  'scene',
+}
 
 local function assert_scene_name(name, label, level)
   if type(name) ~= 'string' or name == '' then
@@ -54,6 +69,20 @@ local function assert_scene(scene)
   return scene
 end
 
+local function snapshot_state(state)
+  local snapshot = {}
+  for _, key in ipairs(state_snapshot_keys) do
+    snapshot[key] = vim.deepcopy(state[key])
+  end
+  return snapshot
+end
+
+local function restore_state(state, snapshot)
+  for _, key in ipairs(state_snapshot_keys) do
+    state[key] = snapshot[key]
+  end
+end
+
 function M.register(name, scene)
   name = assert_scene_name(name, 'scene registration name', 2)
   scene = assert_scene(scene)
@@ -84,12 +113,12 @@ function M.set(instance, name, opts)
   if not scene then
     return false, ('unknown scene: %s'):format(tostring(name))
   end
-  local previous_scene = state.scene
+  local snapshot = snapshot_state(state)
   state.scene = vim.tbl_extend('force', opts, { name = name })
   if scene.enter then
     local ok, err = pcall(scene.enter, instance, opts)
     if not ok then
-      state.scene = previous_scene
+      restore_state(state, snapshot)
       error(err, 0)
     end
   end
@@ -97,9 +126,18 @@ function M.set(instance, name, opts)
 end
 
 function M.render(instance)
+  local state = instance_state(instance)
   local scene = M.current(instance)
   if scene.render then
-    return scene.render(instance)
+    local snapshot = snapshot_state(state)
+    local ok, result = xpcall(function()
+      return scene.render(instance)
+    end, debug.traceback)
+    if not ok then
+      restore_state(state, snapshot)
+      error(result, 0)
+    end
+    return result
   end
 end
 

@@ -2,6 +2,7 @@ local actions = require('hlcraft.ui.actions')
 local buffer_fields = require('hlcraft.ui.input.buffer_fields')
 local commands = require('hlcraft.ui.keymap_commands')
 local navigation = require('hlcraft.ui.navigation')
+local notify = require('hlcraft.notify')
 local ui_fields = require('hlcraft.ui.fields')
 local lifecycle = require('hlcraft.ui.workspace.lifecycle')
 
@@ -29,8 +30,64 @@ local function keymap_opts(opts, extra)
   return vim.tbl_extend('force', opts, extra)
 end
 
-local function set_keymap(mode, lhs, callback, opts, extra)
-  vim.keymap.set(mode, lhs, callback, keymap_opts(opts, extra))
+local function mode_list(mode)
+  if type(mode) == 'table' then
+    return mode
+  end
+  return { mode }
+end
+
+local function cleanup_installed_keymaps(installed, buf)
+  local errors = {}
+  for index = #installed, 1, -1 do
+    local item = installed[index]
+    for _, mode in ipairs(mode_list(item.mode)) do
+      local ok, err = pcall(vim.keymap.del, mode, item.lhs, { buffer = buf })
+      if not ok then
+        errors[#errors + 1] = ('%s %s: %s'):format(mode, item.lhs, tostring(err))
+      end
+    end
+  end
+  return errors
+end
+
+local function append_rollback_errors(err, rollback_errors)
+  if #rollback_errors == 0 then
+    return err
+  end
+  return ('%s; rollback errors: %s'):format(err, table.concat(rollback_errors, '; '))
+end
+
+local function pack(...)
+  return {
+    n = select('#', ...),
+    ...,
+  }
+end
+
+local function protect_keymap(lhs, callback)
+  return function(...)
+    local args = pack(...)
+    local results
+    local ok, err = xpcall(function()
+      results = pack(callback(unpack(args, 1, args.n)))
+    end, debug.traceback)
+    if not ok then
+      notify.error(('workspace keymap %s failed: %s'):format(tostring(lhs), tostring(err)))
+      return nil
+    end
+    return unpack(results, 1, results.n)
+  end
+end
+
+local function set_keymap(mode, lhs, callback, opts, extra, installed)
+  vim.keymap.set(mode, lhs, protect_keymap(lhs, callback), keymap_opts(opts, extra))
+  if installed then
+    installed[#installed + 1] = {
+      mode = mode,
+      lhs = lhs,
+    }
+  end
 end
 
 local function map(mode, lhs, run, extra)
@@ -157,12 +214,12 @@ local workspace_keymaps = {
   map({ 'n', 'i' }, '<CR>', activate, { expr = true }),
 }
 
-local function install_specs(instance, opts)
+local function install_specs(instance, opts, installed)
   for _, spec in ipairs(workspace_keymaps) do
     local mode, lhs, run, extra = spec.mode, spec.lhs, spec.run, spec.opts
     set_keymap(mode, lhs, function()
       return run(instance)
-    end, opts, extra)
+    end, opts, extra, installed)
   end
 end
 
@@ -170,7 +227,7 @@ end
 --- @param instance table The Instance object holding UI state
 --- @param buf number Buffer handle to attach keymaps to
 --- @return nil
-local function setup_input_boundary_keys(instance, buf)
+local function setup_input_boundary_keys(instance, buf, installed)
   local insert_opts = { buffer = buf, silent = true }
   local normal_opts = { buffer = buf, silent = true, nowait = true }
 
@@ -187,14 +244,14 @@ local function setup_input_boundary_keys(instance, buf)
         return
       end
       vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(key, true, false, true), 'n', false)
-    end, insert_opts)
+    end, insert_opts, nil, installed)
   end
 
   for _, lhs in ipairs({ 'X', 'S', 'D', 'c', 'C', 'I', 'A', 'O' }) do
     local key = lhs
     set_keymap('n', key, function()
       commands.feed_normal_key(instance, key)
-    end, normal_opts)
+    end, normal_opts, nil, installed)
   end
 end
 
@@ -207,8 +264,14 @@ function M.setup_workspace_keymaps(instance, buf)
   buf = assert_buffer(buf)
   local opts = { buffer = buf, silent = true, nowait = true }
 
-  install_specs(instance, opts)
-  setup_input_boundary_keys(instance, buf)
+  local installed = {}
+  local ok, err = xpcall(function()
+    install_specs(instance, opts, installed)
+    setup_input_boundary_keys(instance, buf, installed)
+  end, debug.traceback)
+  if not ok then
+    error(append_rollback_errors(err, cleanup_installed_keymaps(installed, buf)), 0)
+  end
 end
 
 return M

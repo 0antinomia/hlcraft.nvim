@@ -5,9 +5,18 @@ local config = require('hlcraft.config')
 local hlcraft = require('hlcraft')
 local detail_renderer = require('hlcraft.ui.render.detail')
 local dynamic_model = require('hlcraft.dynamic.model')
+local dynamic_preview = require('hlcraft.ui.dynamic_preview')
 local engine = require('hlcraft.engine.service')
 local field_editor_renderer = require('hlcraft.ui.render.field_editor')
 local ui_state = require('hlcraft.ui.state')
+
+local function assert_preview_range(lines, item, message)
+  local line = lines[item.line]
+  local start_byte, end_byte = line:find(item.text, 1, true)
+  h.assert_true(start_byte ~= nil, message .. ' swatch was not rendered', scope)
+  h.assert_equal(item.col_start, start_byte - 1, message .. ' start column changed', scope)
+  h.assert_equal(item.col_end, end_byte, message .. ' end column changed', scope)
+end
 
 local persist_dir = h.temp_dir('hlcraft-ui-render')
 hlcraft.setup({
@@ -43,6 +52,36 @@ local result = {
   resolved_bg = '#222222',
   sp = '#333333',
 }
+
+local function new_detail_render_instance(buf, namespace)
+  local instance = {
+    ns = vim.api.nvim_create_namespace(namespace),
+    input_ns = vim.api.nvim_create_namespace(namespace .. '-input'),
+    state = ui_state.initial(),
+  }
+  instance.state.buf = buf
+  instance.state.last_workspace_win = vim.api.nvim_get_current_win()
+  instance.state.detail_index = 1
+  instance.state.results = {
+    result,
+  }
+  return instance
+end
+
+local function register_old_dynamic_preview(instance, dynamic)
+  local previous_id = dynamic_preview.register(instance, {
+    line = 1,
+    col_start = 0,
+    col_end = 4,
+    text = 'OLDX',
+    base = '#000000',
+    dynamic = dynamic,
+  })
+  dynamic_preview.tick(instance, 0)
+  return previous_id,
+    vim.deepcopy(instance.state.dynamic_preview.items),
+    vim.deepcopy(instance.state.dynamic_preview.marks)
+end
 
 local strict_detail_ok = pcall(detail_renderer.build, { detail_menu = {} }, result, 80)
 h.assert_true(not strict_detail_ok, 'detail renderer accepted a build call without instance', scope)
@@ -149,7 +188,142 @@ h.with_temp_buf(function(buf)
     'detail dynamic preview missed renderer color context',
     scope
   )
+  assert_preview_range(
+    dynamic_detail_lines,
+    dynamic_detail_instance.state.dynamic_preview.items[1],
+    'detail dynamic preview'
+  )
 end)
+
+h.with_temp_buf(function(buf)
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, { 'OLDX' })
+  local render_failure_instance = new_detail_render_instance(buf, 'hlcraft-ui-render-dynamic-failure-test')
+  local previous_id, previous_items, previous_marks = register_old_dynamic_preview(render_failure_instance, dynamic)
+  local previous_mark =
+    vim.api.nvim_buf_get_extmark_by_id(buf, render_failure_instance.ns, previous_marks[previous_id], {})
+
+  local original_set_lines = vim.api.nvim_buf_set_lines
+  vim.api.nvim_buf_set_lines = function()
+    error('set lines failed')
+  end
+  local failed_dynamic_render_ok = pcall(detail_renderer.render, render_failure_instance)
+  vim.api.nvim_buf_set_lines = original_set_lines
+
+  h.assert_true(not failed_dynamic_render_ok, 'detail render accepted failed buffer write', scope)
+  h.assert_true(
+    vim.deep_equal(render_failure_instance.state.dynamic_preview.items, previous_items),
+    'failed detail render replaced dynamic preview items',
+    scope
+  )
+  h.assert_true(
+    vim.deep_equal(render_failure_instance.state.dynamic_preview.marks, previous_marks),
+    'failed detail render replaced dynamic preview marks',
+    scope
+  )
+  local preserved_mark =
+    vim.api.nvim_buf_get_extmark_by_id(buf, render_failure_instance.ns, previous_marks[previous_id], {})
+  h.assert_true(
+    vim.deep_equal(preserved_mark, previous_mark),
+    'failed detail render dropped old dynamic preview mark',
+    scope
+  )
+end, { current = true })
+
+h.with_temp_buf(function(buf)
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, { 'OLDX' })
+  local finish_failure_instance = new_detail_render_instance(buf, 'hlcraft-ui-render-dynamic-finish-failure-test')
+  local previous_id, previous_items, previous_marks = register_old_dynamic_preview(finish_failure_instance, dynamic)
+  local previous_mark_id = previous_marks[previous_id]
+
+  local original_set_extmark = vim.api.nvim_buf_set_extmark
+  vim.api.nvim_buf_set_extmark = function()
+    error('finish extmark failed')
+  end
+  local failed_finish_render_ok = pcall(detail_renderer.render, finish_failure_instance)
+  vim.api.nvim_buf_set_extmark = original_set_extmark
+
+  h.assert_true(not failed_finish_render_ok, 'detail render accepted failed finish', scope)
+  h.assert_equal(
+    table.concat(vim.api.nvim_buf_get_lines(buf, 0, -1, false), '\n'),
+    'OLDX',
+    'finish-failed detail render kept partially rendered buffer content',
+    scope
+  )
+  h.assert_true(
+    vim.deep_equal(finish_failure_instance.state.dynamic_preview.items, previous_items),
+    'finish-failed detail render replaced dynamic preview items',
+    scope
+  )
+  h.assert_true(
+    finish_failure_instance.state.dynamic_preview.marks[previous_id] == nil,
+    'finish-failed detail render kept a stale dynamic preview mark id',
+    scope
+  )
+  local stale_finish_failure_mark =
+    vim.api.nvim_buf_get_extmark_by_id(buf, finish_failure_instance.ns, previous_mark_id, {})
+  h.assert_true(
+    #stale_finish_failure_mark == 0,
+    'finish-failed detail render kept a stale dynamic preview extmark',
+    scope
+  )
+  dynamic_preview.tick(finish_failure_instance, 0)
+  local finish_failure_restored_mark = vim.api.nvim_buf_get_extmark_by_id(
+    buf,
+    finish_failure_instance.ns,
+    finish_failure_instance.state.dynamic_preview.marks[previous_id],
+    {}
+  )
+  h.assert_true(
+    #finish_failure_restored_mark > 0,
+    'finish-failed detail render could not rebuild the previous dynamic preview extmark',
+    scope
+  )
+end, { current = true })
+
+h.with_temp_buf(function(buf)
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, { 'OLDX' })
+  local decoration_failure_instance =
+    new_detail_render_instance(buf, 'hlcraft-ui-render-dynamic-decoration-failure-test')
+  local previous_id, previous_items, previous_marks = register_old_dynamic_preview(decoration_failure_instance, dynamic)
+
+  local original_set_extmark = vim.api.nvim_buf_set_extmark
+  vim.api.nvim_buf_set_extmark = function(target_buf, ns, line, col, opts)
+    if type(opts) == 'table' and opts.virt_lines ~= nil then
+      error('decoration extmark failed')
+    end
+    return original_set_extmark(target_buf, ns, line, col, opts)
+  end
+  local failed_decoration_render_ok = pcall(detail_renderer.render, decoration_failure_instance)
+  vim.api.nvim_buf_set_extmark = original_set_extmark
+
+  h.assert_true(not failed_decoration_render_ok, 'detail render accepted failed decoration', scope)
+  h.assert_equal(
+    table.concat(vim.api.nvim_buf_get_lines(buf, 0, -1, false), '\n'),
+    'OLDX',
+    'decoration-failed detail render kept partially rendered buffer content',
+    scope
+  )
+  h.assert_true(
+    vim.deep_equal(decoration_failure_instance.state.dynamic_preview.items, previous_items),
+    'decoration-failed detail render replaced dynamic preview items',
+    scope
+  )
+  h.assert_true(
+    vim.deep_equal(decoration_failure_instance.state.dynamic_preview.marks, previous_marks),
+    'decoration-failed detail render replaced dynamic preview marks',
+    scope
+  )
+  h.assert_true(
+    #vim.api.nvim_buf_get_extmark_by_id(
+        buf,
+        decoration_failure_instance.ns,
+        decoration_failure_instance.state.dynamic_preview.marks[previous_id],
+        {}
+      ) > 0,
+    'decoration-failed detail render did not restore the previous dynamic preview extmark',
+    scope
+  )
+end, { current = true })
 
 engine.clear('HlcraftUiRenderNormal')
 h.cleanup_dir(persist_dir)

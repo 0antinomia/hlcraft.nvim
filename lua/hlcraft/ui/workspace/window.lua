@@ -10,6 +10,8 @@ local function instance_state(instance)
   return instance.state
 end
 
+--- @param state table
+--- @return table
 local function workspace_window_options(state)
   local snapshots = state.workspace_win_options
   if type(snapshots) ~= 'table' then
@@ -31,12 +33,12 @@ end
 
 local function restore_workspace_window_options(state, win)
   if win == nil then
-    return false
+    return true
   end
 
   local snapshot = workspace_window_options(state)[win]
   if not snapshot then
-    return false
+    return true
   end
 
   local restored = window_options.restore(snapshot)
@@ -63,6 +65,78 @@ local function has_origin(state)
   return M.is_valid_win(state.origin_win) and M.is_valid_buf(state.origin_buf) and state.origin_buf ~= state.buf
 end
 
+local function set_current_window(win)
+  if not M.is_valid_win(win) then
+    return false
+  end
+  local ok = pcall(vim.api.nvim_set_current_win, win)
+  return ok and M.is_valid_win(win)
+end
+
+local function set_window_buffer(win, buf)
+  if not M.is_valid_win(win) or not M.is_valid_buf(buf) then
+    return false
+  end
+  local ok = pcall(vim.api.nvim_win_set_buf, win, buf)
+  return ok and M.is_valid_win(win) and vim.api.nvim_win_get_buf(win) == buf
+end
+
+local function close_window(win)
+  if not M.is_valid_win(win) then
+    return true
+  end
+  local ok = pcall(vim.api.nvim_win_close, win, true)
+  return ok and not M.is_valid_win(win)
+end
+
+local function find_workspace_windows(state)
+  if not M.is_valid_buf(state.buf) then
+    return {}
+  end
+
+  local found = vim.fn.win_findbuf(state.buf)
+  if type(found) ~= 'table' then
+    return {}
+  end
+
+  local windows = {}
+  local seen = {}
+  for _, win in ipairs(found) do
+    if not seen[win] and M.is_valid_win(win) then
+      seen[win] = true
+      windows[#windows + 1] = win
+    end
+  end
+  return windows
+end
+
+local function run_restore_step(errors, label, callback)
+  local ok, result = pcall(callback)
+  if not ok then
+    errors[#errors + 1] = ('%s: %s'):format(label, tostring(result))
+  elseif result ~= true then
+    errors[#errors + 1] = label
+  end
+end
+
+local function close_or_replace_window(win)
+  if not M.is_valid_win(win) then
+    return true
+  end
+
+  local tab = vim.api.nvim_win_get_tabpage(win)
+  if #vim.api.nvim_tabpage_list_wins(tab) > 1 or #vim.api.nvim_list_tabpages() > 1 then
+    return close_window(win)
+  end
+
+  local replacement = vim.api.nvim_create_buf(false, true)
+  local replaced = set_window_buffer(win, replacement)
+  if not replaced and M.is_valid_buf(replacement) then
+    pcall(vim.api.nvim_buf_delete, replacement, { force = true })
+  end
+  return replaced
+end
+
 --- Check if a buffer handle is valid
 --- @param buf number|nil Buffer handle
 --- @return boolean True if buffer is valid
@@ -87,19 +161,14 @@ function M.get_win(instance)
     return nil
   end
 
-  local windows = vim.fn.win_findbuf(buf)
-  if type(windows) == 'table' and #windows > 0 then
-    for _, win in ipairs(windows) do
-      if win == state.last_workspace_win and M.is_valid_win(win) then
-        return win
-      end
+  local windows = find_workspace_windows(state)
+  for _, win in ipairs(windows) do
+    if win == state.last_workspace_win then
+      return win
     end
-
-    for _, win in ipairs(windows) do
-      if M.is_valid_win(win) then
-        return win
-      end
-    end
+  end
+  if #windows > 0 then
+    return windows[1]
   end
 
   return nil
@@ -130,53 +199,77 @@ end
 function M.restore_all_workspace_windows(instance)
   local state = instance_state(instance)
   local workspace_wins = vim.tbl_keys(workspace_window_options(state))
+  local errors = {}
   for _, workspace_win in ipairs(workspace_wins) do
-    restore_workspace_window_options(state, workspace_win)
+    local ok, err = pcall(restore_workspace_window_options, state, workspace_win)
+    if not ok then
+      errors[#errors + 1] = ('%s: %s'):format(tostring(workspace_win), tostring(err))
+    end
+  end
+  if #errors > 0 then
+    error(('failed to restore workspace windows: %s'):format(table.concat(errors, '; ')), 2)
   end
 end
 
 --- Restore the origin buffer and window that was active before opening
 --- @param instance table The Instance object holding UI state
---- @return nil
+--- @return boolean restored True when required origin/window operations completed
+--- @return string|nil err
 function M.restore_origin(instance)
   local state = instance_state(instance)
-  local win = M.get_win(instance)
+  local workspace_wins = find_workspace_windows(state)
   local had_origin = has_origin(state)
+  local errors = {}
+  local visible_workspace_wins = {}
 
   if had_origin then
-    if M.is_valid_win(win) and win == state.origin_win then
-      pcall(vim.api.nvim_win_set_buf, win, state.origin_buf)
-    else
-      pcall(vim.api.nvim_set_current_win, state.origin_win)
-      pcall(vim.api.nvim_win_set_buf, state.origin_win, state.origin_buf)
-      if M.is_valid_win(win) then
-        restore_workspace_window_options(state, win)
-        pcall(vim.api.nvim_win_close, win, true)
+    run_restore_step(errors, 'origin focus', function()
+      return set_current_window(state.origin_win)
+    end)
+    run_restore_step(errors, 'origin buffer', function()
+      return set_window_buffer(state.origin_win, state.origin_buf)
+    end)
+  end
+
+  for _, workspace_win in ipairs(workspace_wins) do
+    visible_workspace_wins[workspace_win] = true
+    if not had_origin or workspace_win ~= state.origin_win then
+      local label = ('workspace window %s'):format(tostring(workspace_win))
+      run_restore_step(errors, label .. ' options', function()
+        return restore_workspace_window_options(state, workspace_win)
+      end)
+      run_restore_step(errors, label .. ' close', function()
+        if had_origin then
+          return close_window(workspace_win)
+        end
+        return close_or_replace_window(workspace_win)
+      end)
+    end
+  end
+
+  for _, workspace_win in ipairs(vim.tbl_keys(workspace_window_options(state))) do
+    if not visible_workspace_wins[workspace_win] then
+      if M.is_valid_win(workspace_win) then
+        local label = ('detached workspace window %s options'):format(tostring(workspace_win))
+        run_restore_step(errors, label, function()
+          return restore_workspace_window_options(state, workspace_win)
+        end)
+      else
+        clear_workspace_window_snapshot(state, workspace_win)
       end
     end
   end
 
   if state.origin_win_options ~= nil then
-    restore_origin_window_options(state, true)
+    run_restore_step(errors, 'origin options', function()
+      return restore_origin_window_options(state, true)
+    end)
   end
 
-  if had_origin then
-    return
+  if #errors > 0 then
+    return false, table.concat(errors, '; ')
   end
-
-  if M.is_valid_win(win) then
-    restore_workspace_window_options(state, win)
-  end
-
-  if not M.is_valid_win(win) then
-    return
-  end
-
-  if #vim.api.nvim_tabpage_list_wins(0) > 1 then
-    pcall(vim.api.nvim_win_close, win, true)
-  else
-    vim.cmd('enew')
-  end
+  return true
 end
 
 function M.capture_workspace_window(instance, win)
@@ -186,15 +279,19 @@ function M.capture_workspace_window(instance, win)
   end
 
   if win == state.origin_win then
+    if state.origin_win_options == nil then
+      state.origin_win_options = window_options.snapshot(win)
+    elseif type(state.origin_win_options.values) ~= 'table' then
+      error('origin window option snapshot values must be a table', 2)
+    end
     M.apply_window_options(instance, win)
     return
   end
 
-  state.last_workspace_win = win
-
   local snapshots = workspace_window_options(state)
-  if snapshots[win] == nil then
-    local snapshot = window_options.snapshot(win)
+  local snapshot = snapshots[win]
+  if snapshot == nil then
+    snapshot = window_options.snapshot(win)
     if snapshot == nil or snapshot.win == nil then
       return
     end
@@ -203,13 +300,16 @@ function M.capture_workspace_window(instance, win)
       if type(state.origin_win_options.values) ~= 'table' then
         error('origin window option snapshot values must be a table', 2)
       end
-      snapshot.values = vim.deepcopy(state.origin_win_options.values)
+      snapshot = {
+        win = snapshot.win,
+        values = vim.deepcopy(state.origin_win_options.values),
+      }
     end
-
-    snapshots[win] = snapshot
   end
 
   M.apply_window_options(instance, win)
+  snapshots[win] = snapshot
+  state.last_workspace_win = win
 end
 
 function M.release_workspace_window(instance, win)

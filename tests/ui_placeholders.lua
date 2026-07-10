@@ -41,9 +41,29 @@ h.with_temp_buf(function(buf)
   instance.state.placeholder_marks.underdashed = placeholder_mark_id
 
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, { 'false' })
+  local original_del_extmark = vim.api.nvim_buf_del_extmark
+  vim.api.nvim_buf_del_extmark = function(target_buf, target_ns, mark_id)
+    if target_buf == buf and target_ns == ns and mark_id == placeholder_mark_id then
+      error('placeholder delete failed')
+    end
+    return original_del_extmark(target_buf, target_ns, mark_id)
+  end
+  local failed_delete_ok = pcall(placeholders.refresh, instance)
+  vim.api.nvim_buf_del_extmark = original_del_extmark
+  local failed_delete_mark = instance.state.placeholder_marks.underdashed
   placeholders.refresh(instance)
   marks = vim.api.nvim_buf_get_extmarks(buf, ns, 0, -1, { details = true })
-  h.assert_equal(#marks, 0, 'placeholder was not cleared after input text', scope)
+  if #marks > 0 then
+    original_del_extmark(buf, ns, placeholder_mark_id)
+  end
+  h.assert_true(not failed_delete_ok, 'placeholder refresh accepted failed extmark cleanup', scope)
+  h.assert_equal(
+    failed_delete_mark,
+    placeholder_mark_id,
+    'failed placeholder cleanup dropped the live extmark id',
+    scope
+  )
+  h.assert_equal(#marks, 0, 'placeholder cleanup retry kept the extmark', scope)
 end)
 
 h.with_temp_buf(function(buf)

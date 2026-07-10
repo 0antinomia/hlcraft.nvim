@@ -90,6 +90,44 @@ local function result_at(results, index, label)
   return result
 end
 
+local function snapshot_detail_open_state(state, field_editor)
+  return {
+    detail_index = state.detail_index,
+    field = field_editor.field,
+    geometry = vim.deepcopy(state.geometry),
+    list_cursor = state.list_cursor,
+    results = vim.deepcopy(state.results),
+    scene = vim.deepcopy(state.scene),
+  }
+end
+
+local function restore_detail_open_state(state, field_editor, snapshot)
+  state.detail_index = snapshot.detail_index
+  field_editor.field = snapshot.field
+  state.geometry = snapshot.geometry
+  state.list_cursor = snapshot.list_cursor
+  state.results = snapshot.results
+  state.scene = snapshot.scene
+end
+
+local function append_rollback_error(err, rollback_err)
+  if rollback_err == nil then
+    return err
+  end
+  return ('%s; rollback errors: %s'):format(err, tostring(rollback_err))
+end
+
+local function rerender_restored_detail_open(instance, state, field_editor, snapshot)
+  local ok, err = xpcall(function()
+    instance:rerender()
+  end, debug.traceback)
+  if not ok then
+    restore_detail_open_state(state, field_editor, snapshot)
+    return false, err
+  end
+  return true, nil
+end
+
 function M.enter(instance)
   scene_state(instance_state(instance)).name = 'search'
 end
@@ -102,7 +140,9 @@ end
 
 function M.back(instance)
   instance_state(instance)
-  lifecycle.close(instance)
+  if lifecycle.close(instance) == false then
+    return false, nil
+  end
   return true, nil
 end
 
@@ -119,7 +159,7 @@ end
 --- @return nil
 function M.update_results(instance)
   local state = instance_state(instance)
-  local cursor = nil
+  local cursor = 1
   if state.detail_index == nil then
     cursor = positive_integer(state.list_cursor, 'search list cursor')
   end
@@ -218,10 +258,6 @@ end
 --- @return boolean opened True when the detail scene was opened
 function M.open_detail(instance)
   local state = instance_state(instance)
-  local geometry = geometry_table(state)
-  if type(geometry.detail_menu) ~= 'table' then
-    error('search geometry detail_menu must be a table', 3)
-  end
   local field_editor = field_editor_state(state)
   assert_rerender(instance)
   local win = window.get_win(instance)
@@ -229,20 +265,43 @@ function M.open_detail(instance)
     return false
   end
   local row = vim.api.nvim_win_get_cursor(win)[1]
-  local index = geometry.result_lines[row]
+  local index = result_lines(state)[row]
   if not index then
     return false
   end
   index = positive_integer(index, 'search result index')
   result_at(result_list(state), index, 'search result index')
-  state.detail_index = index
-  field_editor.field = nil
-  require('hlcraft.ui.scene').set(instance, 'detail', { index = index })
-  instance:rerender()
-  local first_key = ui_fields.detail_order[1]
-  local first_row = first_key and geometry.detail_menu[first_key]
-  if first_row then
-    navigation.jump_to_row(instance, first_row.line, false)
+  local snapshot = snapshot_detail_open_state(state, field_editor)
+  local rendered = false
+  local ok, err = xpcall(function()
+    state.list_cursor = index
+    state.detail_index = index
+    field_editor.field = nil
+    local scene_ok, scene_err = require('hlcraft.ui.scene').set(instance, 'detail', { index = index })
+    if not scene_ok then
+      error(scene_err or 'failed to open detail scene', 0)
+    end
+    rendered = true
+    instance:rerender()
+    local first_key = ui_fields.detail_order[1]
+    local rendered_detail_menu = geometry_table(state).detail_menu
+    if type(rendered_detail_menu) ~= 'table' then
+      error('search rendered detail_menu must be a table', 3)
+    end
+    local first_row = first_key and rendered_detail_menu[first_key]
+    if first_row then
+      navigation.jump_to_row(instance, first_row.line, false)
+    end
+  end, debug.traceback)
+  if not ok then
+    restore_detail_open_state(state, field_editor, snapshot)
+    if rendered then
+      local restored, restore_err = rerender_restored_detail_open(instance, state, field_editor, snapshot)
+      if not restored then
+        err = append_rollback_error(err, restore_err)
+      end
+    end
+    error(err, 0)
   end
   return true
 end

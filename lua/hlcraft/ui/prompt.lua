@@ -56,7 +56,13 @@ function M.input(input_opts, submit, opts)
       return
     end
 
-    local ok, err = submit(value)
+    local submit_ok, ok, err = xpcall(function()
+      return submit(value)
+    end, debug.traceback)
+    if not submit_ok then
+      notify.error(ok)
+      return
+    end
     ok = submit_result(ok)
     if opts.notify_errors ~= false and ok == false and err then
       notify.error(err)

@@ -64,9 +64,12 @@ function M.current_result(instance)
 end
 
 function M.current_color_dynamic(instance)
+  if M.current_field_kind(instance) ~= 'color' then
+    return nil
+  end
   local field = M.current_field(instance)
   local result = M.current_result(instance)
-  if M.current_field_kind(instance) ~= 'color' or not result then
+  if not result then
     return nil
   end
   return session.dynamic_value(result.name, field)

@@ -80,7 +80,10 @@ local function clear_overlay(state, ns, key)
   if not mark_id or not valid_buffer(state) then
     return
   end
-  pcall(vim.api.nvim_buf_del_extmark, state.buf, ns, mark_id)
+  local deleted, err = pcall(vim.api.nvim_buf_del_extmark, state.buf, ns, mark_id)
+  if not deleted then
+    error(err, 0)
+  end
   marks[key] = nil
 end
 
