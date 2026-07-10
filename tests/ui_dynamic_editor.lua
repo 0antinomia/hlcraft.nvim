@@ -146,6 +146,7 @@ h.assert_true(not invalid_editor_field_ok, 'dynamic editor accepted an invalid f
 local invalid_editor_raw_text_ok = pcall(editor.set_raw_json, instance, result, 'fg', false)
 h.assert_true(not invalid_editor_raw_text_ok, 'dynamic editor accepted non-string raw JSON text', scope)
 
+engine.clear(name)
 h.cleanup_dir(persist_dir)
 config.setup({})
 

@@ -151,6 +151,7 @@ h.with_temp_buf(function(buf)
   )
 end)
 
+engine.clear('HlcraftUiRenderNormal')
 h.cleanup_dir(persist_dir)
 config.setup({})
 

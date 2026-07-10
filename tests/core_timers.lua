@@ -39,4 +39,26 @@ h.assert_true(not invalid_timer_stop_ok, 'timer stop accepted non-function stop 
 local invalid_timer_close_ok = pcall(timers.stop, { close = false })
 h.assert_true(not invalid_timer_close_ok, 'timer stop accepted non-function close method', scope)
 
+local failed_stop_attempted = false
+local failed_close_attempted = false
+local failed_cleanup_ok, failed_cleanup_err = pcall(timers.stop, {
+  stop = function()
+    failed_stop_attempted = true
+    error('stop failed')
+  end,
+  close = function()
+    failed_close_attempted = true
+    error('close failed')
+  end,
+})
+h.assert_true(not failed_cleanup_ok, 'timer cleanup swallowed operational failures', scope)
+h.assert_true(failed_stop_attempted, 'timer cleanup skipped stop', scope)
+h.assert_true(failed_close_attempted, 'timer cleanup stopped before close', scope)
+h.assert_true(
+  tostring(failed_cleanup_err):find('stop failed', 1, true) ~= nil
+    and tostring(failed_cleanup_err):find('close failed', 1, true) ~= nil,
+  'timer cleanup did not aggregate stop and close failures',
+  scope
+)
+
 print('hlcraft core timers: OK')

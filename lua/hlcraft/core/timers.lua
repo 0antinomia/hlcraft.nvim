@@ -38,15 +38,25 @@ function M.stop(timer)
     error('timer handle must provide stop or close', 2)
   end
 
+  local errors = {}
   if stop then
-    pcall(function()
+    local ok, err = pcall(function()
       timer:stop()
     end)
+    if not ok then
+      errors[#errors + 1] = ('stop: %s'):format(tostring(err))
+    end
   end
   if close then
-    pcall(function()
+    local ok, err = pcall(function()
       timer:close()
     end)
+    if not ok then
+      errors[#errors + 1] = ('close: %s'):format(tostring(err))
+    end
+  end
+  if #errors > 0 then
+    error(('timer cleanup failed: %s'):format(table.concat(errors, '; ')), 2)
   end
 end
 

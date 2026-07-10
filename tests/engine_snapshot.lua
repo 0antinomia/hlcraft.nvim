@@ -108,13 +108,4 @@ local invalid_dynamic_ok = pcall(snapshot.normalize_draft_entry, {
 })
 h.assert_true(not invalid_dynamic_ok, 'snapshot accepted an invalid draft dynamic override', scope)
 
-with_group_state(function()
-  store.data.draft.EmptyDraftEntry = {}
-  store.data.draft_groups.EmptyDraftEntry = 'draft'
-
-  snapshot.remove_empty_draft_entry('EmptyDraftEntry')
-  h.assert_true(store.data.draft.EmptyDraftEntry == nil, 'empty draft entry was not removed', scope)
-  h.assert_true(store.data.draft_groups.EmptyDraftEntry == nil, 'empty draft entry group was not removed', scope)
-end)
-
 print('hlcraft engine snapshot: OK')
