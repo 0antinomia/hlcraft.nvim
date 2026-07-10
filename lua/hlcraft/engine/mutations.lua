@@ -24,16 +24,9 @@ local function draft_entry(name)
   return snapshot.deepcopy(entry)
 end
 
-local function restore(name, entry, group)
-  data.draft[name] = snapshot.deepcopy(entry)
-  data.draft_groups[name] = group
-  snapshot.rebuild_active()
-  applier.apply_group(name)
-end
-
 --- Atomically mutate one draft highlight entry.
 --- @param name string Highlight group name
---- @param patch table
+--- @param patch_spec table
 --- @return boolean ok
 --- @return string|nil err
 function M.apply_patch(name, patch_spec)
@@ -43,12 +36,11 @@ function M.apply_patch(name, patch_spec)
     return false, validation_err
   end
 
-  local previous_entry = snapshot.deepcopy(data.draft[name])
-  local previous_group = data.draft_groups[name]
+  local previous_apply_data = snapshot.capture_apply_data()
   local entry = draft_entry(name)
 
   local function fail(err)
-    restore(name, previous_entry, previous_group)
+    snapshot.restore_apply_data(previous_apply_data)
     return false, err
   end
 
@@ -79,7 +71,16 @@ function M.apply_patch(name, patch_spec)
   end
 
   snapshot.rebuild_active()
-  applier.apply_group(name)
+  local apply_ok, apply_err = xpcall(function()
+    local applied, err = applier.apply_group(name)
+    if applied == false then
+      error(err or 'failed to apply highlight', 2)
+    end
+  end, debug.traceback)
+  if not apply_ok then
+    snapshot.restore_apply_data(previous_apply_data)
+    error(apply_err, 0)
+  end
   return true, nil
 end
 

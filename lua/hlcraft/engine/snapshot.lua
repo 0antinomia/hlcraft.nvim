@@ -5,6 +5,13 @@ local tables = require('hlcraft.core.tables')
 local M = {}
 
 local data = store.data
+local apply_data_keys = {
+  'active',
+  'base_specs',
+  'draft',
+  'draft_groups',
+  'pending',
+}
 
 function M.deepcopy(value)
   return vim.deepcopy(value)
@@ -18,6 +25,20 @@ function M.refresh_base_specs()
   data.base_specs = {}
 end
 
+function M.capture_apply_data()
+  local captured = {}
+  for _, key in ipairs(apply_data_keys) do
+    captured[key] = M.deepcopy(data[key])
+  end
+  return captured
+end
+
+function M.restore_apply_data(captured)
+  for _, key in ipairs(apply_data_keys) do
+    data[key] = captured[key]
+  end
+end
+
 function M.normalize_entry(entry, label)
   if entry == nil then
     return nil
@@ -26,6 +47,9 @@ function M.normalize_entry(entry, label)
   local normalized, err = override_entries.normalize(entry, { label = label or 'entry' })
   if err then
     error(err, 2)
+  end
+  if normalized == nil then
+    error('entry normalization returned no result', 2)
   end
 
   if next(normalized) == nil then
@@ -79,14 +103,6 @@ function M.known_groups()
   end
 
   return tables.sorted_keys(groups)
-end
-
-function M.remove_empty_draft_entry(name)
-  data.draft[name] = M.normalize_draft_entry(data.draft[name])
-  if data.draft[name] == nil then
-    data.draft[name] = nil
-    data.draft_groups[name] = nil
-  end
 end
 
 return M
