@@ -40,13 +40,6 @@ h.assert_equal(
   scope
 )
 
-h.assert_true(model.valid_color_query('#abcdef'), 'valid hex color query was rejected', scope)
-h.assert_true(model.valid_color_query(' #abcdef '), 'spaced hex color query was rejected', scope)
-h.assert_true(model.valid_color_query('NONE'), 'NONE color query was rejected', scope)
-h.assert_true(model.valid_color_query(' none '), 'spaced NONE color query was rejected', scope)
-h.assert_true(not model.valid_color_query('not-a-color'), 'invalid color query was accepted', scope)
-h.assert_true(not model.valid_color_query(123), 'numeric color query was accepted', scope)
-
 local intersection = model.intersect({
   { name = 'Gamma', fg = '#000000' },
   { name = 'Alpha', fg = '#111111' },

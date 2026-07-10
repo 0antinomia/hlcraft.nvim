@@ -51,7 +51,7 @@ end
 
 --- Return the current draft TOML section for a highlight group.
 --- @param name string
---- @return string
+--- @return string|nil
 function M.get_draft_group(name)
   name = assert_name(name)
   return snapshot.normalize_group_name(data.draft_groups[name], 'draft group')
@@ -59,7 +59,7 @@ end
 
 --- Return the persisted TOML section for a highlight group.
 --- @param name string
---- @return string
+--- @return string|nil
 function M.get_persisted_group(name)
   name = assert_name(name)
   return snapshot.normalize_group_name(data.persisted_groups[name], 'persisted group')
@@ -187,22 +187,6 @@ end
 --- @return string|nil err
 function M.save()
   return lifecycle.save()
-end
-
---- Return whether a group currently has draft overrides.
---- @param name string
---- @return boolean
-function M.has_draft(name)
-  name = assert_name(name)
-  return next(normalized_entry_or_empty(data.draft, name, 'draft entry')) ~= nil
-end
-
---- Return whether a group currently has persisted overrides.
---- @param name string
---- @return boolean
-function M.has_persisted(name)
-  name = assert_name(name)
-  return next(normalized_entry_or_empty(data.persisted, name, 'persisted entry')) ~= nil
 end
 
 --- Return the storage path used for persisted overrides.

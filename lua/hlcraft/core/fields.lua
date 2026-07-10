@@ -35,7 +35,6 @@ M.override_keys = concat_lists(M.color_keys, M.style_keys, M.numeric_keys)
 
 M.color_set = key_set(M.color_keys)
 M.style_set = key_set(M.style_keys)
-M.numeric_set = key_set(M.numeric_keys)
 M.override_set = key_set(M.override_keys)
 
 return M

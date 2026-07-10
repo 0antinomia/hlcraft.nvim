@@ -108,7 +108,6 @@ function M.detail_info_virt_lines(instance, result)
 end
 
 M.apply_hint_line = line_highlights.apply_hint_line
-M.apply_label_line = line_highlights.apply_label_line
 M.apply_workbench_line_highlights = line_highlights.apply_workbench_lines
 
 local function assert_detail_menu(detail_menu)

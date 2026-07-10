@@ -64,10 +64,6 @@ function M.empty_message(name_query, color_query)
   return 'No highlight groups match this name filter'
 end
 
-function M.valid_color_query(query)
-  return normalized_color_query(query) ~= nil
-end
-
 function M.intersect(name_results, color_results)
   name_results = assert_results(name_results, 'name search results')
   color_results = assert_results(color_results, 'color search results')

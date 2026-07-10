@@ -2,14 +2,11 @@ local fields = require('hlcraft.core.fields')
 
 local M = {}
 
-M.color_keys = vim.deepcopy(fields.color_keys)
 M.style_keys = vim.deepcopy(fields.style_keys)
 M.numeric_keys = vim.deepcopy(fields.numeric_keys)
 M.override_keys = vim.deepcopy(fields.override_keys)
 M.color_set = vim.deepcopy(fields.color_set)
 M.style_set = vim.deepcopy(fields.style_set)
-M.numeric_set = vim.deepcopy(fields.numeric_set)
-M.override_set = vim.deepcopy(fields.override_set)
 
 M.data = {
   applying = false,

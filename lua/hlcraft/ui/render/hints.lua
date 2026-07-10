@@ -17,14 +17,14 @@ local function key_set(keys)
   return result
 end
 
-M.section_labels = {
+local section_labels = {
   'Action',
   'Adjust',
   'Edit',
   'Global',
   'Set',
 }
-M.section_label_set = key_set(M.section_labels)
+M.section_label_set = key_set(section_labels)
 
 local function pad_label(label)
   local display_width = vim.fn.strdisplaywidth(label)
@@ -34,7 +34,7 @@ local function pad_label(label)
   return label .. string.rep(' ', label_width - display_width)
 end
 
-M.groups = {
+local groups = {
   search = {
     { 'Enter', 'open/apply' },
     { 'Tab', 'input' },
@@ -157,10 +157,6 @@ local function format_range(items, first, last)
   return table.concat(parts, separator)
 end
 
-function M.format(items)
-  return format_range(items)
-end
-
 local function line_display_width(label, items, first, last)
   return vim.fn.strdisplaywidth(pad_label(label) .. format_range(items, first, last))
 end
@@ -169,7 +165,7 @@ function M.section_lines(label, group, options)
   label = non_empty_string(label, 'hint section label')
   group = non_empty_string(group, 'hint group')
   local max_items, width = section_options(options)
-  local items = M.groups[group]
+  local items = groups[group]
   if items == nil then
     error(('unknown hint group: %s'):format(tostring(group)), 2)
   end

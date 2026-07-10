@@ -59,7 +59,7 @@ local function preview_lhs(preview_keymap)
   return assert_non_empty_string(preview_keymap.lhs, 'preview keymap lhs must be a non-empty string')
 end
 
-function M.sections(preview_keymap)
+local function sections(preview_keymap)
   local action_items = {
     { 's', 'save draft' },
   }
@@ -145,8 +145,8 @@ function M.lines(preview_keymap)
     '',
   }
 
-  local sections = tables.assert_sequence(M.sections(preview_keymap), 'help sections', 3)
-  for section_index, section in ipairs(sections) do
+  local help_sections = tables.assert_sequence(sections(preview_keymap), 'help sections', 3)
+  for section_index, section in ipairs(help_sections) do
     section = assert_table(section, 'help section must be a table')
     local title = assert_non_empty_string(section.title, 'help section title must be a non-empty string')
     local items = tables.assert_sequence(section.items, 'help section items', 3)
@@ -155,7 +155,7 @@ function M.lines(preview_keymap)
     for _, item in ipairs(items) do
       lines[#lines + 1] = item_line(item, width)
     end
-    if section_index < #sections then
+    if section_index < #help_sections then
       lines[#lines + 1] = ''
     end
   end
